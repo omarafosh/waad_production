@@ -15,6 +15,7 @@
 3. **Atomic Commits**: Commits should be small and specific to the task at hand.
 4. **Validation**: All tests must pass before merging.
 
-## 4. Current Phase
-Currently working on **Phase 0.1: Git & Branching Strategy Setup**.
-Current branch: `refactor/phase-0.1-git-setup`
+## 4. Current Status
+- **`main`**: Initial clean baseline pushed.
+- **`develop`**: Integration branch created and pushed.
+- **`refactor/phase-0.1-setup`**: Current active working branch.

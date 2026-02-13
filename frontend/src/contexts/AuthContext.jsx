@@ -168,15 +168,16 @@ export const AuthProvider = ({ children }) => {
 
         const response = await authService.me();
 
-        if (response.status === 'success' && response.data) {
-          setUser(response.data);
+        if (response && response.id) {
+          setUser(response);
           setAuthStatus(AUTH_STATUS.AUTHENTICATED);
-          useRBACStore.getState().initialize(response.data);
-          console.info('✅ Session restored:', response.data.username);
+          useRBACStore.getState().initialize(response);
+          console.info('✅ Session restored:', response.username);
         } else {
           // Token invalid or expired
           setAuthStatus(AUTH_STATUS.UNAUTHENTICATED);
           localStorage.removeItem('serviceToken');
+          useRBACStore.getState().clear();
         }
       } catch (error) {
         setAuthStatus(AUTH_STATUS.UNAUTHENTICATED);
@@ -193,17 +194,18 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     const response = await authService.login(credentials);
 
-    if (response.status === 'success' && response.data) {
-      const { token, user } = response.data;
+    if (response) {
+      const { token, user } = response;
 
       if (token) {
         localStorage.setItem('serviceToken', token);
       }
 
-      setUser(user);
+      const userData = user || response; // Resilience if backend flat-returns user
+      setUser(userData);
       setAuthStatus(AUTH_STATUS.AUTHENTICATED);
-      useRBACStore.getState().initialize(user);
-      return user;
+      useRBACStore.getState().initialize(userData);
+      return userData;
     } else {
       throw new Error('Login failed');
     }
@@ -212,27 +214,21 @@ export const AuthProvider = ({ children }) => {
   /**
    * Register
    */
-  const register = async (email, password, firstName, lastName, civilId, phone) => {
-    const response = await authService.register({
-      email,
-      password,
-      fullName: `${firstName} ${lastName}`,
-      username: email.split('@')[0] + Math.floor(Math.random() * 1000), // Simple username gen
-      civilId,
-      phone
-    });
+  const register = async (registrationData) => {
+    const response = await authService.register(registrationData);
 
-    if (response.status === 'success' && response.data) {
-      const { token, user } = response.data;
+    if (response) {
+      const { token, user } = response;
       if (token) {
         localStorage.setItem('serviceToken', token);
       }
-      setUser(user);
+      const userData = user || response;
+      setUser(userData);
       setAuthStatus(AUTH_STATUS.AUTHENTICATED);
-      useRBACStore.getState().initialize(user);
-      return user;
+      useRBACStore.getState().initialize(userData);
+      return userData;
     } else {
-      throw new Error(response.message || 'Registration failed');
+      throw new Error(response?.message || 'Registration failed');
     }
   };
 
@@ -267,8 +263,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.me();
 
-      if (response.status === 'success' && response.data) {
-        setUser(response.data);
+      if (response && response.id) {
+        setUser(response);
         setAuthStatus(AUTH_STATUS.AUTHENTICATED);
       } else {
         setUser(null);

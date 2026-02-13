@@ -93,7 +93,8 @@ import {
 import axiosClient from 'utils/axios';
 import { useAuth } from 'contexts/AuthContext';
 import { useTableRefresh } from 'contexts/TableRefreshContext';
-import { PERMISSIONS } from 'constants/permissions.constants';
+import { PERMISSIONS } from 'constants/rbac';
+import ActionGuard from 'components/rbac/ActionGuard';
 
 const DEFAULT_SORT = { field: 'createdAt', direction: 'desc' };
 
@@ -370,18 +371,13 @@ const UnifiedMembersList = () => {
         <Stack direction="row" spacing={0.5} justifyContent="center">
           {showDeleted ? (
             <>
-              <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_DELETE]}>
-                <Tooltip title="استعادة">
-                  <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); handleRestoreClick(row.original); }}>
-                    <UndoIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="حذف نهائي">
-                  <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleHardDeleteClick(row.original); }}>
+              <ActionGuard permissions={[PERMISSIONS.MEMBER_SUSPEND, PERMISSIONS.MEMBER_TERMINATE]} mode="hide">
+                <Tooltip title="حذف/إدارة القيد">
+                  <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteClick(row.original); }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              </RBACGuard>
+              </ActionGuard>
             </>
           ) : (
             <>
@@ -421,20 +417,20 @@ const UnifiedMembersList = () => {
                 </IconButton>
               </Tooltip>
 
-              <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_EDIT]}>
+              <ActionGuard permission={PERMISSIONS.MEMBER_UPDATE} mode="hide">
                 <Tooltip title="تعديل">
                   <IconButton size="small" sx={{ color: '#008e92' }} onClick={(e) => { e.stopPropagation(); navigate(`/members/${row.original.id}/edit`); }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              </RBACGuard>
-              <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_DELETE]}>
-                <Tooltip title="حذف">
+              </ActionGuard>
+              <ActionGuard permission={PERMISSIONS.MEMBER_SUSPEND} mode="hide">
+                <Tooltip title="إيقاف">
                   <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteClick(row.original); }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              </RBACGuard>
+              </ActionGuard>
             </>
           )
           }
@@ -648,7 +644,7 @@ const UnifiedMembersList = () => {
           actions={
             <Stack direction="row" spacing={1} sx={{ '& .MuiButton-root': { transition: 'all 0.2s' } }}>
               {/* Excel Group */}
-              <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_IMPORT]}>
+              <ActionGuard permission={PERMISSIONS.MEMBER_IMPORT}>
                 <Button
                   variant="outlined"
                   onClick={handleDownloadTemplate}
@@ -657,7 +653,7 @@ const UnifiedMembersList = () => {
                 >
                   تحميل القالب
                 </Button>
-              </RBACGuard>
+              </ActionGuard>
 
               <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_IMPORT]}>
                 <Button
@@ -670,7 +666,7 @@ const UnifiedMembersList = () => {
                 </Button>
               </RBACGuard>
 
-              <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_EXPORT]}>
+              <ActionGuard permission={PERMISSIONS.MEMBER_PDF_EXPORT}>
                 <Button
                   variant="outlined"
                   onClick={() => setExportWizardOpen(true)}
@@ -679,7 +675,7 @@ const UnifiedMembersList = () => {
                 >
                   تصدير لإكسل
                 </Button>
-              </RBACGuard>
+              </ActionGuard>
 
               {/* View/Action Group */}
               <RBACGuard requiredPermissions={[PERMISSIONS.MEMBER_DELETE]}>

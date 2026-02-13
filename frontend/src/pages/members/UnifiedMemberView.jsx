@@ -84,7 +84,8 @@ import MemberAvatar from 'components/tba/MemberAvatar';
 import DependentModal from './DependentModal';
 
 // Constants
-import { PERMISSIONS } from 'constants/permissions.constants';
+import { PERMISSIONS } from 'constants/rbac';
+import ActionGuard from 'components/rbac/ActionGuard';
 import { MEMBER_TYPES, GENDERS } from 'services/api/unified-members.service';
 
 // Relationship Translation Map (using centralized i18n)
@@ -269,7 +270,7 @@ const UnifiedMemberView = () => {
             <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/members')}>
               {MEMBERS_AR.buttons.back}
             </Button>
-            <RBACGuard requiredPermissions={[PERMISSIONS.MANAGE_MEMBERS]}>
+            <ActionGuard permission={PERMISSIONS.MEMBER_UPDATE}>
               <Button
                 variant="outlined"
                 color="primary"
@@ -278,6 +279,8 @@ const UnifiedMemberView = () => {
               >
                 {MEMBERS_AR.buttons.edit}
               </Button>
+            </ActionGuard>
+            <ActionGuard permissions={[PERMISSIONS.MEMBER_SUSPEND, PERMISSIONS.MEMBER_TERMINATE]}>
               <Button
                 variant="outlined"
                 color="error"
@@ -286,7 +289,7 @@ const UnifiedMemberView = () => {
               >
                 {MEMBERS_AR.buttons.delete}
               </Button>
-            </RBACGuard>
+            </ActionGuard>
           </Stack>
         }
       />
@@ -491,7 +494,7 @@ const UnifiedMemberView = () => {
                       }
                     />
                   </Stack>
-                  <RBACGuard requiredPermissions={[PERMISSIONS.MANAGE_MEMBERS]}>
+                  <ActionGuard permission={PERMISSIONS.MEMBER_CREATE}>
                     <Button
                       variant="contained"
                       startIcon={<AddIcon />}
@@ -500,7 +503,7 @@ const UnifiedMemberView = () => {
                     >
                       {MEMBERS_AR.buttons.addDependent}
                     </Button>
-                  </RBACGuard>
+                  </ActionGuard>
                 </Stack>
 
                 <Divider />
@@ -566,7 +569,7 @@ const UnifiedMemberView = () => {
                                   <TableCell align="center">
                                     <Stack direction="row" spacing={1} justifyContent="center">
                                       {showDeleted ? (
-                                        <RBACGuard requiredPermissions={[PERMISSIONS.MANAGE_MEMBERS]}>
+                                        <ActionGuard permission={PERMISSIONS.MEMBER_ACTIVATE}>
                                           <Button
                                             size="small"
                                             variant="outlined"
@@ -576,7 +579,7 @@ const UnifiedMemberView = () => {
                                           >
                                             {MEMBERS_AR.buttons.restore}
                                           </Button>
-                                        </RBACGuard>
+                                        </ActionGuard>
                                       ) : (
                                         <>
                                           <Tooltip title="عرض التفاصيل">
@@ -584,18 +587,20 @@ const UnifiedMemberView = () => {
                                               <BadgeIcon fontSize="small" />
                                             </IconButton>
                                           </Tooltip>
-                                          <RBACGuard requiredPermissions={[PERMISSIONS.MANAGE_MEMBERS]}>
+                                          <ActionGuard permission={PERMISSIONS.MEMBER_UPDATE}>
                                             <Tooltip title="تعديل">
                                               <IconButton size="small" color="secondary" onClick={() => handleEditClick(dep)}>
                                                 <EditIcon fontSize="small" />
                                               </IconButton>
                                             </Tooltip>
+                                          </ActionGuard>
+                                          <ActionGuard permissions={[PERMISSIONS.MEMBER_SUSPEND, PERMISSIONS.MEMBER_TERMINATE]}>
                                             <Tooltip title="حذف">
                                               <IconButton size="small" color="error" onClick={() => handleDeleteConfirm(dep)}>
                                                 <DeleteIcon fontSize="small" />
                                               </IconButton>
                                             </Tooltip>
-                                          </RBACGuard>
+                                          </ActionGuard>
                                         </>
                                       )}
                                     </Stack>

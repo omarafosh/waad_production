@@ -1,4 +1,4 @@
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 
 /**
  * ============================================================================
@@ -217,10 +217,10 @@ export const companyService = {
   // Default company (preferred for single-company mode)
   getDefaultCompany,
   updateDefaultCompany,
-  
+
   // Legacy alias for backward compatibility
   getSystemCompany: getDefaultCompany,
-  
+
   // CRUD operations
   getAll,
   getById,
@@ -228,7 +228,7 @@ export const companyService = {
   create,
   update,
   delete: remove,
-  
+
   // Activation
   activate,
   deactivate

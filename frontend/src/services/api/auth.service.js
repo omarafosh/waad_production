@@ -1,86 +1,127 @@
 /**
- * JWT Authentication Service
- * Reverted to JWT due to Backend Stateless Enforcement (Phase 2)
- *
- * This service handles authentication using Bearer Tokens
- * stored in localStorage.
+ * JWT Authentication Service (Phase 2.2 - Hardened)
+ * 
+ * This service implements SOLID principles and handles all authentication 
+ * operations using Bearer Tokens and Refresh Tokens.
  */
 
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 
-/**
- * Login with username/password
- * Returns JWT token and user info
- */
-export const login = async (credentials) => {
-  // Use JWT endpoint instead of session
-  const response = await axiosClient.post('/auth/login', credentials);
-  // Backend returns ApiResponse<LoginResponse> wrapped in axios response
-  // response.data = { status: 'success', data: { token, user }, message: '...' }
-  return response.data;
-};
+// ==============================|| HELPER FUNCTIONS ||============================== //
 
 /**
- * Register a new user
+ * Unwrap ApiResponse and handle potential null data
+ * @param {Object} response - Axios response object
+ * @returns {any} Unwrapped data
  */
-export const register = async (userData) => {
-  const response = await axiosClient.post('/auth/register', userData);
-  return response.data;
-};
+const unwrap = (response) => response.data?.data || response.data;
 
-/**
- * Get current authenticated user
- * Uses Bearer token from localStorage (injected by axios interceptor)
- */
-export const me = async () => {
-  try {
-    // Use JWT endpoint
-    const response = await axiosClient.get('/auth/me');
-    // Backend returns ApiResponse<UserInfo> wrapped in axios response
-    // response.data = { status: 'success', data: UserInfo, message: '...' }
-    return response.data;
-  } catch (error) {
-    // Expected 401 when no token or expired
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      return { status: 'unauthenticated', data: null };
+// ==============================|| AUTH SERVICE OBJECT ||============================== //
+
+export const authService = {
+  /**
+   * Login with username/password
+   * @param {Object} credentials - { identifier, password }
+   * @returns {Promise<Object>} LoginResponse { token, refreshToken, user }
+   */
+  login: async (credentials) => {
+    const response = await axiosClient.post('/auth/login', credentials);
+    return unwrap(response);
+  },
+
+  /**
+   * Register a new user
+   * @param {Object} userData - Registration details
+   * @returns {Promise<Object>} Created user information
+   */
+  register: async (userData) => {
+    const response = await axiosClient.post('/auth/register', userData);
+    return unwrap(response);
+  },
+
+  /**
+   * Get current authenticated user profile
+   * @returns {Promise<Object>} User information
+   */
+  me: async () => {
+    try {
+      const response = await axiosClient.get('/auth/me');
+      return unwrap(response);
+    } catch (error) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        return { status: 'unauthenticated', data: null };
+      }
+      throw error;
     }
-    // Re-throw other errors
-    throw error;
+  },
+
+  /**
+   * Refresh the access token using a refresh token
+   * @param {string} refreshToken - Valid refresh token
+   * @returns {Promise<Object>} New access token and refresh token
+   */
+  refreshToken: async (refreshToken) => {
+    const response = await axiosClient.post('/auth/refresh', { refreshToken });
+    return unwrap(response);
+  },
+
+  /**
+   * Logout the user
+   * @returns {Promise<void>}
+   */
+  logout: async () => {
+    try {
+      await axiosClient.post('/auth/session/logout');
+    } catch (e) {
+      // Ignore errors on logout
+    }
+    // Note: Local storage cleanup should be handled by the caller/store
+  },
+
+  /**
+   * Request a password reset email (Token-based)
+   * @param {string} email - User email address
+   * @returns {Promise<void>}
+   */
+  forgotPassword: async (email) => {
+    await axiosClient.post('/auth/token/forgot-password', { email });
+  },
+
+  /**
+   * Reset password using a secure token
+   * @param {Object} data - { token, newPassword }
+   * @returns {Promise<void>}
+   */
+  resetPassword: async (data) => {
+    await axiosClient.post('/auth/token/reset-password', data);
+  },
+
+  /**
+   * Change password for logged-in user
+   * @param {Object} data - { currentPassword, newPassword }
+   * @returns {Promise<void>}
+   */
+  changePassword: async (data) => {
+    await axiosClient.put('/auth/users/me/password', data);
+  },
+
+  /**
+   * Verify email address using token
+   * @param {string} token - Verification token
+   * @returns {Promise<void>}
+   */
+  verifyEmail: async (token) => {
+    await axiosClient.post('/auth/verify-email', { token });
+  },
+
+  /**
+   * Resend verification email
+   * @param {string} email - User email
+   * @returns {Promise<void>}
+   */
+  resendVerification: async (email) => {
+    await axiosClient.post('/auth/resend-verification', { email });
   }
 };
 
-/**
- * Logout
- * Client-side only (JWT is stateless), but we call backend to allow any cleanup if needed
- */
-export const logout = async () => {
-  // Optional: Call backend logout if implemented, otherwise just clear local state
-  try {
-    // Session logout endpoint might not work with JWT, but safe to ignore error
-    await axiosClient.post('/auth/session/logout');
-  } catch (e) {
-    // Ignore
-  }
-  return { status: 'success' };
-};
-
-/**
- * Check if user is authenticated
- * Tries to fetch current user
- */
-export const isAuthenticated = async () => {
-  try {
-    const response = await me();
-    return response.status === 'success';
-  } catch (error) {
-    return false;
-  }
-};
-
-// Export as default for backward compatibility
-export default {
-  login,
-  me,
-  logout,
-  isAuthenticated
-};
+export default authService;

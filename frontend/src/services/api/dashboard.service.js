@@ -1,4 +1,4 @@
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 
 /**
  * ============================================================================
@@ -50,7 +50,7 @@ export const getDashboardSummary = async (employerId = null) => {
     if (employerId) {
       params.employerId = employerId;
     }
-    
+
     const response = await axiosClient.get(`${BASE_URL}/summary`, { params });
     return unwrap(response);
   } catch (error) {
@@ -73,7 +73,7 @@ export const getMonthlyTrends = async (months = 12, employerId = null) => {
     if (employerId) {
       params.employerId = employerId;
     }
-    
+
     const response = await axiosClient.get(`${BASE_URL}/monthly-trends`, { params });
     return unwrap(response);
   } catch (error) {

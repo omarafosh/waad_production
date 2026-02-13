@@ -1,4 +1,4 @@
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 
 /**
  * Benefit Policies API Service

@@ -1,4 +1,4 @@
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 
 /**
  * Provider Contracts API Service
@@ -93,7 +93,7 @@ export const PRICING_MODEL_CONFIG = {
 export const getProviderContracts = async (params = {}) => {
   const response = await axiosClient.get(BASE_URL, { params });
   const data = unwrap(response);
-  
+
   // Normalize backend response (items/total) to frontend format (content/totalElements)
   if (data && typeof data === 'object') {
     if (Array.isArray(data.items)) {
@@ -114,7 +114,7 @@ export const getProviderContracts = async (params = {}) => {
       };
     }
   }
-  
+
   return data;
 };
 
@@ -416,7 +416,7 @@ export const downloadPricingTemplate = async (contractId) => {
     const response = await axiosClient.get(`${BASE_URL}/${contractId}/pricing/import/template`, {
       responseType: 'blob'
     });
-    
+
     // Check if response is actually an error (JSON instead of blob)
     const contentType = response.headers?.['content-type'] || '';
     if (contentType.includes('application/json')) {
@@ -425,7 +425,7 @@ export const downloadPricingTemplate = async (contractId) => {
       const errorData = JSON.parse(text);
       throw new Error(errorData.message || errorData.messageAr || 'فشل تحميل القالب');
     }
-    
+
     // Create download link
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
@@ -435,7 +435,7 @@ export const downloadPricingTemplate = async (contractId) => {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-    
+
     return response.data;
   } catch (error) {
     console.error('[downloadPricingTemplate] Error:', error);

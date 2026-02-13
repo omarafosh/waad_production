@@ -89,7 +89,12 @@ public class PdfCompanySettings {
     // ========== Metadata ==========
     
     @Column(name = "active")
-    private Boolean active;
+    @Builder.Default
+    private boolean active = true;
+
+    // Explicit getters/setters for interoperability
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
     
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

@@ -313,6 +313,13 @@ public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
                 .count();
     }
 
+    /**
+     * Get count of all rules
+     */
+    public int getRulesCount() {
+        return rules.size();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // ENUMS
     // ═══════════════════════════════════════════════════════════════════════════

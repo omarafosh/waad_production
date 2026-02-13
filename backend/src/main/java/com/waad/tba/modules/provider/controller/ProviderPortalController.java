@@ -1006,6 +1006,4 @@ public class ProviderPortalController {
                         return ResponseEntity.ok(ApiResponse.success(emptyStats)); // Return empty instead of 500
                 }
         }
-
-        }
 }

@@ -1,4 +1,4 @@
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 import { createErrorHandler } from 'utils/api-error-handler';
 import { normalizePaginatedResponse } from 'utils/api-response-normalizer';
 

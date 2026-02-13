@@ -1,650 +1,129 @@
-import axiosClient from 'utils/axios';
-
 /**
- * ============================================================================
- * Employers API Service - Phase 2 Implementation
- * ============================================================================
- *
- * Features:
- * - Field normalization (Frontend ↔ Backend mapping)
- * - Auto-code generation support (optional code field)
- * - Error handling and user-friendly messages
- * - Backward compatibility with legacy field names
- * - Full CRUD operations with proper transformations
- *
- * Backend Contract:
- * - CREATE: POST /api/employers - code is optional (auto-generated)
- * - READ:   GET /api/employers/:id
- * - UPDATE: PUT /api/employers/:id
- * - DELETE: DELETE /api/employers/:id
- * - LIST:   GET /api/employers
- *
- * Field Mapping Reference:
- * ┌─────────────────┬──────────────────┬─────────────────┐
- * │ Frontend Field  │ Backend Field    │ Direction       │
- * ├─────────────────┼──────────────────┼─────────────────┤
- * │ code            │ code             │ Both            │
- * │ name            │ name             │ Both            │
- * │ active          │ active           │ Both            │
- * └─────────────────┴──────────────────┴─────────────────┘
- *
- * @see EMPLOYER_API_CONTRACT.md
- * @see PHASE-2-EMPLOYER-IMPLEMENTATION-REPORT.md
+ * Employers & Organization API Service (Phase 2.5 - HARDENED)
+ * 
+ * Manages employer organizations and insurance partners.
+ * Adheres to SOLID principles and provides enterprise-grade error handling.
+ * 
+ * Responsibilities:
+ * 1. Employer CRM (Lifecycle, Policies).
+ * 2. Organization Structure & Code Management.
+ * 3. Archiving & Data Retention.
+ * 4. Selector & Financial Tracking Tags.
  */
+
+import axiosClient from './client';
+import { createErrorHandler } from 'utils/api-error-handler';
+import { normalizePaginatedResponse } from 'utils/api-response-normalizer';
 
 const BASE_URL = '/employers';
 
-// ============================================================================
-// FIELD NORMALIZATION (Frontend ↔ Backend)
-// ============================================================================
+// ==============================|| ERROR HANDLING ||============================== //
+
+const handleEmployerErrors = createErrorHandler('جهة العمل', {
+  404: 'جهة العمل غير موجودة',
+  409: 'رمز المنظمة مكرر أو مستخدم بالفعل',
+  422: 'بيانات جهة العمل غير مكتملة'
+});
 
 /**
- * Normalize frontend request payload to backend canonical format
- *
- * Transformations:
- * - name → name (required field)
- * - active → active (defaults to true)
- *
- * Auto-Code Generation:
- * - If 'code' is not provided → backend auto-generates (EMP-01, EMP-02, ...)
- * - If provided → backend uses the provided value
- *
- * @param {Object} frontendDto - Frontend form data
- * @param {string} [frontendDto.code] - Employer code
- * @param {string} frontendDto.name - Name (required)
- * @param {boolean} [frontendDto.active=true] - Active status
- * @returns {Object} Backend-compatible DTO
- *
- * @example
- * const frontendDto = {
- *   code: 'EMP-CUSTOM',
- *   name: 'شركة الواحة',
- *   active: true
- * };
- *
- * const backendDto = normalizeEmployerRequest(frontendDto);
- * // Result: { code: 'EMP-CUSTOM', name: 'شركة الواحة', active: true }
+ * Unwrap ApiResponse and handle potential null data
  */
-export const normalizeEmployerRequest = (frontendDto) => {
-  if (!frontendDto) {
-    console.warn('[EmployerService] normalizeEmployerRequest: No DTO provided');
-    return null;
-  }
+const unwrap = (response) => response.data?.data || response.data;
 
-  // Extract code (primary 'code')
-  const code = frontendDto.code || null;
+// ==============================|| EMPLOYERS SERVICE OBJECT ||============================== //
 
-  // Extract name - required field
-  const name = frontendDto.name || null;
+export const employersService = {
 
-  // Extract optional fields
-  const active = frontendDto.active !== undefined ? frontendDto.active : true;
+  // --- CORE CRUD ---
 
-  // Build normalized payload
-  const normalized = {
-    name,
-    active
-  };
-
-  // Only include code if provided (otherwise backend auto-generates)
-  if (code && code.trim() !== '') {
-    normalized.code = code.trim();
-  }
-
-  console.debug('[EmployerService] Request normalized:', {
-    input: { code: frontendDto.code, name: frontendDto.name },
-    output: normalized
-  });
-
-  return normalized;
-};
-
-/**
- * Normalize backend response to frontend expected format
- *
- * Transformations:
- * - id, code, name, active, archived, createdAt, updatedAt
- * - activePolicyName, activePolicyId
- *
- * @param {Object} backendDto - Backend response data
- * @param {number} backendDto.id - Employer ID
- * @param {string} backendDto.code - Employer code (e.g., 'EMP-01')
- * @param {string} backendDto.name - Unified name
- *
- * // Backend returns:
- * const backendDto = {
- *   id: 1,
- *   code: 'EMP-01',
- *   name: 'شركة الواحة',
- *   active: true,
- *   createdAt: '2024-12-29T10:00:00',
- *   updatedAt: '2024-12-29T10:00:00'
- * };
- *
- * // Normalized to frontend format:
- * const frontendDto = normalizeEmployerResponse(backendDto);
- * // Result: Same structure
- */
-export const normalizeEmployerResponse = (backendDto) => {
-  if (!backendDto) {
-    console.warn('[EmployerService] normalizeEmployerResponse: No DTO provided');
-    return null;
-  }
-
-  const normalized = {
-    id: backendDto.id,
-    code: backendDto.code,
-    name: backendDto.name,
-    active: backendDto.active,
-    archived: backendDto.archived,
-    activePolicyName: backendDto.activePolicyName,
-    activePolicyId: backendDto.activePolicyId,
-    createdAt: backendDto.createdAt,
-    updatedAt: backendDto.updatedAt,
-    // Statistics fields
-    totalMembers: backendDto.totalMembers || 0,
-    activePoliciesCount: backendDto.activePoliciesCount || 0
-  };
-
-  console.debug('[EmployerService] Response normalized:', {
-    input: { code: backendDto.code, name: backendDto.name },
-    output: normalized
-  });
-
-  return normalized;
-};
-
-/**
- * Normalize array of employer responses
- *
- * @param {Array} backendArray - Array of backend DTOs
- * @returns {Array} Array of frontend-compatible DTOs
- */
-export const normalizeEmployerArrayResponse = (backendArray) => {
-  if (!Array.isArray(backendArray)) {
-    console.warn('[EmployerService] normalizeEmployerArrayResponse: Not an array');
-    return [];
-  }
-
-  return backendArray.map(normalizeEmployerResponse);
-};
-
-// ============================================================================
-// ERROR HANDLING
-// ============================================================================
-
-/**
- * Map backend errors to user-friendly frontend messages
- *
- * Error Types Handled:
- * - 400 Bad Request: Validation errors
- * - 404 Not Found: Employer not found
- * - 409 Conflict: Code already exists (duplicate)
- * - 500 Server Error: Unexpected errors
- *
- * @param {Error} error - Axios error object
- * @returns {Object} Structured error object
- * @property {number} status - HTTP status code
- * @property {string} message - User-friendly error message
- * @property {Object} [fieldErrors] - Field-specific errors (for validation)
- * @property {string} [errorCode] - Backend error code (if available)
- *
- * @example
- * try {
- *   await createEmployer(dto);
- * } catch (err) {
- *   const error = handleEmployerErrors(err);
- *   if (error.status === 400) {
- *     // Show field errors
- *     console.error('Validation failed:', error.fieldErrors);
- *   } else {
- *     // Show general error
- *     console.error('Error:', error.message);
- *   }
- * }
- */
-export const handleEmployerErrors = (error) => {
-  const status = error?.response?.status;
-  const data = error?.response?.data;
-  const message = data?.message || error?.message || 'حدث خطأ غير متوقع';
-
-  console.error('[EmployerService] Error occurred:', {
-    status,
-    message,
-    data
-  });
-
-  // Structure error response
-  const errorResponse = {
-    status: status || 500,
-    message,
-    errorCode: data?.errorCode || null,
-    fieldErrors: null,
-    originalError: error
-  };
-
-  // Handle specific error types
-  switch (status) {
-    case 400: // Validation Error
-      errorResponse.message = 'يرجى تصحيح الأخطاء في النموذج';
-      errorResponse.fieldErrors = data?.errors || {};
-
-      // No more field mapping needed as frontend and backend are unified
-      if (errorResponse.fieldErrors) {
-        errorResponse.fieldErrors = data?.errors || {};
-      }
-      break;
-
-    case 404: // Not Found
-      errorResponse.message = 'جهة العمل غير موجودة';
-      break;
-
-    case 409: // Conflict (Duplicate Code)
-      errorResponse.message = 'رمز جهة العمل مستخدم بالفعل. يرجى اختيار رمز آخر.';
-      break;
-
-    case 403: // Forbidden
-      errorResponse.message = 'ليس لديك صلاحية لتنفيذ هذه العملية';
-      break;
-
-    case 500: // Server Error
-      errorResponse.message = 'خطأ في الخادم. يرجى المحاولة لاحقاً.';
-      break;
-
-    default:
-      errorResponse.message = message || 'حدث خطأ أثناء معالجة الطلب';
-  }
-
-  return errorResponse;
-};
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Unwrap ApiResponse envelope
- * Backend returns: { status: "success", data: {...}, message: "...", timestamp: "..." }
- * We need response.data.data (axios wraps in .data, then ApiResponse has .data)
- */
-const unwrap = (response) => response?.data?.data || response?.data || null;
-
-/**
- * Safely extract array from API response
- * Handles both ApiResponse<List<T>> and ApiResponse<PaginationResponse<T>>
- */
-const unwrapArray = (response) => {
-  const data = response?.data?.data || response?.data;
-
-  // If data is an array, return it
-  if (Array.isArray(data)) return data;
-
-  // If data has items (pagination), return items
-  if (data?.items && Array.isArray(data.items)) return data.items;
-
-  // If data has content (Spring Page), return content
-  if (data?.content && Array.isArray(data.content)) return data.content;
-
-  // Fallback to empty array
-  return [];
-};
-
-/**
- * Validate required fields before sending to backend
- *
- * @param {Object} dto - Frontend DTO
- * @returns {Object|null} Validation errors or null if valid
- */
-const validateEmployerDto = (dto) => {
-  const errors = {};
-
-  // Check for required 'name'
-  if (!dto.name || dto.name.trim() === '') {
-    errors.name = 'اسم جهة العمل مطلوب';
-  }
-
-  return Object.keys(errors).length > 0 ? errors : null;
-};
-
-// ============================================================================
-// CRUD OPERATIONS
-// ============================================================================
-
-/**
- * Get all active employers
- *
- * @param {Object} [params] - Query parameters
- * @param {boolean} [params.deleted] - Include archived/deleted employers
- * @returns {Promise<Array>} List of employers (frontend format)
- * @throws {Error} Network or server error
- */
-export const getEmployers = async (params = {}) => {
-  try {
-    console.debug('[EmployerService] Fetching all employers...', params);
-    const response = await axiosClient.get(BASE_URL, { params });
-
-    const data = response?.data?.data || response?.data;
-
-    // Handle Page response (New)
-    if (data && data.content && Array.isArray(data.content)) {
-      return {
-        content: normalizeEmployerArrayResponse(data.content),
-        totalElements: data.totalElements,
-        totalPages: data.totalPages
-      };
+  getAll: async (params = {}) => {
+    try {
+      const response = await axiosClient.get(BASE_URL, { params });
+      return normalizePaginatedResponse(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
     }
+  },
 
-    // Handle List response (Legacy)
-    const rawData = unwrapArray(response);
-    return normalizeEmployerArrayResponse(rawData);
-  } catch (error) {
-    console.error('[EmployerService] getEmployers failed:', error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Get employer by ID
- *
- * @param {number} id - Employer ID
- * @returns {Promise<Object>} Employer details (frontend format)
- * @throws {Error} Network, not found, or server error
- *
- * @example
- * const employer = await getEmployerById(1);
- * console.log(employer);
- * // {
- * //   id: 1,
- * //   code: 'EMP-01',
- * //   name: 'شركة الواحة',
- * //   active: true,
- * //   createdAt: '2024-12-29T10:00:00',
- * //   updatedAt: '2024-12-29T10:00:00'
- * // }
- */
-export const getEmployerById = async (id) => {
-  try {
-    console.debug(`[EmployerService] Fetching employer ID: ${id}...`);
-    const response = await axiosClient.get(`${BASE_URL}/${id}`);
-    const rawData = unwrap(response);
-    return normalizeEmployerResponse(rawData);
-  } catch (error) {
-    console.error(`[EmployerService] getEmployerById(${id}) failed:`, error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Create new employer
- *
- * Features:
- * - Auto-code generation if code not provided
- * - Field normalization (employerCode → code, nameAr → name)
- * - Client-side validation before sending
- * - Error handling with user-friendly messages
- *
- * @param {Object} frontendDto - Employer data (frontend format)
- * @param {string} [frontendDto.code] - Employer code (optional - auto-generated if missing)
- * @param {string} frontendDto.name - Name (required)
- * @param {boolean} [frontendDto.active=true] - Active status
- * @returns {Promise<Object>} Created employer (frontend format)
- * @throws {Error} Validation, conflict, or server error
- *
- * @example
- * // Create with auto-generated code:
- * const newEmployer = await createEmployer({
- *   name: 'شركة الواحة',
- *   active: true
- * });
- * console.log(newEmployer.code); // 'EMP-01' (auto-generated)
- *
- * @example
- * // Create with custom code:
- * const newEmployer = await createEmployer({
- *   code: 'EMP-CUSTOM',
- *   name: 'شركة النور'
- * });
- * console.log(newEmployer.code); // 'EMP-CUSTOM'
- *
- * @example
- * // Error handling:
- * try {
- *   await createEmployer({ nameAr: 'شركة الواحة' });
- * } catch (error) {
- *   if (error.status === 400) {
- *     console.error('Validation errors:', error.fieldErrors);
- *   } else if (error.status === 409) {
- *     console.error('Code already exists');
- *   }
- * }
- */
-export const createEmployer = async (frontendDto) => {
-  try {
-    console.debug('[EmployerService] Creating employer...', frontendDto);
-
-    // Client-side validation
-    const validationErrors = validateEmployerDto(frontendDto);
-    if (validationErrors) {
-      console.warn('[EmployerService] Validation failed:', validationErrors);
-      throw {
-        response: {
-          status: 400,
-          data: {
-            message: 'يرجى تصحيح الأخطاء في النموذج',
-            errors: validationErrors
-          }
-        }
-      };
+  getById: async (id) => {
+    try {
+      const response = await axiosClient.get(`${BASE_URL}/${id}`);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
     }
+  },
 
-    // Normalize request
-    const backendDto = normalizeEmployerRequest(frontendDto);
-
-    // Send to backend
-    const response = await axiosClient.post(BASE_URL, backendDto);
-    const rawData = unwrap(response);
-
-    console.info('[EmployerService] Employer created successfully:', rawData);
-
-    // Normalize response
-    return normalizeEmployerResponse(rawData);
-  } catch (error) {
-    console.error('[EmployerService] createEmployer failed:', error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Update existing employer
- *
- * Features:
- * - Field normalization (employerCode → code, nameAr → name)
- * - Client-side validation
- * - Code change warning (if auto-generated code is changed)
- * - Error handling
- *
- * @param {number} id - Employer ID
- * @param {Object} frontendDto - Updated employer data (frontend format)
- * @param {string} [frontendDto.code] - Employer code
- * @param {string} frontendDto.name - Name (required)
- * @param {boolean} [frontendDto.active] - Active status
- * @returns {Promise<Object>} Updated employer (frontend format)
- * @throws {Error} Validation, not found, conflict, or server error
- *
- * @example
- * const updated = await updateEmployer(1, {
- *   code: 'EMP-01',
- *   name: 'شركة الواحة المحدودة',
- *   active: true
- * });
- */
-export const updateEmployer = async (id, frontendDto) => {
-  try {
-    console.debug(`[EmployerService] Updating employer ID: ${id}...`, frontendDto);
-
-    // Client-side validation
-    const validationErrors = validateEmployerDto(frontendDto);
-    if (validationErrors) {
-      console.warn('[EmployerService] Validation failed:', validationErrors);
-      throw {
-        response: {
-          status: 400,
-          data: {
-            message: 'يرجى تصحيح الأخطاء في النموذج',
-            errors: validationErrors
-          }
-        }
-      };
+  create: async (data) => {
+    try {
+      const response = await axiosClient.post(BASE_URL, data);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
     }
+  },
 
-    // Normalize request
-    const backendDto = normalizeEmployerRequest(frontendDto);
+  update: async (id, data) => {
+    try {
+      const response = await axiosClient.put(`${BASE_URL}/${id}`, data);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
+    }
+  },
 
-    // Send to backend
-    const response = await axiosClient.put(`${BASE_URL}/${id}`, backendDto);
-    const rawData = unwrap(response);
+  // --- ARCHIVING & LIFECYCLE ---
 
-    console.info(`[EmployerService] Employer ID: ${id} updated successfully`);
+  archive: async (id) => {
+    try {
+      const response = await axiosClient.post(`${BASE_URL}/${id}/archive`);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
+    }
+  },
 
-    // Normalize response
-    return normalizeEmployerResponse(rawData);
-  } catch (error) {
-    console.error(`[EmployerService] updateEmployer(${id}) failed:`, error);
-    throw handleEmployerErrors(error);
+  restore: async (id) => {
+    try {
+      const response = await axiosClient.post(`${BASE_URL}/${id}/restore`);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
+    }
+  },
+
+  // --- SELECTORS & STATS ---
+
+  getSelectors: async () => {
+    try {
+      const response = await axiosClient.get(`${BASE_URL}/selectors`);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
+    }
+  },
+
+  getCount: async () => {
+    try {
+      const response = await axiosClient.get(`${BASE_URL}/count`);
+      return unwrap(response);
+    } catch (error) {
+      throw handleEmployerErrors(error);
+    }
+  },
+
+  // --- EXPORTS ---
+
+  exportExcel: async () => {
+    try {
+      const response = await axiosClient.get(`${BASE_URL}/export/excel`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      throw handleEmployerErrors(error);
+    }
   }
-};
-
-/**
- * Delete employer - DISABLED
- * 
- * Employers cannot be deleted because they are linked to members, policies, claims.
- * Use archiveEmployer() instead.
- * 
- * @deprecated Use archiveEmployer() instead
- * @throws {Error} Always throws - delete is not allowed
- */
-export const deleteEmployer = async (id) => {
-  throw new Error('لا يمكن حذف الشريك. استخدم الأرشفة بدلاً من ذلك. Employer cannot be deleted. Use archive instead.');
-};
-
-/**
- * Archive employer (safe alternative to delete)
- * Sets archived=true, hiding from default lists while preserving all data
- * 
- * @param {number} id - Employer ID
- * @returns {Promise<Object>} Archived employer
- */
-export const archiveEmployer = async (id) => {
-  try {
-    console.debug(`[EmployerService] Archiving employer ID: ${id}...`);
-    const response = await axiosClient.post(`${BASE_URL}/${id}/archive`);
-    console.info(`[EmployerService] Employer ID: ${id} archived successfully`);
-    return unwrap(response);
-  } catch (error) {
-    console.error(`[EmployerService] archiveEmployer(${id}) failed:`, error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Restore archived employer
- * Sets archived=false, making employer visible again
- * 
- * @param {number} id - Employer ID
- * @returns {Promise<Object>} Restored employer
- */
-export const restoreEmployer = async (id) => {
-  try {
-    console.debug(`[EmployerService] Restoring employer ID: ${id}...`);
-    const response = await axiosClient.post(`${BASE_URL}/${id}/restore`);
-    console.info(`[EmployerService] Employer ID: ${id} restored successfully`);
-    return unwrap(response);
-  } catch (error) {
-    console.error(`[EmployerService] restoreEmployer(${id}) failed:`, error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Export employers to Excel
- * @returns {Promise<Blob>} Excel file blob
- */
-export const exportEmployers = async () => {
-  try {
-    console.debug('[EmployerService] Exporting employers to Excel...');
-    const response = await axiosClient.get(`${BASE_URL}/export/excel`, {
-      responseType: 'blob',
-    });
-    return response.data;
-  } catch (error) {
-    console.error('[EmployerService] Error exporting employers:', error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Get employer selectors (for dropdowns)
- *
- * @returns {Promise<Array>} List of employer selectors
- * @example
- * const selectors = await getEmployerSelectors();
- * // [{ id: 1, label: 'شركة الواحة' }, { id: 2, label: 'شركة النور' }]
- */
-export const getEmployerSelectors = async () => {
-  try {
-    console.debug('[EmployerService] Fetching employer selectors...');
-    const response = await axiosClient.get(`${BASE_URL}/selectors`);
-    return unwrapArray(response);
-  } catch (error) {
-    console.error('[EmployerService] getEmployerSelectors failed:', error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-/**
- * Get total count of active employers
- *
- * @returns {Promise<number>} Count of active employers
- */
-export const getEmployerCount = async () => {
-  try {
-    console.debug('[EmployerService] Fetching employer count...');
-    const response = await axiosClient.get(`${BASE_URL}/count`);
-    return unwrap(response);
-  } catch (error) {
-    console.error('[EmployerService] getEmployerCount failed:', error);
-    throw handleEmployerErrors(error);
-  }
-};
-
-
-
-// ============================================================================
-// DEFAULT EXPORT
-// ============================================================================
-
-/**
- * Employers Service - Default Export
- * All CRUD operations with normalization and error handling
- */
-const employersService = {
-  // CRUD Operations
-  getEmployers,
-  getEmployerById,
-  createEmployer,
-  updateEmployer,
-  deleteEmployer,
-  exportEmployers,
-
-  // Additional Operations
-  getEmployerSelectors,
-  getEmployerCount,
-
-  // Normalization Utilities (exported for advanced usage)
-  normalizeEmployerRequest,
-  normalizeEmployerResponse,
-  normalizeEmployerArrayResponse,
-  handleEmployerErrors
 };
 
 export default employersService;

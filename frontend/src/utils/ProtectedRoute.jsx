@@ -15,12 +15,12 @@
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
-import { useRBAC } from '../store/rbacSlice';
+import { useRBAC } from '../api/rbac';
 import PropTypes from 'prop-types';
 
-const ProtectedRoute = ({ 
-  children, 
-  requiredPermission, 
+const ProtectedRoute = ({
+  children,
+  requiredPermission,
   requiredPermissions = [],
   requireAll = false,
   fallbackPath = '/unauthorized'

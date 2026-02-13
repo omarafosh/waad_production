@@ -9,7 +9,7 @@
  * 4. Review detailed results
  */
 
-import axios from 'utils/axios';
+import axiosClient from './client';
 
 const unwrap = (response) => response.data?.data || response.data;
 
@@ -266,23 +266,23 @@ export default {
   // Members
   downloadMemberTemplate,
   importMembers,
-  
+
   // Providers
   downloadProviderTemplate,
   importProviders,
-  
+
   // Medical Services
   downloadMedicalServiceTemplate,
   importMedicalServices,
-  
+
   // Medical Categories
   downloadMedicalCategoryTemplate,
   importMedicalCategories,
-  
+
   // Medical Packages
   downloadMedicalPackageTemplate,
   importMedicalPackages,
-  
+
   // Helpers
   downloadBlob,
   formatImportSummary,

@@ -1,10 +1,10 @@
 // ==============================|| TBA API SERVICES - BARREL EXPORT ||============================== //
 
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 import claimsService from './claims.service';
 import dashboardService from './dashboard.service';
 import employersService from './employers.service';
-import membersService from './members.service';
+import membersService from './unified-members.service';
 import reviewersService from './reviewers.service';
 import visitsService from './visits.service';
 import preApprovalsService from './pre-approvals.service';

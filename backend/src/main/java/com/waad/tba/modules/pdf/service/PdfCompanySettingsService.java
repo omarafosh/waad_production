@@ -66,7 +66,7 @@ public class PdfCompanySettingsService {
         settings.setUpdatedBy(username);
         
         // Deactivate other settings if this one is active
-        if (Boolean.TRUE.equals(settings.getIsActive())) {
+        if (settings.isActive()) {
             deactivateAllSettings();
         }
         
@@ -127,9 +127,9 @@ public class PdfCompanySettingsService {
         existing.setUpdatedBy(username);
         
         // Handle activation
-        if (updates.getIsActive() != null && Boolean.TRUE.equals(updates.getIsActive())) {
+        if (updates.isActive()) {
             deactivateAllSettings();
-            existing.setIsActive(true);
+            existing.setActive(true);
         }
         
         return repository.save(existing);
@@ -172,7 +172,7 @@ public class PdfCompanySettingsService {
         deactivateAllSettings();
         
         PdfCompanySettings settings = getSettingsById(id);
-        settings.setIsActive(true);
+        settings.setActive(true);
         settings.setUpdatedBy(username);
         
         return repository.save(settings);
@@ -182,7 +182,7 @@ public class PdfCompanySettingsService {
     
     private void deactivateAllSettings() {
         List<PdfCompanySettings> allSettings = repository.findAll();
-        allSettings.forEach(s -> s.setIsActive(false));
+        allSettings.forEach(s -> s.setActive(false));
         repository.saveAll(allSettings);
     }
     
@@ -221,7 +221,7 @@ public class PdfCompanySettingsService {
             .marginBottom(20)
             .marginLeft(20)
             .marginRight(20)
-            .isActive(true)
+            .active(true)
             .build();
     }
 }

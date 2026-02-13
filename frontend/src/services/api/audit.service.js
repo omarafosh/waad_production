@@ -1,4 +1,4 @@
-import axios from 'utils/axios';
+import axiosClient from './client';
 
 /**
  * Audit History API Service

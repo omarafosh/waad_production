@@ -1,4 +1,4 @@
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 import { normalizePaginatedResponse } from 'utils/api-response-normalizer';
 
 /**
@@ -39,8 +39,8 @@ export const normalizeMemberRequest = (payload) => {
   delete normalized.updatedBy;
 
   // ✅ FIX: Handle optional fields - convert empty strings to null
-  const optionalFields = ['nationalNumber', 'birthDate', 'gender', 'maritalStatus',
-    'nationality', 'phone', 'email', 'address', 'civilId',
+  const optionalFields = ['civilId', 'birthDate', 'gender', 'maritalStatus',
+    'nationality', 'phone', 'email', 'address',
     'policyNumber', 'benefitPolicyId', 'startDate', 'endDate', 'notes'];
 
   optionalFields.forEach(field => {
@@ -57,7 +57,7 @@ export const normalizeMemberRequest = (payload) => {
       delete cleanedFm.id; // Should not be sent
 
       // Convert empty strings to null for optional fields
-      ['nationalNumber', 'birthDate', 'gender'].forEach(field => {
+      ['civilId', 'birthDate', 'gender'].forEach(field => {
         if (cleanedFm[field] === '' || cleanedFm[field] === undefined) {
           cleanedFm[field] = null;
         }

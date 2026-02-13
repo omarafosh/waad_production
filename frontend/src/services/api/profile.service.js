@@ -8,7 +8,7 @@
  * Last Updated: 2024-12-21
  */
 
-import axiosClient from 'utils/axios';
+import axiosClient from './client';
 
 /**
  * Change password for the currently authenticated user

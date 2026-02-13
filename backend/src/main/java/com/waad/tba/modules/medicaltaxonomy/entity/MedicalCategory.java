@@ -22,8 +22,11 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class MedicalCategory {
+@lombok.experimental.SuperBuilder
+@lombok.EqualsAndHashCode(callSuper = true)
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE medical_categories SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class MedicalCategory extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,33 +52,4 @@ public class MedicalCategory {
      */
     @Column(name = "parent_id")
     private Long parentId;
-
-    /**
-     * Soft delete flag
-     */
-    @Column(nullable = false)
-    private boolean active = true;
-
-    /**
-     * Audit: creation timestamp
-     */
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    /**
-     * Audit: last update timestamp
-     */
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

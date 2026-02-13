@@ -115,9 +115,9 @@ public class BenefitPolicyCoverageService {
                     member.getFullName()));
         }
 
-        if (!policy.isActive()) {
+        if (!policy.isActive() || policy.isDeleted()) {
             throw new BusinessRuleException(
-                String.format("Member's Benefit Policy '%s' is inactive (soft deleted). Cannot process claim.",
+                String.format("Member's Benefit Policy '%s' is inactive or soft-deleted. Cannot process claim.",
                     policy.getName()));
         }
 
@@ -182,7 +182,7 @@ public class BenefitPolicyCoverageService {
             return Optional.empty(); 
         }
 
-        if (!policy.isActive()) return Optional.empty();
+        if (!policy.isActive() || policy.isDeleted()) return Optional.empty();
 
         MedicalService service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) return Optional.empty();

@@ -50,8 +50,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @lombok.EqualsAndHashCode(callSuper = true)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE members SET active = false, updated_at = NOW() WHERE id = ?")
-@org.hibernate.annotations.SQLRestriction("active = true")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE members SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id

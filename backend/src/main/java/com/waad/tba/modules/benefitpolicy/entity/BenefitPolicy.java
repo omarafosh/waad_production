@@ -40,8 +40,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @lombok.EqualsAndHashCode(callSuper = true)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE benefit_policies SET active = false, updated_at = NOW() WHERE id = ?")
-@org.hibernate.annotations.SQLRestriction("active = true")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE benefit_policies SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id

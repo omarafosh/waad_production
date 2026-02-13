@@ -19,9 +19,11 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class MedicalPackage {
+@lombok.experimental.SuperBuilder
+@lombok.EqualsAndHashCode(callSuper = true)
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE medical_packages SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class MedicalPackage extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,18 +60,6 @@ public class MedicalPackage {
      */
     @Column()
     private java.math.BigDecimal totalCoverageLimit;
-
-    @Builder.Default
-    @Column(nullable = false)
-    private Boolean active = true;
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
     // Transient field for services count
     @Transient

@@ -51,16 +51,16 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
     @Query(value = "SELECT bp FROM BenefitPolicy bp " +
                    "LEFT JOIN FETCH bp.employerOrganization " +
                    "LEFT JOIN FETCH bp.insuranceOrganization " +
-                   "WHERE bp.active = true",
-           countQuery = "SELECT COUNT(bp) FROM BenefitPolicy bp WHERE bp.active = true")
+                   "WHERE bp.active = true AND bp.deleted = false",
+           countQuery = "SELECT COUNT(bp) FROM BenefitPolicy bp WHERE bp.active = true AND bp.deleted = false")
     Page<BenefitPolicy> findAllOptimized(Pageable pageable);
 
     /**
      * Find all deleted (soft-deleted) policies - paginated.
      * Use native query to bypass @SQLRestriction.
      */
-    @Query(value = "SELECT * FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.active = false", 
-           countQuery = "SELECT COUNT(*) FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.active = false",
+    @Query(value = "SELECT * FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.active = false OR bp.deleted = true", 
+           countQuery = "SELECT COUNT(*) FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.active = false OR bp.deleted = true",
            nativeQuery = true)
     Page<BenefitPolicy> findByActiveFalseNative(Pageable pageable);
 
@@ -142,7 +142,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
     @Query("SELECT bp FROM BenefitPolicy bp " +
            "WHERE bp.employerOrganization.id = :employerOrgId " +
            "AND bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND bp.startDate <= :date " +
            "AND bp.endDate >= :date")
     List<BenefitPolicy> findEffectivePoliciesForEmployer(
@@ -155,7 +155,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
     @Query("SELECT bp FROM BenefitPolicy bp " +
            "WHERE bp.employerOrganization.id = :employerOrgId " +
            "AND bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND bp.startDate <= :date " +
            "AND bp.endDate >= :date " +
            "ORDER BY bp.createdAt DESC")
@@ -169,7 +169,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
     @Query("SELECT COUNT(bp) > 0 FROM BenefitPolicy bp " +
            "WHERE bp.employerOrganization.id = :employerOrgId " +
            "AND bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND bp.id != :excludeId " +
            "AND bp.startDate <= :endDate " +
            "AND bp.endDate >= :startDate")
@@ -185,7 +185,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
     @Query("SELECT COUNT(bp) > 0 FROM BenefitPolicy bp " +
            "WHERE bp.employerOrganization.id = :employerOrgId " +
            "AND bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND bp.startDate <= :endDate " +
            "AND bp.endDate >= :startDate")
     boolean existsOverlappingActivePolicyNew(
@@ -199,7 +199,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
     @Query("SELECT bp FROM BenefitPolicy bp " +
            "WHERE bp.employerOrganization.id = :employerOrgId " +
            "AND bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND (:excludeId IS NULL OR bp.id != :excludeId) " +
            "AND bp.startDate <= :endDate " +
            "AND bp.endDate >= :startDate")
@@ -217,7 +217,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
      * Search policies by name
      */
     @Query("SELECT bp FROM BenefitPolicy bp " +
-           "WHERE bp.active = true " +
+           "WHERE bp.active = true AND bp.deleted = false " +
            "AND (LOWER(bp.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "     OR LOWER(bp.policyCode) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<BenefitPolicy> searchByNameOrCode(@Param("search") String search, Pageable pageable);
@@ -227,7 +227,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
      */
     @Query("SELECT bp FROM BenefitPolicy bp " +
            "WHERE bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND bp.endDate BETWEEN :today AND :futureDate")
     List<BenefitPolicy> findPoliciesExpiringSoon(
             @Param("today") LocalDate today,
@@ -238,7 +238,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
      */
     @Query("SELECT bp FROM BenefitPolicy bp " +
            "WHERE bp.status = 'ACTIVE' " +
-           "AND bp.active = true " +
+           "AND bp.active = true AND bp.deleted = false " +
            "AND bp.endDate < :today")
     List<BenefitPolicy> findExpiredActivePolicies(@Param("today") LocalDate today);
 

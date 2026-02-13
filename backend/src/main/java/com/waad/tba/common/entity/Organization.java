@@ -12,8 +12,11 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Organization {
+@lombok.experimental.SuperBuilder
+@lombok.EqualsAndHashCode(callSuper = true)
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE organizations SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class Organization extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,29 +49,5 @@ public class Organization {
     private String email;
 
     @Builder.Default
-    private boolean active = true;
-
-    /**
-     * Archive flag - soft delete for employers
-     * Archived organizations are hidden from default lists but remain in database
-     * with all relations intact (Members, Benefit Policies, Claims, etc.)
-     */
-    @Builder.Default
     private boolean archived = false;
-
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

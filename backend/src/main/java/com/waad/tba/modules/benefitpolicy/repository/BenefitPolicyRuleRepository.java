@@ -146,7 +146,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
     @Query("SELECT r FROM BenefitPolicyRule r WHERE r.benefitPolicy.id = :policyId " +
            "AND r.medicalService.id = :serviceId " +
            "AND r.encounterType = :encounterType " +
-           "AND r.active = true")
+           "AND r.active = true AND r.deleted = false")
     Optional<BenefitPolicyRule> findActiveByServiceAndEncounter(
             @Param("policyId") Long policyId,
             @Param("serviceId") Long serviceId,
@@ -158,7 +158,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
     @Query("SELECT r FROM BenefitPolicyRule r WHERE r.benefitPolicy.id = :policyId " +
            "AND r.medicalService.id = :serviceId " +
            "AND r.encounterType IS NULL " +
-           "AND r.active = true")
+           "AND r.active = true AND r.deleted = false")
     Optional<BenefitPolicyRule> findActiveByServiceGeneral(
             @Param("policyId") Long policyId,
             @Param("serviceId") Long serviceId);
@@ -169,7 +169,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
     @Query("SELECT r FROM BenefitPolicyRule r WHERE r.benefitPolicy.id = :policyId " +
            "AND r.medicalCategory.id = :categoryId " +
            "AND r.encounterType = :encounterType " +
-           "AND r.active = true")
+           "AND r.active = true AND r.deleted = false")
     Optional<BenefitPolicyRule> findActiveByCategoryAndEncounter(
             @Param("policyId") Long policyId,
             @Param("categoryId") Long categoryId,
@@ -181,7 +181,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
     @Query("SELECT r FROM BenefitPolicyRule r WHERE r.benefitPolicy.id = :policyId " +
            "AND r.medicalCategory.id = :categoryId " +
            "AND r.encounterType IS NULL " +
-           "AND r.active = true")
+           "AND r.active = true AND r.deleted = false")
     Optional<BenefitPolicyRule> findActiveByCategoryGeneral(
             @Param("policyId") Long policyId,
             @Param("categoryId") Long categoryId);
@@ -202,7 +202,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
     @Query("""
         SELECT r FROM BenefitPolicyRule r
         WHERE r.benefitPolicy.id = :policyId
-          AND r.active = true
+          AND r.active = true AND r.deleted = false
           AND (
               r.medicalService.id = :serviceId
               OR (r.medicalPackage.id IN :packageIds AND r.medicalService IS NULL)
@@ -268,7 +268,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
         WHERE r.benefitPolicy.id = :policyId
           AND r.medicalCategory.id = :categoryId
           AND r.medicalService IS NULL
-          AND r.active = true
+          AND r.active = true AND r.deleted = false
         """)
     Optional<BenefitPolicyRule> findActiveCategoryRule(
             @Param("policyId") Long policyId,
@@ -327,7 +327,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
         WHERE r.benefitPolicy.id = :policyId
           AND r.medicalCategory IS NOT NULL
           AND r.medicalService IS NULL
-          AND r.active = true
+          AND r.active = true AND r.deleted = false
         ORDER BY r.id DESC
         """)
     List<BenefitPolicyRule> findCategoryRulesForPolicy(@Param("policyId") Long policyId);
@@ -339,7 +339,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
         SELECT r FROM BenefitPolicyRule r
         WHERE r.benefitPolicy.id = :policyId
           AND r.medicalService IS NOT NULL
-          AND r.active = true
+          AND r.active = true AND r.deleted = false
         ORDER BY r.id DESC
         """)
     List<BenefitPolicyRule> findServiceRulesForPolicy(@Param("policyId") Long policyId);

@@ -23,8 +23,8 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE providers SET active = false, updated_at = NOW() WHERE id = ?")
-@org.hibernate.annotations.SQLRestriction("active = true")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE providers SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class Provider extends SoftDeleteEntity {
 
     @Id

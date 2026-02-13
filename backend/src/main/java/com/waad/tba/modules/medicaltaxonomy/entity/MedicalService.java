@@ -45,8 +45,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @lombok.experimental.SuperBuilder
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE medical_services SET active = false WHERE id = ?")
-@org.hibernate.annotations.Where(clause = "active = true")
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE medical_services SET deleted = true, deleted_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id

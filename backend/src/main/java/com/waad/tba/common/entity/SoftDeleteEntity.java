@@ -3,6 +3,7 @@ package com.waad.tba.common.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 
@@ -27,18 +28,34 @@ public abstract class SoftDeleteEntity {
 
     @Version
     @Column(name = "version")
+    @Builder.Default
     protected Long version = 0L;
 
+    /**
+     * active: Business status (Enabled/Disabled)
+     */
     @Column(nullable = false)
+    @Builder.Default
     protected boolean active = true;
+
+    /**
+     * deleted: System status (Soft Delete)
+     */
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    protected boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    protected LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by", length = 100)
+    protected String deletedBy;
 
     @Column(name = "valid_from")
     protected LocalDateTime validFrom;
 
     @Column(name = "valid_to")
     protected LocalDateTime validTo;
-
-
 
     /**
      * Audit: creation timestamp
@@ -71,17 +88,16 @@ public abstract class SoftDeleteEntity {
 
     /**
      * Compatibility getter for 'active' field.
-     * Lombok generates isActive() for boolean fields, but some code expects getActive().
      */
     public boolean getActive() {
         return active;
     }
 
-    /**
-     * Standard getter for 'active' field.
-     * Manually added to ensure availability.
-     */
     public boolean isActive() {
         return active;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
     }
 }

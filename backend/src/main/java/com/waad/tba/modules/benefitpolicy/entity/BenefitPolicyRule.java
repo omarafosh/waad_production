@@ -50,11 +50,12 @@ import java.time.LocalDateTime;
     )
 })
 @Data
-@Builder
+@lombok.experimental.SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(callSuper = true)
 @EntityListeners(AuditingEntityListener.class)
-public class BenefitPolicyRule {
+public class BenefitPolicyRule extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -162,31 +163,6 @@ public class BenefitPolicyRule {
     @Column(name = "encounter_type", length = 30)
     private VisitType encounterType;
 
-    /**
-     * Whether this rule is active (Business status)
-     */
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean active = true;
-
-    /**
-     * Whether this rule is soft-deleted (System status)
-     */
-    @Column(name = "is_deleted", nullable = false)
-    @Builder.Default
-    private boolean deleted = false;
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // AUDIT FIELDS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // BUSINESS METHODS

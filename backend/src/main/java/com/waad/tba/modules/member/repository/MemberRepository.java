@@ -20,13 +20,13 @@ import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecificationExecutor<Member> {
     
-    @Query("SELECT m FROM Member m WHERE m.civilId = :civilId AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m WHERE m.civilId = :civilId AND m.active = true AND m.deleted = false ORDER BY m.id DESC")
     List<Member> findByCivilId(@Param("civilId") String civilId);
     
-    @Query("SELECT m FROM Member m WHERE m.cardNumber = :cardNumber AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m WHERE m.cardNumber = :cardNumber AND m.active = true AND m.deleted = false ORDER BY m.id DESC")
     List<Member> findByCardNumber(@Param("cardNumber") String cardNumber);
     
-    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.active = true AND m.deleted = false ORDER BY m.id DESC")
     List<Member> findByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 
     
@@ -36,7 +36,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
      * to avoid LazyInitializationException and ensure eligibility data is complete.
      */
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"employerOrganization", "benefitPolicy"})
-    @Query("SELECT m FROM Member m WHERE m.barcode = :barcode AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m WHERE m.barcode = :barcode AND m.active = true AND m.deleted = false ORDER BY m.id DESC")
     List<Member> findByBarcode(@Param("barcode") String barcode);
     
     /**
@@ -44,7 +44,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
      * Used for eligibility checks when searching by card number instead of barcode.
      */
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"employerOrganization", "benefitPolicy"})
-    @Query("SELECT m FROM Member m WHERE m.cardNumber = :cardNumber AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m WHERE m.cardNumber = :cardNumber AND m.active = true AND m.deleted = false ORDER BY m.id DESC")
     List<Member> findByCardNumberWithDetails(@Param("cardNumber") String cardNumber);
 
     /**
@@ -52,7 +52,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
      * Used for eligibility checks when searching by employee number (e.g. EMP-...).
      */
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"employerOrganization", "benefitPolicy"})
-    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.active = true AND m.deleted = false ORDER BY m.id DESC")
     List<Member> findByEmployeeNumberWithDetails(@Param("employeeNumber") String employeeNumber);
 
 
@@ -94,11 +94,11 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
 
     @Override
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"employerOrganization", "benefitPolicy"})
-    @Query("SELECT m FROM Member m WHERE m.active = true")
+    @Query("SELECT m FROM Member m WHERE m.active = true AND m.deleted = false")
     Page<Member> findAll(Pageable pageable);
 
     @Query("SELECT m FROM Member m LEFT JOIN FETCH m.employerOrganization LEFT JOIN FETCH m.benefitPolicy WHERE " +
-           "m.active = true AND (" +
+           "m.active = true AND m.deleted = false AND (" +
            "LOWER(m.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.civilId) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(m.barcode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

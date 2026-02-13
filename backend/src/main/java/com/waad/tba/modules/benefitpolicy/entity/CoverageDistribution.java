@@ -30,11 +30,12 @@ import java.time.LocalDateTime;
     @Index(name = "idx_dist_service", columnList = "medical_service_id")
 })
 @Data
-@Builder
+@lombok.experimental.SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(callSuper = true)
 @EntityListeners(AuditingEntityListener.class)
-public class CoverageDistribution {
+public class CoverageDistribution extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,15 +69,4 @@ public class CoverageDistribution {
     @DecimalMin(value = "0.00")
     @Column(name = "limit_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal limitAmount;
-
-    @Builder.Default
-    private boolean active = true;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 }

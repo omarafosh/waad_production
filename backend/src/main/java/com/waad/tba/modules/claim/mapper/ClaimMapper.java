@@ -379,7 +379,7 @@ public class ClaimMapper {
             dto.setMemberId(claim.getMember().getId());
             dto.setMemberFullName(claim.getMember().getFullName());
             dto.setMemberName(claim.getMember().getFullName()); // Alias for Frontend compatibility
-            dto.setMemberNationalNumber(claim.getMember().getCivilId());
+            dto.setMemberCivilId(claim.getMember().getCivilId());
             
             // Get employer info from member (جهة العمل)
             if (claim.getMember().getEmployerOrganization() != null) {

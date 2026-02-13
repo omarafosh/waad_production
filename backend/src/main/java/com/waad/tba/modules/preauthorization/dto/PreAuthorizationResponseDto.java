@@ -32,7 +32,7 @@ public class PreAuthorizationResponseDto {
     private Long memberId;
     private String memberName;
     private String memberCardNumber;
-    private String memberNationalNumber;
+    private String memberCivilId;
     
     // ==================== EMPLOYER DETAILS (جهة العمل) ====================
     private Long employerId;

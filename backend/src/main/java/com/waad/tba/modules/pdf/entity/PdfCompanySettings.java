@@ -88,8 +88,8 @@ public class PdfCompanySettings {
     
     // ========== Metadata ==========
     
-    @Column(name = "is_active")
-    private Boolean isActive;
+    @Column(name = "active")
+    private Boolean active;
     
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

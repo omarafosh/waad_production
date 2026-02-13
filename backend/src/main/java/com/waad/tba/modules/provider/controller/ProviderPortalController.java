@@ -9,6 +9,10 @@ import com.waad.tba.modules.provider.dto.ProviderClaimResponse;
 import com.waad.tba.modules.provider.dto.ProviderVisitRegisterRequest;
 import com.waad.tba.modules.provider.dto.ProviderVisitResponse;
 import com.waad.tba.modules.provider.dto.EffectivePriceResponseDto;
+import com.waad.tba.modules.provider.dto.MyContractResponseDto;
+import com.waad.tba.modules.provider.dto.MyContractServiceDto;
+import com.waad.tba.modules.provider.dto.ProviderServiceDto;
+import com.waad.tba.common.service.ResourceMessageService;
 import com.waad.tba.modules.provider.service.ProviderPortalService;
 import com.waad.tba.modules.provider.service.ProviderClaimsService;
 import com.waad.tba.modules.provider.service.ProviderVisitService;
@@ -63,19 +67,13 @@ public class ProviderPortalController {
         private final ProviderClaimsService providerClaimsService;
         private final ProviderVisitService providerVisitService;
         private final ProviderServiceService providerServiceService;
-        private final ProviderContractService providerContractService;
+        @Qualifier("providerContractModuleService")
+        private final com.waad.tba.modules.providercontract.service.ProviderContractService providerContractService;
 
         private final com.waad.tba.modules.provider.service.ProviderService providerService;
         private final com.waad.tba.modules.provider.service.ProviderDocumentService providerDocumentService;
-
-        // NEW: Modern provider contract module service for my-contract endpoints
-        @Qualifier("providerContractModuleService")
-        private final com.waad.tba.modules.providercontract.service.ProviderContractService modernContractService;
-
-        // ... (other fields)
-
-        // ... (existing code)
-
+        private final ResourceMessageService messageService;
+ 
         private final ProviderContractPricingItemService pricingItemService;
 
         // For pre-approval services lookup
@@ -515,7 +513,7 @@ public class ProviderPortalController {
 
                 if (providerId == null) {
                         // Admin without provider binding - return empty list
-                        return ResponseEntity.ok(ApiResponse.success("No provider bound", List.of()));
+                        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("api.success"), List.of()));
                 }
 
                 log.debug("📋 Provider services request: providerId={}", providerId);
@@ -626,13 +624,13 @@ public class ProviderPortalController {
 
                 try {
                         // Use the MODERN ProviderContractService (from providercontract module)
-                        com.waad.tba.modules.providercontract.dto.ProviderContractResponseDto activeContract = modernContractService
+                        com.waad.tba.modules.providercontract.dto.ProviderContractResponseDto activeContract = providerContractService
                                         .findActiveByProvider(providerId);
 
                         if (activeContract == null) {
-                                return ResponseEntity.ok(ApiResponse.success(
-                                                "No active contract found",
-                                                MyContractResponseDto.builder()
+                                        return ResponseEntity.ok(ApiResponse.success(
+                                                        messageService.getMessage("provider.contract.not.found"),
+                                                        MyContractResponseDto.builder()
                                                                 .providerId(providerId)
                                                                 .hasActiveContract(false)
                                                                 .build()));
@@ -657,13 +655,12 @@ public class ProviderPortalController {
                                         .hasActiveContract(true)
                                         .totalServices(totalServices)
                                         .build();
-
-                        return ResponseEntity.ok(ApiResponse.success("Active contract found", response));
-                } catch (Exception e) {
-                        log.error("[PROVIDER-PORTAL] Error fetching my contract: {}", e.getMessage(), e);
-                        return ResponseEntity.ok(ApiResponse.success(
-                                        "Unable to fetch contract",
-                                        MyContractResponseDto.builder()
+                                        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("provider.contract.active"), response));
+                        } catch (Exception e) {
+                                        log.error("[PROVIDER-PORTAL] Error fetching my contract: {}", e.getMessage(), e);
+                                        return ResponseEntity.ok(ApiResponse.success(
+                                                        messageService.getMessage("api.error"),
+                                                        MyContractResponseDto.builder()
                                                         .providerId(providerId)
                                                         .hasActiveContract(false)
                                                         .errorMessage(e.getMessage())
@@ -740,7 +737,7 @@ public class ProviderPortalController {
 
                 try {
                         // Use MODERN ProviderContractService to get active contract
-                        com.waad.tba.modules.providercontract.dto.ProviderContractResponseDto activeContract = modernContractService
+                        com.waad.tba.modules.providercontract.dto.ProviderContractResponseDto activeContract = providerContractService
                                         .findActiveByProvider(providerId);
 
                         if (activeContract == null) {
@@ -858,14 +855,14 @@ public class ProviderPortalController {
 
                 try {
                         // 1. Get active contract
-                        com.waad.tba.modules.providercontract.dto.ProviderContractResponseDto activeContract = modernContractService
+                        com.waad.tba.modules.providercontract.dto.ProviderContractResponseDto activeContract = providerContractService
                                         .findActiveByProvider(providerId);
 
                         if (activeContract == null) {
                                 log.warn("[PROVIDER-PORTAL] No active contract found for provider {}", providerId);
-                                return ResponseEntity.ok(ApiResponse.success(
-                                                "No active contract found",
-                                                java.util.Collections.emptyList()));
+                                        return ResponseEntity.ok(ApiResponse.success(
+                                                        messageService.getMessage("provider.contract.not.found"),
+                                                        java.util.Collections.emptyList()));
                         }
 
                         // 2. Get member's benefit policy
@@ -950,50 +947,7 @@ public class ProviderPortalController {
                                         java.util.Collections.emptyList()));
                 }
         }
-
-        // ═══════════════════════════════════════════════════════════════════════════
-        // DTO CLASSES FOR MY CONTRACT ENDPOINTS
-        // ═══════════════════════════════════════════════════════════════════════════
-
-        /**
-         * Response DTO for my-contract endpoint
-         */
-        @lombok.Data
-        @lombok.Builder
-        @lombok.NoArgsConstructor
-        @lombok.AllArgsConstructor
-        public static class MyContractResponseDto {
-                private Long id;
-                private Long providerId;
-                private String providerName;
-                private LocalDate effectiveFrom;
-                private LocalDate effectiveTo;
-                private Boolean hasActiveContract;
-                private Long totalServices;
-                private String errorMessage;
-        }
-
-        /**
-         * DTO for services in my contract
-         */
-        @lombok.Data
-        @lombok.Builder
-        @lombok.NoArgsConstructor
-        @lombok.AllArgsConstructor
-        public static class MyContractServiceDto {
-                private Long id; // Pricing Item ID
-                private Long medicalServiceId; // Medical Service ID - IMPORTANT for claim creation
-                private String serviceCode;
-                private String serviceName;
-                private String categoryName;
-                private java.math.BigDecimal contractPrice;
-                private String currency;
-                private LocalDate effectiveFrom;
-                private LocalDate effectiveTo;
-                private Boolean hasContract;
-                private Boolean requiresPreAuth; // From BenefitPolicyRule
-        }
-
+ 
         /**
          * Get Provider Documents (Provider Portal).
          * Unified list including core documents and operational attachments.
@@ -1053,21 +1007,5 @@ public class ProviderPortalController {
                 }
         }
 
-        /**
-         * Simplified DTO for frontend service dropdown
-         */
-        @lombok.Data
-        @lombok.Builder
-        @lombok.NoArgsConstructor
-        @lombok.AllArgsConstructor
-        public static class ProviderServiceDto {
-                private Long serviceId;
-                private String serviceCode;
-                private String serviceName;
-                private String categoryCode;
-                private String categoryName;
-                private java.math.BigDecimal contractPrice;
-                private String currency;
-                private Boolean requiresPA;
         }
 }

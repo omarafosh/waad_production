@@ -8,6 +8,11 @@ import com.waad.tba.modules.member.dto.MemberCreateDto;
 import com.waad.tba.modules.member.dto.MemberFinancialSummaryDto;
 import com.waad.tba.modules.member.dto.MemberUpdateDto;
 import com.waad.tba.modules.member.dto.MemberViewDto;
+import com.waad.tba.modules.member.dto.MemberDocumentResponseDto;
+import com.waad.tba.modules.member.dto.MemberWorkflowHistoryResponseDto;
+import com.waad.tba.modules.member.dto.MemberRemainingLimitDto;
+import com.waad.tba.common.service.ResourceMessageService;
+import com.waad.tba.modules.member.mapper.UnifiedMemberMapper;
 import com.waad.tba.modules.member.service.MemberFinancialSummaryService;
 import com.waad.tba.modules.member.service.MemberPdfExportService;
 import com.waad.tba.modules.member.service.UnifiedMemberService;
@@ -96,6 +101,8 @@ public class UnifiedMemberController {
     private final MemberDocumentService memberDocumentService;
     private final FileStorageService fileStorageService;
     private final MemberPdfExportService memberPdfExportService;
+    private final UnifiedMemberMapper unifiedMemberMapper;
+    private final ResourceMessageService messageService;
 
     // ==================== CREATE OPERATIONS ====================
 
@@ -250,7 +257,7 @@ public class UnifiedMemberController {
                  created.getDependents() != null ? created.getDependents().size() : 0);
         
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("تم إنشاء العضو بنجاح", created));
+                .body(ApiResponse.success(messageService.getMessage("member.created.success"), created));
     }
 
     /**
@@ -353,7 +360,7 @@ public class UnifiedMemberController {
     @Operation(summary = "Restore deleted member", description = "Restores a soft-deleted member to active status.")
     public ResponseEntity<ApiResponse<?>> restoreMember(@PathVariable Long id) {
         unifiedMemberService.restoreMember(id);
-        return ResponseEntity.ok(ApiResponse.success("تم استعادة العضو بنجاح"));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("member.restored.success")));
     }
 
     // ==================== READ OPERATIONS ====================
@@ -827,7 +834,7 @@ public class UnifiedMemberController {
         var doc = memberDocumentService.uploadDocument(
             id, file, DocumentType.PHOTO, "System");
             
-        return ResponseEntity.ok(ApiResponse.success("تم رفع الصورة بنجاح", doc.getFilePath()));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("member.photo.uploaded"), doc.getFilePath()));
     }
 
     /**
@@ -839,7 +846,7 @@ public class UnifiedMemberController {
     public ResponseEntity<ApiResponse<Void>> deleteMemberPhoto(@PathVariable Long id) {
         log.info("Deleting photo for member: id={}", id);
         memberDocumentService.deleteMemberPhoto(id);
-        return ResponseEntity.ok(ApiResponse.success("تم حذف الصورة بنجاح", null));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("member.photo.deleted"), null));
     }
 
     /**
@@ -1110,22 +1117,23 @@ public class UnifiedMemberController {
         summary = "Get Member Remaining Limit",
         description = "Returns the remaining coverage limit for a member. Used in Provider Portal during claim creation."
     )
-    public ResponseEntity<java.util.Map<String, Object>> getRemainingLimit(
+    public ResponseEntity<MemberRemainingLimitDto> getRemainingLimit(
             @PathVariable Long memberId) {
         
         log.info("📊 Retrieving remaining limit for member: memberId={}", memberId);
         
         MemberFinancialSummaryDto summary = financialSummaryService.getFinancialSummary(memberId);
         
-        java.util.Map<String, Object> result = new java.util.HashMap<>();
-        result.put("memberId", memberId);
-        result.put("memberName", summary.getFullName());
-        result.put("annualLimit", summary.getAnnualLimit());
-        result.put("usedAmount", summary.getTotalApproved());
-        result.put("remainingLimit", summary.getRemainingCoverage());
-        result.put("usagePercentage", summary.getUtilizationPercent());
-        result.put("policyName", summary.getPolicyName());
-        result.put("policyActive", summary.getPolicyActive());
+        MemberRemainingLimitDto result = MemberRemainingLimitDto.builder()
+                .memberId(memberId)
+                .memberName(summary.getFullName())
+                .annualLimit(summary.getAnnualLimit())
+                .usedAmount(summary.getTotalApproved())
+                .remainingLimit(summary.getRemainingCoverage())
+                .usagePercentage(summary.getUtilizationPercent())
+                .policyName(summary.getPolicyName())
+                .policyActive(summary.getPolicyActive())
+                .build();
         
         log.info("✅ Remaining limit retrieved: memberId={}, remaining={}", 
                  memberId, summary.getRemainingCoverage());
@@ -1186,7 +1194,7 @@ public class UnifiedMemberController {
     @Operation(summary = "Create Draft Member", description = "Requirement 6: Creates a member in DRAFT status.")
     public ResponseEntity<ApiResponse<MemberViewDto>> createDraftMember(@Valid @RequestBody MemberCreateDto dto) {
         MemberViewDto created = unifiedMemberService.createDraftMember(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Draft created", created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(messageService.getMessage("member.draft.created"), created));
     }
 
     @PutMapping("/{id}/promote")
@@ -1194,32 +1202,38 @@ public class UnifiedMemberController {
     @Operation(summary = "Promote to Active", description = "Requirement 6: Promotes a draft member to ACTIVE.")
     public ResponseEntity<ApiResponse<MemberViewDto>> promoteToActive(@PathVariable Long id, @RequestParam String reason) {
         MemberViewDto promoted = unifiedMemberService.promoteToActive(id, reason);
-        return ResponseEntity.ok(ApiResponse.success("Member promoted to ACTIVE", promoted));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("member.promoted.active"), promoted));
     }
 
     @GetMapping("/{id}/workflow-history")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'EMPLOYER_ADMIN')")
     @Operation(summary = "Get Workflow History", description = "Returns status transition history for a member.")
-    public ResponseEntity<List<com.waad.tba.modules.member.entity.MemberWorkflowHistory>> getWorkflowHistory(@PathVariable Long id) {
-        return ResponseEntity.ok(unifiedMemberService.getWorkflowHistory(id));
+    public ResponseEntity<List<MemberWorkflowHistoryResponseDto>> getWorkflowHistory(@PathVariable Long id) {
+        List<com.waad.tba.modules.member.entity.MemberWorkflowHistory> history = unifiedMemberService.getWorkflowHistory(id);
+        return ResponseEntity.ok(history.stream()
+            .map(unifiedMemberMapper::toWorkflowHistoryDto)
+            .collect(java.util.stream.Collectors.toList()));
     }
 
     @PostMapping(value = "/{id}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'EMPLOYER_ADMIN')")
     @Operation(summary = "Upload Member Document", description = "Requirement 5: Uploads and links a document to a member.")
-    public ResponseEntity<ApiResponse<com.waad.tba.modules.member.entity.MemberDocument>> uploadDocument(
+    public ResponseEntity<ApiResponse<MemberDocumentResponseDto>> uploadDocument(
             @PathVariable Long id,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @RequestParam("type") com.waad.tba.modules.member.entity.MemberDocument.DocumentType type) {
         String currentUser = "System"; // In real impl, get from security context
         com.waad.tba.modules.member.entity.MemberDocument doc = memberDocumentService.uploadDocument(id, file, type, currentUser);
-        return ResponseEntity.ok(ApiResponse.success("Document uploaded", doc));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("member.document.uploaded"), unifiedMemberMapper.toDocumentDto(doc)));
     }
 
     @GetMapping("/{id}/documents")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'EMPLOYER_ADMIN')")
-    public ResponseEntity<List<com.waad.tba.modules.member.entity.MemberDocument>> getDocuments(@PathVariable Long id) {
-        return ResponseEntity.ok(memberDocumentService.getMemberDocuments(id));
+    public ResponseEntity<List<MemberDocumentResponseDto>> getDocuments(@PathVariable Long id) {
+        List<com.waad.tba.modules.member.entity.MemberDocument> documents = memberDocumentService.getMemberDocuments(id);
+        return ResponseEntity.ok(documents.stream()
+            .map(unifiedMemberMapper::toDocumentDto)
+            .collect(java.util.stream.Collectors.toList()));
     }
 
     @DeleteMapping("/documents/{documentId}")

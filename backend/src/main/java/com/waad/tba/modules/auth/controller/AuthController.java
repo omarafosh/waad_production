@@ -29,6 +29,7 @@ import com.waad.tba.modules.rbac.dto.*;
 import com.waad.tba.modules.rbac.service.UserSecurityService;
 import com.waad.tba.modules.auth.dto.TokenRefreshRequest;
 import com.waad.tba.modules.auth.dto.TokenRefreshResponse;
+import com.waad.tba.common.service.ResourceMessageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -53,6 +54,7 @@ public class AuthController {
     private final com.waad.tba.modules.auth.service.RefreshTokenService refreshTokenService;
     private final com.waad.tba.security.JwtTokenProvider tokenProvider;
     private final com.waad.tba.modules.rbac.repository.UserRepository userRepository;
+    private final ResourceMessageService messageService;
 
     /**
      * SESSION-BASED LOGIN (Phase A)
@@ -91,7 +93,7 @@ public class AuthController {
         session.setAttribute("employerId", userInfo.getEmployerId());
         session.setAttribute("companyId", userInfo.getCompanyId());
         
-        return ResponseEntity.ok(ApiResponse.success("Login successful", userInfo));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("auth.login.success"), userInfo));
     }
 
     /**
@@ -108,7 +110,7 @@ public class AuthController {
         
         if (session == null || session.getAttribute("userId") == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.<LoginResponse.UserInfo>error("No active session"));
+                    .body(ApiResponse.<LoginResponse.UserInfo>error(messageService.getMessage("auth.session.none")));
         }
         
         // AUDIT FIX (TASK A): Fetch current user data from DB (including latest roles)
@@ -137,7 +139,7 @@ public class AuthController {
         
         SecurityContextHolder.clearContext();
         
-        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("auth.logout.success"), null));
     }
 
     // ========== EXISTING JWT-BASED ENDPOINTS (TEMPORARY - Phase B) ==========
@@ -164,7 +166,7 @@ public class AuthController {
         com.waad.tba.modules.auth.entity.RefreshToken refreshToken = refreshTokenService.createRefreshToken(response.getUser().getId());
         response.setRefreshToken(refreshToken.getToken());
         
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("auth.login.success"), response));
     }
 
     @PostMapping("/register")
@@ -183,7 +185,7 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request) {
         LoginResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Registration successful", response));
+                .body(ApiResponse.success(messageService.getMessage("auth.register.success"), response));
     }
 
     @GetMapping("/me")
@@ -202,7 +204,7 @@ public class AuthController {
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("Invalid Authorization header"));
+                    .body(ApiResponse.error(messageService.getMessage("auth.header.invalid")));
         }
 
         String token = authHeader.substring(7);
@@ -213,7 +215,7 @@ public class AuthController {
         } catch (Exception ex) {
             log.error("Error retrieving current user from token: {}", ex.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("Invalid or expired session. Please log in again."));
+                    .body(ApiResponse.error(messageService.getMessage("auth.session.invalid")));
         }
     }
 
@@ -234,7 +236,7 @@ public class AuthController {
         authService.sendResetOtp(request.getEmail());
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("Reset OTP sent to your email")
+                .message(messageService.getMessage("auth.otp.sent"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }
@@ -256,7 +258,7 @@ public class AuthController {
         authService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("Password reset successfully")
+                .message(messageService.getMessage("auth.password.reset"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }
@@ -283,8 +285,7 @@ public class AuthController {
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("If an account exists with this email, a password reset link has been sent")
-                .messageAr("إذا كان هناك حساب مرتبط بهذا البريد، سيتم إرسال رابط إعادة تعيين كلمة المرور")
+                .message(messageService.getMessage("auth.password.reset.requested"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }
@@ -309,8 +310,7 @@ public class AuthController {
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("Password reset successfully. Your account has been unlocked.")
-                .messageAr("تم إعادة تعيين كلمة المرور بنجاح. تم إلغاء قفل حسابك.")
+                .message(messageService.getMessage("auth.password.reset.unlocked"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }
@@ -335,8 +335,7 @@ public class AuthController {
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("Email verified successfully")
-                .messageAr("تم التحقق من البريد الإلكتروني بنجاح")
+                .message(messageService.getMessage("auth.email.verified"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }
@@ -358,8 +357,7 @@ public class AuthController {
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("Verification email sent successfully")
-                .messageAr("تم إرسال بريد التحقق بنجاح")
+                .message(messageService.getMessage("auth.verification.sent"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }
@@ -384,8 +382,7 @@ public class AuthController {
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .status("success")
-                .message("Password changed successfully")
-                .messageAr("تم تغيير كلمة المرور بنجاح")
+                .message(messageService.getMessage("auth.password.changed"))
                 .timestamp(LocalDateTime.now())
                 .build());
     }

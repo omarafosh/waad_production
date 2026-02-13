@@ -7,6 +7,7 @@ import com.waad.tba.modules.preauthorization.service.PreAuthorizationService;
 import com.waad.tba.modules.preauthorization.service.PreAuthorizationAttachmentService;
 import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.common.dto.PaginationResponse;
+import com.waad.tba.common.service.ResourceMessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ public class PreAuthorizationController {
 
     private final PreAuthorizationService preAuthorizationService;
     private final PreAuthorizationAttachmentService attachmentService;
+    private final ResourceMessageService messageService;
 
     // ==================== CREATE ====================
 
@@ -58,7 +60,7 @@ public class PreAuthorizationController {
         
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Pre-authorization created successfully", response));
+                .body(ApiResponse.success(messageService.getMessage("preauth.created.success"), response));
     }
 
     // ==================== UPDATE ====================
@@ -79,7 +81,7 @@ public class PreAuthorizationController {
         String updatedBy = authentication != null ? authentication.getName() : "system";
         PreAuthorizationResponseDto response = preAuthorizationService.updatePreAuthorization(id, dto, updatedBy);
         
-        return ResponseEntity.ok(ApiResponse.success("Pre-authorization updated successfully", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.updated.success"), response));
     }
 
     // ==================== APPROVE ====================
@@ -100,7 +102,7 @@ public class PreAuthorizationController {
         String approvedBy = authentication != null ? authentication.getName() : "system";
         PreAuthorizationResponseDto response = preAuthorizationService.approvePreAuthorization(id, dto, approvedBy);
         
-        return ResponseEntity.ok(ApiResponse.success("Pre-authorization approved successfully", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.approved.success"), response));
     }
 
     // ==================== REJECT ====================
@@ -121,7 +123,7 @@ public class PreAuthorizationController {
         String rejectedBy = authentication != null ? authentication.getName() : "system";
         PreAuthorizationResponseDto response = preAuthorizationService.rejectPreAuthorization(id, dto, rejectedBy);
         
-        return ResponseEntity.ok(ApiResponse.success("Pre-authorization rejected", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.rejected.success"), response));
     }
 
     // ==================== CANCEL ====================
@@ -143,7 +145,7 @@ public class PreAuthorizationController {
         String cancelReason = reason != null ? reason : "Cancelled by user";
         PreAuthorizationResponseDto response = preAuthorizationService.cancelPreAuthorization(id, cancelReason, cancelledBy);
         
-        return ResponseEntity.ok(ApiResponse.success("Pre-authorization cancelled", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.cancelled.success"), response));
     }
 
     // ==================== DELETE ====================
@@ -163,7 +165,7 @@ public class PreAuthorizationController {
         String deletedBy = authentication != null ? authentication.getName() : "system";
         preAuthorizationService.deletePreAuthorization(id, deletedBy);
         
-        return ResponseEntity.ok(ApiResponse.<Void>success("Pre-authorization deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.<Void>success(messageService.getMessage("preauth.deleted.success"), null));
     }
 
     // ==================== ATTACHMENTS ====================
@@ -174,7 +176,7 @@ public class PreAuthorizationController {
      */
     @PostMapping(value = "/{id:\\d+}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('CREATE_PRE_AUTH') or hasAuthority('UPDATE_PRE_AUTH')")
-    public ResponseEntity<ApiResponse<PreAuthorizationAttachment>> uploadAttachment(
+    public ResponseEntity<ApiResponse<PreAuthorizationAttachmentResponseDto>> uploadAttachment(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "attachmentType", defaultValue = "OTHER") String attachmentType,
@@ -185,7 +187,7 @@ public class PreAuthorizationController {
         String uploadedBy = authentication != null ? authentication.getName() : "system";
         PreAuthorizationAttachment attachment = attachmentService.uploadAttachment(id, file, attachmentType, uploadedBy);
         
-        return ResponseEntity.ok(ApiResponse.success("Attachment uploaded successfully", attachment));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.attachment.uploaded"), mapToAttachmentDto(attachment)));
     }
 
     // ==================== GET ALL (PAGINATED) ====================
@@ -386,7 +388,7 @@ public class PreAuthorizationController {
         
         int count = preAuthorizationService.markExpiredPreAuthorizations();
         
-        return ResponseEntity.ok(ApiResponse.success(count + " pre-authorizations marked as expired", Integer.valueOf(count)));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.expired.marked", count), Integer.valueOf(count)));
     }
 
     // ==================== START REVIEW ====================
@@ -406,7 +408,7 @@ public class PreAuthorizationController {
         String reviewedBy = authentication != null ? authentication.getName() : "system";
         PreAuthorizationResponseDto response = preAuthorizationService.startReview(id, reviewedBy);
         
-        return ResponseEntity.ok(ApiResponse.success("تم استلام طلب الموافقة المسبقة للمراجعة", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.review.started"), response));
     }
 
     // ==================== CHECK VALIDITY ====================
@@ -426,19 +428,13 @@ public class PreAuthorizationController {
         PreAuthorizationResponseDto response = preAuthorizationService.checkValidity(memberId, serviceCode);
         
         if (response != null) {
-            return ResponseEntity.ok(ApiResponse.success("يوجد موافقة مسبقة صالحة", response));
+            return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.valid.found"), response));
         } else {
-            return ResponseEntity.ok(ApiResponse.success("لا توجد موافقة مسبقة صالحة", null));
+            return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.valid.not.found"), null));
         }
     }
 
     // ==================== ATTACHMENTS ====================
-
-    /**
-     * Upload attachment to pre-authorization
-     * POST /api/pre-authorizations/{id}/attachments
-     */
-
 
     /**
      * Get all attachments for a pre-authorization
@@ -446,11 +442,15 @@ public class PreAuthorizationController {
      */
     @GetMapping("/{id:\\d+}/attachments")
     @PreAuthorize("hasAuthority('VIEW_PRE_AUTH')")
-    public ResponseEntity<ApiResponse<List<PreAuthorizationAttachment>>> getAttachments(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<List<PreAuthorizationAttachmentResponseDto>>> getAttachments(@PathVariable Long id) {
         log.info("[API] Getting attachments for pre-authorization {}", id);
         
-        List<PreAuthorizationAttachment> attachments = attachmentService.getAttachments(id);
-        return ResponseEntity.ok(ApiResponse.success("تم استرجاع المرفقات", attachments));
+        List<PreAuthorizationAttachmentResponseDto> attachments = attachmentService.getAttachments(id)
+                .stream()
+                .map(this::mapToAttachmentDto)
+                .toList();
+                
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("preauth.attachment.retrieved"), attachments));
     }
 
     /**
@@ -497,11 +497,24 @@ public class PreAuthorizationController {
         
         try {
             attachmentService.deleteAttachment(attachmentId);
-            return ResponseEntity.ok(ApiResponse.<Void>success("تم حذف المرفق بنجاح", null));
+            return ResponseEntity.ok(ApiResponse.<Void>success(messageService.getMessage("preauth.attachment.deleted"), null));
         } catch (RuntimeException e) {
             log.error("Failed to delete attachment {}: {}", attachmentId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("فشل في حذف المرفق: " + e.getMessage()));
+                    .body(ApiResponse.error(messageService.getMessage("api.error") + ": " + e.getMessage()));
         }
+    }
+
+    private PreAuthorizationAttachmentResponseDto mapToAttachmentDto(PreAuthorizationAttachment entity) {
+        return PreAuthorizationAttachmentResponseDto.builder()
+                .id(entity.getId())
+                .preAuthorizationId(entity.getPreAuthorizationId())
+                .originalFileName(entity.getOriginalFileName())
+                .fileType(entity.getFileType())
+                .fileSize(entity.getFileSize())
+                .attachmentType(entity.getAttachmentType())
+                .createdAt(entity.getCreatedAt())
+                .createdBy(entity.getCreatedBy())
+                .build();
     }
 }

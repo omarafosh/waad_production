@@ -792,7 +792,7 @@ public class PreAuthorizationService {
                 .memberId(preAuth.getMemberId())
                 .memberName(member != null ? member.getFullName() : null)
                 .memberCardNumber(member != null ? member.getCardNumber() : null)
-                .memberNationalNumber(member != null ? member.getCivilId() : null)
+                .memberCivilId(member != null ? member.getCivilId() : null)
                 // Employer info (جهة العمل)
                 .employerId(member != null && member.getEmployerOrganization() != null ? member.getEmployerOrganization().getId() : null)
                 .employerName(member != null && member.getEmployerOrganization() != null ? member.getEmployerOrganization().getName() : null)

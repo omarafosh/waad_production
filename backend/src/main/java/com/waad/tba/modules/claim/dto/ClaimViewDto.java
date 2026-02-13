@@ -30,7 +30,7 @@ public class ClaimViewDto {
      * Alias for memberFullName (Frontend compatibility)
      */
     private String memberName;
-    private String memberNationalNumber;
+    private String memberCivilId;
     
     // Employer information (جهة العمل)
     private Long employerId;

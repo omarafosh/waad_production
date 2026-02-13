@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.common.dto.PaginationResponse;
+import com.waad.tba.common.service.ResourceMessageService;
 import com.waad.tba.modules.claim.dto.ClaimApproveDto;
 import com.waad.tba.modules.claim.dto.ClaimCreateDto;
 import com.waad.tba.modules.claim.dto.ClaimRejectDto;
@@ -41,13 +42,14 @@ import lombok.RequiredArgsConstructor;
 public class ClaimController {
 
     private final ClaimService claimService;
+    private final ResourceMessageService messageService;
 
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAnyAuthority('CLAIM_MANAGE', 'CLAIM_CREATE')")
     public ResponseEntity<ApiResponse<ClaimViewDto>> createClaim(@Valid @RequestBody ClaimCreateDto dto) {
         ClaimViewDto claim = claimService.createClaim(dto);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Claim created successfully", claim));
+                .body(ApiResponse.success(messageService.getMessage("claim.created.success"), claim));
     }
 
     @PutMapping("/{id:\\d+}")
@@ -56,7 +58,7 @@ public class ClaimController {
             @PathVariable Long id,
             @Valid @RequestBody ClaimUpdateDto dto) {
         ClaimViewDto claim = claimService.updateClaim(id, dto);
-        return ResponseEntity.ok(ApiResponse.success("Claim updated successfully", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.updated.success"), claim));
     }
 
     @GetMapping("/{id:\\d+}")
@@ -92,7 +94,7 @@ public class ClaimController {
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_MANAGE')")
     public ResponseEntity<ApiResponse<Void>> deleteClaim(@PathVariable Long id) {
         claimService.deleteClaim(id);
-        return ResponseEntity.ok(ApiResponse.success("Claim deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.deleted.success"), null));
     }
 
     @GetMapping("/count")
@@ -100,7 +102,7 @@ public class ClaimController {
     public ResponseEntity<ApiResponse<Long>> countClaims(
             @RequestParam(required = false) Long employerId) {
         long count = claimService.countClaims(employerId);
-        return ResponseEntity.ok(ApiResponse.success("Claims counted successfully", count));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.counted.success"), count));
     }
 
     @GetMapping("/search")
@@ -116,14 +118,14 @@ public class ClaimController {
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_VIEW')")
     public ResponseEntity<ApiResponse<List<ClaimViewDto>>> getClaimsByMember(@PathVariable Long memberId) {
         List<ClaimViewDto> claims = claimService.getClaimsByMember(memberId);
-        return ResponseEntity.ok(ApiResponse.success("Member claims retrieved successfully", claims));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.member.retrieved"), claims));
     }
 
     @GetMapping("/pre-authorization/{preAuthorizationId}")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_VIEW')")
     public ResponseEntity<ApiResponse<List<ClaimViewDto>>> getClaimsByPreAuthorization(@PathVariable Long preAuthorizationId) {
         List<ClaimViewDto> claims = claimService.getClaimsByPreAuthorization(preAuthorizationId);
-        return ResponseEntity.ok(ApiResponse.success("Pre-authorization claims retrieved successfully", claims));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.preauth.retrieved"), claims));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -139,7 +141,7 @@ public class ClaimController {
     @Operation(summary = "Submit claim for review", description = "Submit a draft claim for review. Validates required attachments.")
     public ResponseEntity<ApiResponse<ClaimViewDto>> submitClaim(@PathVariable Long id) {
         ClaimViewDto claim = claimService.submitClaim(id);
-        return ResponseEntity.ok(ApiResponse.success("تم تقديم المطالبة للمراجعة بنجاح", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.submitted.review"), claim));
     }
 
     /**
@@ -151,7 +153,7 @@ public class ClaimController {
     @Operation(summary = "Start review", description = "Take a submitted claim for review. Transitions to UNDER_REVIEW status.")
     public ResponseEntity<ApiResponse<ClaimViewDto>> startReview(@PathVariable Long id) {
         ClaimViewDto claim = claimService.startReview(id);
-        return ResponseEntity.ok(ApiResponse.success("تم استلام المطالبة للمراجعة", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.review.started"), claim));
     }
 
     /**
@@ -177,7 +179,7 @@ public class ClaimController {
             @PathVariable Long id,
             @Valid @RequestBody ClaimApproveDto dto) {
         ClaimViewDto claim = claimService.requestApproval(id, dto);
-        return ResponseEntity.ok(ApiResponse.success("جاري معالجة الموافقة...", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.approval.processing"), claim));
     }
 
     /**
@@ -191,7 +193,7 @@ public class ClaimController {
             @PathVariable Long id,
             @Valid @RequestBody ClaimRejectDto dto) {
         ClaimViewDto claim = claimService.rejectClaim(id, dto);
-        return ResponseEntity.ok(ApiResponse.success("تم رفض المطالبة", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.rejected.success"), claim));
     }
 
     /**
@@ -205,7 +207,7 @@ public class ClaimController {
             @PathVariable Long id,
             @Valid @RequestBody ClaimSettleDto dto) {
         ClaimViewDto claim = claimService.settleClaim(id, dto);
-        return ResponseEntity.ok(ApiResponse.success("تمت تسوية المطالبة بنجاح", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.settled.success"), claim));
     }
 
     /**
@@ -224,7 +226,7 @@ public class ClaimController {
             @PathVariable Long id,
             @Valid @RequestBody ClaimReturnForInfoDto dto) {
         ClaimViewDto claim = claimService.returnForInfo(id, dto);
-        return ResponseEntity.ok(ApiResponse.success("تم إعادة المطالبة لطلب معلومات إضافية", claim));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.returned.info"), claim));
     }
 
     /**
@@ -236,7 +238,7 @@ public class ClaimController {
     @Operation(summary = "Get cost breakdown", description = "Get detailed cost breakdown including deductible, co-pay, and insurance amount.")
     public ResponseEntity<ApiResponse<CostBreakdownDto>> getCostBreakdown(@PathVariable Long id) {
         CostBreakdownDto breakdown = claimService.getCostBreakdownDto(id);
-        return ResponseEntity.ok(ApiResponse.success("تم استرجاع تفاصيل التكلفة", breakdown));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.cost.breakdown"), breakdown));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -266,7 +268,7 @@ public class ClaimController {
                 .size(size)
                 .build();
 
-        return ResponseEntity.ok(ApiResponse.success("المطالبات المعلقة", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.inbox.pending"), response));
     }
 
     /**
@@ -291,7 +293,7 @@ public class ClaimController {
                 .size(size)
                 .build();
 
-        return ResponseEntity.ok(ApiResponse.success("المطالبات الموافق عليها", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.inbox.approved"), response));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -308,7 +310,7 @@ public class ClaimController {
     @Operation(summary = "Get claims by visit", description = "Retrieve all claims for a specific visit")
     public ResponseEntity<ApiResponse<List<ClaimViewDto>>> getClaimsByVisit(@PathVariable Long visitId) {
         List<ClaimViewDto> claims = claimService.getClaimsByVisit(visitId);
-        return ResponseEntity.ok(ApiResponse.success("Claims for visit retrieved successfully", claims));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.visit.retrieved"), claims));
     }
 
     /**
@@ -347,6 +349,6 @@ public class ClaimController {
                 .size(size)
                 .build();
 
-        return ResponseEntity.ok(ApiResponse.success("Claims by status retrieved", response));
+        return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("claim.status.retrieved"), response));
     }
 }

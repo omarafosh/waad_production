@@ -11,7 +11,11 @@ import com.waad.tba.modules.member.dto.FamilyEligibilityResponseDto;
 import com.waad.tba.modules.member.dto.MemberCreateDto;
 import com.waad.tba.modules.member.dto.MemberUpdateDto;
 import com.waad.tba.modules.member.dto.MemberViewDto;
+import com.waad.tba.modules.member.dto.MemberDocumentResponseDto;
+import com.waad.tba.modules.member.dto.MemberWorkflowHistoryResponseDto;
 import com.waad.tba.modules.member.entity.Member;
+import com.waad.tba.modules.member.entity.MemberDocument;
+import com.waad.tba.modules.member.entity.MemberWorkflowHistory;
 
 /**
  * ==================== UNIFIED MEMBER ARCHITECTURE ====================
@@ -338,6 +342,42 @@ public class UnifiedMemberMapper {
             .benefitPolicyStatus(principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getStatus().name() : null)
             .employerOrgId(principal.getEmployerOrganization() != null ? principal.getEmployerOrganization().getId() : null)
             .employerOrgName(principal.getEmployerOrganization() != null ? principal.getEmployerOrganization().getName() : null)
+            .build();
+    }
+
+    /**
+     * Convert MemberDocument entity to MemberDocumentResponseDto.
+     */
+    public MemberDocumentResponseDto toDocumentDto(MemberDocument doc) {
+        if (doc == null) return null;
+        return MemberDocumentResponseDto.builder()
+            .id(doc.getId())
+            .documentType(doc.getDocumentType().name())
+            .fileName(doc.getFileName())
+            .mimeType(doc.getMimeType())
+            .fileSize(doc.getFileSize())
+            .uploadedAt(doc.getUploadedAt())
+            .uploadedBy(doc.getUploadedBy())
+            .isVerified(doc.getIsVerified())
+            .verifiedAt(doc.getVerifiedAt())
+            .verifiedBy(doc.getVerifiedBy())
+            .notes(doc.getNotes())
+            .filePath(doc.getFilePath())
+            .build();
+    }
+
+    /**
+     * Convert MemberWorkflowHistory entity to MemberWorkflowHistoryResponseDto.
+     */
+    public MemberWorkflowHistoryResponseDto toWorkflowHistoryDto(MemberWorkflowHistory history) {
+        if (history == null) return null;
+        return MemberWorkflowHistoryResponseDto.builder()
+            .id(history.getId())
+            .fromStatus(history.getFromStatus())
+            .toStatus(history.getToStatus())
+            .changedAt(history.getChangedAt())
+            .changedBy(history.getChangedBy())
+            .reason(history.getReason())
             .build();
     }
 }

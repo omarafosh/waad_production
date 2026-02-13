@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import com.waad.tba.common.entity.Organization;
+import com.waad.tba.common.entity.SoftDeleteEntity;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -20,21 +21,26 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "users")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class User {
+@EqualsAndHashCode(callSuper = true)
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE users SET active = false, updated_at = NOW() WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("active = true")
+public class User extends SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,10 +80,6 @@ public class User {
      */
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
-
-    @Column(name = "active")
-    @Builder.Default
-    private Boolean active = true;
 
     @Column(name = "email_verified")
     @Builder.Default
@@ -193,13 +195,6 @@ public class User {
      */
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
-
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 
     /**
      * Check if account is currently locked

@@ -44,8 +44,8 @@ public class BatchClaimItemResponse {
     @Schema(description = "Member name", example = "Abdullah Al-Qahtani")
     private String memberName;
     
-    @Schema(description = "Member national number", example = "1234567890")
-    private String memberNationalNumber;
+    @Schema(description = "Member civil ID", example = "1234567890")
+    private String memberCivilId;
     
     @Schema(description = "Service date", example = "2025-12-15")
     @JsonFormat(pattern = "yyyy-MM-dd")

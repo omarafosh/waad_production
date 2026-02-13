@@ -356,7 +356,7 @@ public class UnifiedMemberController {
      * Restore a deleted member
      */
     @PutMapping("/{id}/restore")
-    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('MEMBER_EDIT')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('MEMBER_MANAGE')")
     @Operation(summary = "Restore deleted member", description = "Restores a soft-deleted member to active status.")
     public ResponseEntity<ApiResponse<?>> restoreMember(@PathVariable Long id) {
         unifiedMemberService.restoreMember(id);

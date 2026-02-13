@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Builder;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +29,7 @@ import java.time.LocalDateTime;
 @lombok.experimental.SuperBuilder
 @lombok.NoArgsConstructor
 @lombok.AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public abstract class SoftDeleteEntity {
 
     @Version
@@ -60,31 +66,24 @@ public abstract class SoftDeleteEntity {
     /**
      * Audit: creation timestamp
      */
+    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     protected LocalDateTime createdAt;
 
     /**
      * Audit: last update timestamp
      */
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     protected LocalDateTime updatedAt;
 
+    @CreatedBy
     @Column(name = "created_by", length = 100, updatable = false)
     protected String createdBy;
 
+    @LastModifiedBy
     @Column(name = "updated_by", length = 100)
     protected String updatedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 
     /**
      * Compatibility getter for 'active' field.

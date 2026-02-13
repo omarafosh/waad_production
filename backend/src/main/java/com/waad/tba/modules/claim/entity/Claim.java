@@ -276,19 +276,15 @@ public class Claim extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     // createdBy و updatedBy موروثة من SoftDeleteEntity
 
-    @Override
     @PrePersist
     protected void onCreate() {
-        super.onCreate();
         validateArchitecturalRules();
         validateBusinessRules();
         calculateFields();
     }
 
-    @Override
     @PreUpdate
     protected void onUpdate() {
-        super.onUpdate();
         validateBusinessRules();
         calculateFields();
     }

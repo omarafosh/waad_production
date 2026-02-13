@@ -228,7 +228,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                     AppPermission.VISIT_VIEW.name(), AppPermission.VISIT_PRINT.name(), AppPermission.VISIT_EXPORT.name(),
                     AppPermission.REPORT_VIEW.name(), AppPermission.REPORT_PRINT.name(), AppPermission.REPORT_EXPORT.name(),
                     AppPermission.BASIC_DATA_VIEW.name(),
-                    AppPermission.EMPLOYER_VIEW.name(), AppPermission.EMPLOYER_EDIT.name()
+                    AppPermission.EMPLOYER_VIEW.name(), AppPermission.EMPLOYER_UPDATE.name()
                 )
         ));
         

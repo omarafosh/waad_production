@@ -37,7 +37,7 @@ public class EmployerController {
     }
 
     @GetMapping({ "/selectors", "/selector" })
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN', 'EMPLOYER_ADMIN', 'PROVIDER') or hasAuthority('VIEW_EMPLOYERS')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN', 'EMPLOYER_ADMIN', 'PROVIDER') or hasAuthority('EMPLOYER_VIEW')")
     public ResponseEntity<ApiResponse<List<EmployerSelectorDto>>> selectors() {
         List<EmployerSelectorDto> selectors = service.getSelectors();
         return ResponseEntity.ok(ApiResponse.success(selectors));
@@ -59,7 +59,7 @@ public class EmployerController {
     }
 
     @PutMapping("/{id:\\d+}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN') or hasAuthority('EMPLOYER_EDIT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN') or hasAuthority('EMPLOYER_UPDATE')")
     public ResponseEntity<ApiResponse<EmployerResponseDto>> update(
             @PathVariable Long id,
             @Valid @RequestBody EmployerUpdateDto dto) {
@@ -79,7 +79,7 @@ public class EmployerController {
      * Sets archived=true, hiding from default lists while preserving all data
      */
     @PostMapping("/{id:\\d+}/archive")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN') or hasAuthority('MANAGE_EMPLOYERS')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN') or hasAuthority('EMPLOYER_MANAGE')")
     public ResponseEntity<ApiResponse<EmployerResponseDto>> archive(@PathVariable Long id) {
         EmployerResponseDto archived = service.archive(id);
         return ResponseEntity.ok(ApiResponse.success("Employer archived successfully", archived));
@@ -97,7 +97,7 @@ public class EmployerController {
     }
 
     @GetMapping("/count")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN') or hasAuthority('VIEW_EMPLOYERS')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'INSURANCE_ADMIN') or hasAuthority('EMPLOYER_VIEW')")
     public ResponseEntity<ApiResponse<Long>> count() {
         long total = service.count();
         return ResponseEntity.ok(ApiResponse.success(total));

@@ -291,17 +291,13 @@ public class PreAuthorization extends SoftDeleteEntity {
 
     // ==================== Business Logic Methods ====================
 
-    @Override
     @PrePersist
     protected void onCreate() {
-        super.onCreate();
         prePersistLogic();
     }
 
-    @Override
     @PreUpdate
     protected void onUpdate() {
-        super.onUpdate();
         validateAmounts();
     }
 

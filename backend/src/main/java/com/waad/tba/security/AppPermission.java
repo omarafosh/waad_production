@@ -112,17 +112,17 @@ public enum AppPermission {
     // ============================================
     EMPLOYER_VIEW("عرض أصحاب العمل", "View employer information"),
     EMPLOYER_CREATE("إضافة صاحب عمل", "Create new employer"),
-    EMPLOYER_EDIT("تعديل صاحب عمل", "Update existing employer"),
+    EMPLOYER_UPDATE("تعديل صاحب عمل", "Update existing employer"),
     EMPLOYER_DELETE("حذف صاحب عمل", "Delete employer"),
     EMPLOYER_EXPORT("تصدير أصحاب العمل", "Export employers data"),
-    // MANAGE_EMPLOYERS("إدارة أصحاب العمل", "Legacy: Full employer management"), // DEPRECATED
+    EMPLOYER_MANAGE("إدارة أصحاب العمل", "Full employer management"),
     
     // ============================================
     // Member Management
     // ============================================
     MEMBER_VIEW("عرض الأعضاء", "View member information"),
     MEMBER_CREATE("إضافة عضو", "Create new member"),
-    MEMBER_EDIT("تعديل عضو", "Update existing member"),
+    MEMBER_UPDATE("تعديل عضو", "Update existing member"),
     MEMBER_PORTAL_EDIT("تعديل الأعضاء (البوابة)", "Allow employer to edit members via portal"),
     MEMBER_DELETE("حذف عضو", "Delete member"),
     MEMBER_PRINT("طباعة الأعضاء", "Print member information"),
@@ -130,7 +130,7 @@ public enum AppPermission {
     MEMBER_IMPORT("استيراد الأعضاء", "Import members from Excel"),
     MEMBER_PORTAL_VIEW("عرض الأعضاء (البوابة)", "Allow employer to view members via portal"),
     MEMBER_PORTAL_DOWNLOAD_ATTACHMENTS("تحميل المرفقات (البوابة)", "Allow employer to download attachments via portal"),
-    // MANAGE_MEMBERS("إدارة الأعضاء", "Legacy: Full member management"), // DEPRECATED
+    MEMBER_MANAGE("إدارة الأعضاء", "Full member management"),
     
     // ============================================
     // Settlement Management

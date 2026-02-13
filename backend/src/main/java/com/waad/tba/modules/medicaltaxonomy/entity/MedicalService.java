@@ -150,16 +150,14 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
 
     // active, createdAt, updatedAt are inherited from SoftDeleteEntity
 
-    @Override
+    @PrePersist
     protected void onCreate() {
         validateArchitecturalRules();
-        super.onCreate();
     }
 
-    @Override
+    @PreUpdate
     protected void onUpdate() {
         validateArchitecturalRules();
-        super.onUpdate();
     }
 
     /**

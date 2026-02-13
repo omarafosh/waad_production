@@ -12,7 +12,8 @@ import {
   isSuperAdminOnlyDomain,
   getAssignableRoles,
   canModifyRole,
-  ROLE_PERMISSIONS
+  ROLE_PERMISSIONS,
+  PERMISSIONS
 } from 'constants/rbac';
 
 // ==============================|| RBAC STORE - ROLE-BASED ACCESS CONTROL ||============================== //
@@ -39,6 +40,7 @@ export const useRBACStore = create((set, get) => ({
   roles: [],
   permissions: [],
   user: null,
+  isAuthenticated: false, // Unified with rbacSlice
   isInitialized: false,
 
   // Actions
@@ -135,6 +137,7 @@ export const useRBACStore = create((set, get) => ({
         roles: normalizedRoles,
         permissions: finalPermissions,
         user: hydratedUser,
+        isAuthenticated: !!hydratedUser,
         isInitialized: true
       });
 
@@ -165,6 +168,7 @@ export const useRBACStore = create((set, get) => ({
       roles: [],
       permissions: [],
       user: null,
+      isAuthenticated: false,
       isInitialized: false
     });
   },
@@ -216,9 +220,31 @@ export const useRBACStore = create((set, get) => ({
     // SUPER_ADMIN bypasses all checks
     if (roles.includes('SUPER_ADMIN')) return true;
 
-    // Check if permission exists in flattened list
-    // Backend returns strings, but we handles both cases for safety
-    return permissions.some(p => (p?.name || p) === permissionName);
+    if (!permissionName) return true;
+
+    // Support for multiple permissions (OR check)
+    if (Array.isArray(permissionName)) {
+      return permissionName.some(p => permissions.includes(p));
+    }
+
+    return permissions.includes(permissionName);
+  },
+
+  /**
+   * Check if user has ANY of the permissions (convenience)
+   */
+  hasAnyPermission: (permissionsList) => {
+    return get().hasPermission(permissionsList);
+  },
+
+  /**
+   * Check if user has ALL of the permissions
+   */
+  hasAllPermissions: (permissionsList) => {
+    const { permissions, roles } = get();
+    if (roles.includes('SUPER_ADMIN')) return true;
+    if (!permissionsList || permissionsList.length === 0) return true;
+    return permissionsList.every(p => permissions.includes(p));
   },
 
   /**
@@ -390,15 +416,21 @@ export const useRBAC = () => {
   const isInsuranceAdminOrHigher = useRBACStore((state) => state.isInsuranceAdminOrHigher);
   const hasAccessToDomain = useRBACStore((state) => state.hasAccessToDomain);
   const hasPermission = useRBACStore((state) => state.hasPermission);
+  const hasAnyPermission = useRBACStore((state) => state.hasAnyPermission);
+  const hasAllPermissions = useRBACStore((state) => state.hasAllPermissions);
+  const isAuthenticated = useRBACStore((state) => state.isAuthenticated);
 
   return {
     roles,
     permissions,
     primaryRole: getPrimaryRole(),
     user,
+    isAuthenticated,
     isInitialized,
     hasRole,
     hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
     isSuperAdmin: isSuperAdmin(),
     isEmployerRole: isEmployerRole(),
     // RBAC Hardening
@@ -410,10 +442,17 @@ export const useRBAC = () => {
     getPrivilegeLevel: getPrivilegeLevelFromStore,
     isInsuranceAdminOrHigher: isInsuranceAdminOrHigher(),
     hasAccessToDomain,
+    // Global Constants access
+    PERMISSIONS,
     // Disabled - for compatibility only
     employerId: null,
     canSwitch: false
   };
 };
+
+/**
+ * COMPATIBILITY HOOK (Redirects rbacSlice usage)
+ */
+export const useRBACLegacy = useRBAC;
 
 export default useRBACStore;

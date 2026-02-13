@@ -1,0 +1,75 @@
+spring:
+  # ==============================
+  # 🗄️ Database (Development)
+  # ==============================
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tba_waad_system}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}  # Default for local dev only
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  # ==============================
+  # 🧠 JPA / Hibernate (Development)
+  # ==============================
+  jpa:
+    hibernate:
+      ddl-auto: update  # Auto-update schema in dev
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+
+  # ==============================
+  # 🚀 Flyway (Development)
+  # ==============================
+  flyway:
+    enabled: true
+    validate-on-migrate: false  # Allow checksum changes in dev
+    clean-disabled: false       # Allow clean in dev
+
+# ==============================
+# 🌐 Server (Development)
+# ==============================
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false  # HTTP allowed in dev
+
+# ==============================
+# 🔐 JWT (Development)
+# ==============================
+jwt:
+  secret: ${JWT_SECRET:VGhpcy1pcy1hLUJhc2U2NC1leGFtcGxlLXNlY3JldC0uLi4=}
+  expiration: 86400000
+
+# ==============================
+# 🔒 Security (Development)
+# ==============================
+app:
+  security:
+    require-email-verification: false
+  
+  frontend:
+    cors:
+      allowed-origins: http://localhost:3000,http://localhost:5173
+
+# ==============================
+# 📘 Swagger (Development - ENABLED)
+# ==============================
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# ==============================
+# 📊 Logging (Development)
+# ==============================
+logging:
+  level:
+    com.waad.tba: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG

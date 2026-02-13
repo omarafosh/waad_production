@@ -1,0 +1,17 @@
+[
+  {
+    "id": "TC001",
+    "title": "benefitpolicycontrollercrudoperations",
+    "description": "Test the CRUD operations of BenefitPolicyController including creation, retrieval, update, soft-delete, and restore of benefit policies to ensure full lifecycle management."
+  },
+  {
+    "id": "TC002",
+    "title": "eligibilitycontrollereligibilitycheck",
+    "description": "Verify the EligibilityController API correctly checks member eligibility based on active policies, service dates, waiting periods, and annual limits, returning appropriate eligibility status and denial reason codes."
+  },
+  {
+    "id": "TC003",
+    "title": "claimcontrollersubmissionandstatusflow",
+    "description": "Test the ClaimController API for claim submission, financial cost breakdown accuracy (deductible, co-pay), and proper status transitions through Draft, Submitted, Approved, and Settled states with correct user permissions."
+  }
+]

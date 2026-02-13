@@ -1,0 +1,32 @@
+package com.waad.tba.modules.provider.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ProviderCreateDto {
+    /**
+     * Provider name (اسم مقدم الخدمة)
+     */
+    private String name;
+    
+    private String licenseNumber;
+    private String taxNumber;
+    private String city;
+    private String address;
+    private String phone;
+    private String email;
+    private String providerType;
+    private String networkStatus;
+    private LocalDate contractStartDate;
+    private LocalDate contractEndDate;
+    private BigDecimal defaultDiscountRate;
+}

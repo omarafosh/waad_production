@@ -1,0 +1,41 @@
+package com.waad.tba.modules.auth.dto;
+
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoginResponse {
+    private String token;
+    private String refreshToken; // Phase 2: Added Refresh Token
+    private UserInfo user;
+    
+    /**
+     * Simplified UserInfo DTO - Role-Based Only
+     * Each user has exactly ONE role
+     * No permissions array (Backend is the authority)
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserInfo {
+        private Long id;
+        private String username;
+        private String fullName;
+        private String email;
+        private String civilId;
+        private List<String> roles;      // User's roles (typically ONE role)
+        private List<String> permissions; // Flattened permissions for UI Masking
+        private Long employerId;         // For EMPLOYER_ADMIN role
+        private Long providerId;         // For PROVIDER role
+        private String providerName;     // Provider name for display (PROVIDER role)
+        private Long companyId;          // For INSURANCE_ADMIN role (deprecated)
+    }
+}

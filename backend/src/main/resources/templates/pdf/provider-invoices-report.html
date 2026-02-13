@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="|${reportTitle} - ${provider.name}|">Provider Invoices Report</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Traditional Arabic', 'Arial', sans-serif;
+            font-size: 10pt;
+            line-height: 1.5;
+            color: #333;
+            direction: rtl;
+        }
+
+        /* Header */
+        .header {
+            padding: 8mm 0;
+            border-bottom: 2px solid #1976d2;
+            margin-bottom: 5mm;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-logo img {
+            max-height: 45px;
+        }
+
+        .header-info {
+            text-align: center;
+            flex: 1;
+        }
+
+        .header-company-name {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .header-details {
+            font-size: 8pt;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 3mm 10mm;
+            border-top: 1px solid #ddd;
+            background: white;
+            text-align: center;
+            font-size: 8pt;
+            color: #757575;
+        }
+
+        /* Report Title */
+        .report-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5mm;
+            color: #1976d2;
+        }
+
+        .report-meta {
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 5mm;
+        }
+
+        .meta-grid {
+            display: table;
+            width: 100%;
+        }
+
+        .meta-row {
+            display: table-row;
+        }
+
+        .meta-cell {
+            display: table-cell;
+            padding: 3px 5px;
+            width: 25%;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .meta-value {
+            color: #333;
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #1976d2;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 6mm;
+        }
+
+        .summary-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #1565c0;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #1976d2;
+        }
+
+        .summary-grid {
+            display: table;
+            width: 100%;
+        }
+
+        .summary-row {
+            display: table-row;
+        }
+
+        .summary-cell {
+            display: table-cell;
+            padding: 4px;
+            text-align: center;
+            width: 25%;
+        }
+
+        .summary-number {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1565c0;
+        }
+
+        .summary-label {
+            font-size: 8pt;
+            color: #666;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5mm;
+            font-size: 9pt;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 4px 6px;
+            text-align: right;
+        }
+
+        th {
+            background-color: #1976d2;
+            color: white;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+
+        td {
+            font-size: 9pt;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        tbody tr:hover {
+            background-color: #e3f2fd;
+        }
+
+        /* Status Badges */
+        .status-approved {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8pt;
+        }
+
+        .status-rejected {
+            background: #ffebee;
+            color: #c62828;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8pt;
+        }
+
+        .status-pending {
+            background: #fff3e0;
+            color: #ef6c00;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8pt;
+        }
+
+        .status-partial {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8pt;
+        }
+
+        /* Page Break Control */
+        .page-break {
+            page-break-before: always;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        /* Currency */
+        .currency {
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            direction: ltr;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 6mm;
+        }
+
+        .section-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 3mm;
+            padding-bottom: 2mm;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        /* Totals Row */
+        .totals-row {
+            background: #e8f5e9 !important;
+            font-weight: bold;
+        }
+
+        .totals-row td {
+            border-top: 2px solid #1976d2;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-logo" th:if="${company.hasLogo()}">
+                <img th:src="${company.logoBase64DataUrl}" alt="Company Logo" />
+            </div>
+            <div class="header-info">
+                <div class="header-company-name" th:text="${company.companyName}">نظام وعد الطبي</div>
+                <div class="header-details">
+                    <span th:if="${company.address}" th:text="${company.address}">الرياض</span>
+                    <span th:if="${company.phone}"> • </span>
+                    <span th:if="${company.phone}" th:text="${company.phone}">+966XXXXXXXXX</span>
+                    <span th:if="${company.email}"> • </span>
+                    <span th:if="${company.email}" th:text="${company.email}">info@waad.com</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div th:text="${company.footerText}">جميع الحقوق محفوظة © 2026 - نظام وعد الطبي</div>
+        <div style="margin-top: 2px; font-size: 7pt; color: #999;">
+            تم إنشاء التقرير: <span th:text="${generatedAt}"></span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Report Title -->
+        <h1 class="report-title" th:text="${reportTitle}">تقرير فواتير مقدم الخدمة</h1>
+
+        <!-- Provider & Period Info -->
+        <div class="report-meta">
+            <div class="meta-grid">
+                <div class="meta-row">
+                    <div class="meta-cell">
+                        <span class="meta-label">مقدم الخدمة:</span><br />
+                        <span class="meta-value" th:text="${provider.name}">مستشفى النور</span>
+                    </div>
+                    <div class="meta-cell">
+                        <span class="meta-label">الفترة من:</span><br />
+                        <span class="meta-value" th:text="${fromDate}">2026-01-01</span>
+                    </div>
+                    <div class="meta-cell">
+                        <span class="meta-label">الفترة إلى:</span><br />
+                        <span class="meta-value" th:text="${toDate}">2026-03-31</span>
+                    </div>
+                    <div class="meta-cell">
+                        <span class="meta-label">تاريخ التقرير:</span><br />
+                        <span class="meta-value" th:text="${reportDate}">2026-02-04</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="summary-box">
+            <div class="summary-title">📊 الملخص المالي</div>
+            <div class="summary-grid">
+                <div class="summary-row">
+                    <div class="summary-cell">
+                        <div class="summary-number" th:text="${claimsCount}">0</div>
+                        <div class="summary-label">إجمالي الفواتير</div>
+                    </div>
+                    <div class="summary-cell">
+                        <div class="summary-number" th:text="${#numbers.formatDecimal(totalRequestedAmount, 1, 2)}">0.00
+                        </div>
+                        <div class="summary-label">إجمالي المطالبات</div>
+                    </div>
+                    <div class="summary-cell">
+                        <div class="summary-number" style="color: #2e7d32;"
+                            th:text="${#numbers.formatDecimal(totalApprovedAmount, 1, 2)}">0.00</div>
+                        <div class="summary-label">المبالغ المعتمدة</div>
+                    </div>
+                    <div class="summary-cell">
+                        <div class="summary-number" style="color: #c62828;"
+                            th:text="${#numbers.formatDecimal(totalRejectedAmount, 1, 2)}">0.00</div>
+                        <div class="summary-label">المبالغ المرفوضة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Summary -->
+        <div class="section">
+            <div class="summary-grid" style="text-align: center; margin-bottom: 4mm;">
+                <div class="summary-row">
+                    <div class="summary-cell">
+                        <span class="status-approved" th:text="|معتمدة: ${approvedCount}|">معتمدة: 0</span>
+                    </div>
+                    <div class="summary-cell">
+                        <span class="status-rejected" th:text="|مرفوضة: ${rejectedCount}|">مرفوضة: 0</span>
+                    </div>
+                    <div class="summary-cell">
+                        <span class="status-pending" th:text="|قيد المراجعة: ${pendingCount}|">قيد المراجعة: 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Claims Table -->
+        <div class="section">
+            <h2 class="section-title">📋 تفاصيل الفواتير</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">#</th>
+                        <th style="width: 8%;">رقم</th>
+                        <th style="width: 15%;">اسم المريض</th>
+                        <th style="width: 10%;">رقم البطاقة</th>
+                        <th style="width: 10%;">التاريخ</th>
+                        <th style="width: 15%;">التشخيص</th>
+                        <th style="width: 10%;">المطلوب</th>
+                        <th style="width: 10%;">المعتمد</th>
+                        <th style="width: 8%;">الفرق</th>
+                        <th style="width: 10%;">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="claim, iterStat : ${claims}">
+                        <td th:text="${iterStat.count}">1</td>
+                        <td th:text="${claim.id}">1001</td>
+                        <td th:text="${claim.memberName}">محمد أحمد</td>
+                        <td th:text="${claim.memberCardNumber}">12345678</td>
+                        <td th:text="${#temporals.format(claim.serviceDate, 'yyyy-MM-dd')}">2026-01-15</td>
+                        <td th:text="${#strings.abbreviate(claim.diagnosisDescription, 25)}">فحص طبي عام</td>
+                        <td class="currency" th:text="${#numbers.formatDecimal(claim.requestedAmount, 1, 2)}">500.00
+                        </td>
+                        <td class="currency"
+                            th:text="${claim.approvedAmount != null ? #numbers.formatDecimal(claim.approvedAmount, 1, 2) : '-'}">
+                            450.00</td>
+                        <td class="currency"
+                            th:text="${claim.differenceAmount != null ? #numbers.formatDecimal(claim.differenceAmount, 1, 2) : '-'}">
+                            50.00</td>
+                        <td>
+                            <span
+                                th:if="${claim.statusCode == 'APPROVED' or claim.statusCode == 'PAID' or claim.statusCode == 'SETTLED'}"
+                                class="status-approved" th:text="${claim.status}">معتمدة</span>
+                            <span th:if="${claim.statusCode == 'REJECTED'}" class="status-rejected"
+                                th:text="${claim.status}">مرفوضة</span>
+                            <span th:if="${claim.statusCode == 'PARTIALLY_APPROVED'}" class="status-partial"
+                                th:text="${claim.status}">جزئية</span>
+                            <span
+                                th:if="${claim.statusCode != 'APPROVED' and claim.statusCode != 'PAID' and claim.statusCode != 'SETTLED' and claim.statusCode != 'REJECTED' and claim.statusCode != 'PARTIALLY_APPROVED'}"
+                                class="status-pending" th:text="${claim.status}">قيد المراجعة</span>
+                        </td>
+                    </tr>
+
+                    <!-- Totals Row -->
+                    <tr class="totals-row">
+                        <td colspan="6" style="text-align: left; font-weight: bold;">الإجمالي</td>
+                        <td class="currency" th:text="${#numbers.formatDecimal(totalRequestedAmount, 1, 2)}">0.00</td>
+                        <td class="currency" th:text="${#numbers.formatDecimal(totalApprovedAmount, 1, 2)}">0.00</td>
+                        <td class="currency"
+                            th:text="${#numbers.formatDecimal(totalRequestedAmount - totalApprovedAmount, 1, 2)}">0.00
+                        </td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rejected Lines Detail (for rejected report) -->
+        <div class="section page-break" th:if="${reportType == 'PROVIDER_REJECTED'}">
+            <h2 class="section-title">❌ تفاصيل الخدمات المرفوضة</h2>
+            <table th:each="claim : ${claims}" th:if="${claim.lines != null and #lists.size(claim.lines) > 0}">
+                <thead>
+                    <tr style="background: #ffebee;">
+                        <th colspan="6" style="text-align: right; color: #c62828;">
+                            فاتورة رقم <span th:text="${claim.id}">1001</span> -
+                            <span th:text="${claim.memberName}">محمد أحمد</span>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th style="width: 30%;">الخدمة</th>
+                        <th style="width: 10%;">الكود</th>
+                        <th style="width: 10%;">الكمية</th>
+                        <th style="width: 15%;">السعر</th>
+                        <th style="width: 15%;">المعتمد</th>
+                        <th style="width: 20%;">سبب الرفض</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="line : ${claim.lines}">
+                        <td th:text="${line.serviceName}">خدمة طبية</td>
+                        <td th:text="${line.serviceCode}">SRV001</td>
+                        <td th:text="${line.quantity}">1</td>
+                        <td class="currency" th:text="${#numbers.formatDecimal(line.totalPrice, 1, 2)}">100.00</td>
+                        <td class="currency"
+                            th:text="${line.approvedAmount != null ? #numbers.formatDecimal(line.approvedAmount, 1, 2) : '-'}">
+                            80.00</td>
+                        <td th:text="${line.rejectionReason}" style="color: #c62828;">غير مغطاة</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="section" style="margin-top: 15mm;">
+            <div class="meta-grid">
+                <div class="meta-row">
+                    <div class="meta-cell" style="width: 33%; text-align: center;">
+                        <div style="border-top: 1px solid #333; padding-top: 5px; margin-top: 20mm;">
+                            المدقق المالي
+                        </div>
+                    </div>
+                    <div class="meta-cell" style="width: 34%; text-align: center;">
+                        <div style="border-top: 1px solid #333; padding-top: 5px; margin-top: 20mm;">
+                            مدير العمليات
+                        </div>
+                    </div>
+                    <div class="meta-cell" style="width: 33%; text-align: center;">
+                        <div style="border-top: 1px solid #333; padding-top: 5px; margin-top: 20mm;">
+                            المدير العام
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

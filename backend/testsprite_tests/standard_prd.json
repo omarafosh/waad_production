@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "project": "TBA WAAD Insurance Engine",
+    "date": "2026-02-10",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "The TBA WAAD Insurance Engine is a backend system designed to manage insurance benefit policies, perform eligibility checks, and handle medical claims with financial cost breakdowns. It is built using Java, Spring Boot, and PostgreSQL, providing APIs and services for insurance companies and third-party administrators to automate and streamline insurance operations.",
+  "core_goals": [
+    "Enable CRUD and lifecycle management of insurance benefit policies including soft-delete and restore.",
+    "Provide an eligibility engine API to verify member eligibility against active benefit policies and coverage conditions.",
+    "Process and manage medical claims with detailed financial calculations including deductible, co-pay, and net insurance payments.",
+    "Ensure accurate pricing by mapping service codes and applying provider contract rates.",
+    "Support comprehensive testing scenarios to validate eligibility, pricing accuracy, and claims lifecycle management."
+  ],
+  "key_features": [
+    "Benefit Policy Management with CRUD operations and lifecycle support including soft-delete and restore capabilities.",
+    "Eligibility Engine API that checks member eligibility based on policy status, membership status, service dates, annual coverage limits, and waiting periods.",
+    "Claim Management module handling claim submissions, cost breakdown calculations, and status transitions through draft, submitted, approved, and settled stages.",
+    "Service price mapping that verifies provider price against master catalog price and contract rates, with handling for unmapped services.",
+    "Comprehensive testing design document summarizing key test cases for eligibility, pricing, and claims functionality ensuring system validation and correctness."
+  ],
+  "user_flow_summary": [
+    "Administrator creates and manages Benefit Policies including setting annual limits, waiting periods, and deductibles.",
+    "Member registers and links to an Employer Organization and associated Benefit Policy.",
+    "Eligibility Check: User inputs member ID, service date, and provider ID to check eligibility via API or UI; system returns eligibility status with reason codes if ineligible.",
+    "Provider registers a visit and creates a claim for the member selecting the correct service code; the system maps service pricing using the provider contract.",
+    "Claim cost breakdown is viewed showing deductible, co-pay, and insurer coverage calculated according to policy rules.",
+    "Claim progresses through lifecycle states: Draft → Submitted → Approved → Settled, each with required actor interactions (provider, TPA auditor, finance)."
+  ],
+  "validation_criteria": [
+    "Eligibility API must correctly identify eligible and ineligible members with appropriate reason codes based on membership status, policy dates, waiting periods, and coverage limits.",
+    "Pricing engine must accurately map service codes and apply provider contract rates before falling back to master catalog prices.",
+    "Claims cost breakdown calculations for deductible and co-pay must be accurate according to configured policy rules.",
+    "Claim lifecycle status transitions must be enforceable and reflect real-world workflow from submission to settlement.",
+    "All key scenarios described in the testing design document (eligibility, pricing, claims) must be executed successfully with automated or manual verification to ensure engine correctness."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "Java",
+      "Spring Boot",
+      "PostgreSQL",
+      "Maven"
+    ],
+    "features": [
+      {
+        "name": "Benefit Policy Management",
+        "description": "CRUD and lifecycle management for insurance benefit policies, including soft-delete and restore functionality.",
+        "files": [
+          "src/main/java/com/waad/tba/modules/benefitpolicy/controller/BenefitPolicyController.java",
+          "src/main/java/com/waad/tba/modules/benefitpolicy/service/BenefitPolicyService.java"
+        ]
+      },
+      {
+        "name": "Eligibility Engine",
+        "description": "API for checking member eligibility against benefit policies.",
+        "files": [
+          "src/main/java/com/waad/tba/modules/eligibility/controller/EligibilityController.java",
+          "src/main/java/com/waad/tba/modules/eligibility/service/EligibilityEngineServiceImpl.java"
+        ]
+      },
+      {
+        "name": "Claim Management",
+        "description": "Handling medical claims and financial cost breakdown.",
+        "files": [
+          "src/main/java/com/waad/tba/modules/claim/controller/ClaimController.java",
+          "src/main/java/com/waad/tba/modules/claim/service/ClaimService.java"
+        ]
+      }
+    ]
+  }
+}

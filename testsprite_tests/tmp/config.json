@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8080",
+  "backendAuthType": "basic token",
+  "backendUsername": "superadmin",
+  "backendPassword": "Admin@123",
+  "executionArgs": {
+    "projectName": "waadTbaSystem2026-main",
+    "projectPath": "d:\\Backend\\waadTbaSystem2026-main_final\\waadTbaSystem2026-main",
+    "testIds": [],
+    "additionalInstruction": "Focus on validating the eligibility rules (BenefitAnnualLimitRule, WaitingPeriodRule) and the claim cost breakdown logic (Deductible, Co-pay) as defined in the testing_design.md and Prd.md files. Ensure tests cover both positive (eligible) and negative (not eligible) scenarios.",
+    "envs": {
+      "API_KEY": "sk-user-wmQ_i0h1kSyWqkla5s5LDb7s3ATfnjmm-hvwK8MphLb69tt4YzSEHW0Mz8Siuen29hK7tSadIvr7g4SHzi3DPmZJr2XsV2WKisBpotla_in17EMLHlwsrrKq1-zZ7Z9lcfY"
+    }
+  }
+}

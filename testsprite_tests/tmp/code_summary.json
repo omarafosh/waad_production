@@ -1,0 +1,39 @@
+{
+    "tech_stack": [
+        "Java",
+        "Spring Boot",
+        "PostgreSQL",
+        "React",
+        "Material-UI",
+        "Vite"
+    ],
+    "features": [
+        {
+            "name": "Benefit Policy Management",
+            "description": "CRUD and lifecycle management for insurance benefit policies, including soft-delete and restore functionality.",
+            "files": [
+                "backend/src/main/java/com/waad/tba/modules/benefitpolicy/controller/BenefitPolicyController.java",
+                "backend/src/main/java/com/waad/tba/modules/benefitpolicy/service/BenefitPolicyService.java",
+                "backend/src/main/java/com/waad/tba/modules/benefitpolicy/repository/BenefitPolicyRepository.java"
+            ]
+        },
+        {
+            "name": "Eligibility Engine",
+            "description": "API for checking member eligibility against benefit policies, including annual limits and waiting periods.",
+            "files": [
+                "backend/src/main/java/com/waad/tba/modules/eligibility/controller/EligibilityController.java",
+                "backend/src/main/java/com/waad/tba/modules/eligibility/service/EligibilityEngineServiceImpl.java",
+                "backend/src/main/java/com/waad/tba/modules/eligibility/rules/BenefitAnnualLimitRule.java",
+                "backend/src/main/java/com/waad/tba/modules/eligibility/rules/WaitingPeriodRule.java"
+            ]
+        },
+        {
+            "name": "Claim Management",
+            "description": "Handling medical claims, financial cost breakdown (deductibles, co-pays), and status transitions.",
+            "files": [
+                "backend/src/main/java/com/waad/tba/modules/claim/controller/ClaimController.java",
+                "backend/src/main/java/com/waad/tba/modules/claim/service/ClaimService.java"
+            ]
+        }
+    ]
+}

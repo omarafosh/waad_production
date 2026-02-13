@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8080",
+  "backendAuthType": "basic token",
+  "backendUsername": "superadmin",
+  "backendPassword": "Admin@123",
+  "executionArgs": {
+    "projectName": "backend",
+    "projectPath": "d:\\Backend\\waadTbaSystem2026-main_final\\waadTbaSystem2026-main\\backend",
+    "testIds": [],
+    "additionalInstruction": "Execute all backend tests aiming for 100% functional coverage. \n1. ELIGIBILITY: Test active/inactive members, active/expired/cancelled policies, waiting periods (met/unmet), and annual limits (remaining vs spent).\n2. PRICING: Verify Provider Contract rates vs Master Catalog fallback.\n3. CLAIMS: Test full lifecycle from Draft to Settled.\n4. NEGATIVE CASES: Invalid status, unauthorized provider, and service date outside policy range.\nReport all failures clearly with reason codes.",
+    "envs": {
+      "API_KEY": "sk-user-wmQ_i0h1kSyWqkla5s5LDb7s3ATfnjmm-hvwK8MphLb69tt4YzSEHW0Mz8Siuen29hK7tSadIvr7g4SHzi3DPmZJr2XsV2WKisBpotla_in17EMLHlwsrrKq1-zZ7Z9lcfY"
+    }
+  }
+}

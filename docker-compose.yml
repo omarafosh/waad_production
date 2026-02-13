@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tba-db
+    environment:
+      POSTGRES_DB: tba_waad_system
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: tba-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/tba_waad_system
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-ReplaceThisWithVerySecureSecretKeyInProduction}
+      SPRING_PROFILES_ACTIVE: prod
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    container_name: tba-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tba-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tba-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:

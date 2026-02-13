@@ -1,0 +1,16 @@
+* {
+  -webkit-tap-highlight-color: transparent;
+  /* Force English/Western digits globally */
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum", "lnum";
+}
+
+/* Ensure material-ui table components use English digits */
+.MuiTablePagination-root, 
+.MuiTablePagination-select, 
+.MuiTablePagination-displayedRows,
+.MuiTableCell-root,
+.MuiTypography-root {
+  font-variant-numeric: tabular-nums lining-nums !important;
+  font-feature-settings: "tnum", "lnum" !important;
+}

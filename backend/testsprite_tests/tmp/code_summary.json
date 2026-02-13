@@ -1,0 +1,34 @@
+{
+    "tech_stack": [
+        "Java",
+        "Spring Boot",
+        "PostgreSQL",
+        "Maven"
+    ],
+    "features": [
+        {
+            "name": "Benefit Policy Management",
+            "description": "CRUD and lifecycle management for insurance benefit policies, including soft-delete and restore functionality.",
+            "files": [
+                "src/main/java/com/waad/tba/modules/benefitpolicy/controller/BenefitPolicyController.java",
+                "src/main/java/com/waad/tba/modules/benefitpolicy/service/BenefitPolicyService.java"
+            ]
+        },
+        {
+            "name": "Eligibility Engine",
+            "description": "API for checking member eligibility against benefit policies.",
+            "files": [
+                "src/main/java/com/waad/tba/modules/eligibility/controller/EligibilityController.java",
+                "src/main/java/com/waad/tba/modules/eligibility/service/EligibilityEngineServiceImpl.java"
+            ]
+        },
+        {
+            "name": "Claim Management",
+            "description": "Handling medical claims and financial cost breakdown.",
+            "files": [
+                "src/main/java/com/waad/tba/modules/claim/controller/ClaimController.java",
+                "src/main/java/com/waad/tba/modules/claim/service/ClaimService.java"
+            ]
+        }
+    ]
+}

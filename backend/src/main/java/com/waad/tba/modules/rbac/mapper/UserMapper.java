@@ -31,6 +31,7 @@ public class UserMapper {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .active(user.getActive())
+                .allowAllCompanies(user.getAllowAllCompanies())
                 .roles(user.getRoles() != null ? 
                        user.getRoles().stream()
                            .map(roleMapper::toResponseDto)
@@ -45,8 +46,6 @@ public class UserMapper {
                     providerRepository.findById(user.getProviderId())
                         .map(com.waad.tba.modules.provider.entity.Provider::getName).orElse(null) : null)
 
-                // Provider specific permissions
-                .allowAllCompanies(user.getAllowAllCompanies())
                 .permittedCompanies(user.getPermittedOrganizations() != null ?
                         user.getPermittedOrganizations().stream()
                                 .map(this::toEmployerResponseDto)
@@ -79,7 +78,6 @@ public class UserMapper {
                 // Employer/Provider associations (2026-01-16)
                 .employerId(dto.getEmployerId())
                 .providerId(dto.getProviderId())
-
                 .allowAllCompanies(dto.getAllowAllCompanies() != null ? dto.getAllowAllCompanies() : true)
                 .build();
     }
@@ -93,11 +91,9 @@ public class UserMapper {
         if (dto.getActive() != null) {
             user.setActive(dto.getActive());
         }
-        // Employer/Provider associations (2026-01-16)
         // Fix: Allow setting to null (for unlinking)
         user.setEmployerId(dto.getEmployerId());
         user.setProviderId(dto.getProviderId());
-        
         if (dto.getAllowAllCompanies() != null) {
             user.setAllowAllCompanies(dto.getAllowAllCompanies());
         }

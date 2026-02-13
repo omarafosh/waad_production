@@ -1,14 +1,24 @@
 import PropTypes from 'prop-types';
+import { IntlProvider } from 'react-intl';
+
+// project imports
+import useConfig from 'hooks/useConfig';
+import messages, { flattenMessages } from 'i18n';
 
 // ==============================|| LOCALIZATION ||============================== //
-// Simplified Locales wrapper - Static Arabic UX for Closed Enterprise
-// react-intl removed to prevent runtime crashes from missing message IDs
-// All text now uses static Arabic strings via utils/labels.js
 
 export default function Locales({ children }) {
-  // Simply render children - no IntlProvider needed
-  // Static Arabic terminology is used throughout the application
-  return <>{children}</>;
+  const { i18n } = useConfig();
+
+  return (
+    <IntlProvider
+      locale={i18n}
+      defaultLocale="ar"
+      messages={flattenMessages(messages[i18n] || messages.ar)}
+    >
+      {children}
+    </IntlProvider>
+  );
 }
 
 Locales.propTypes = { children: PropTypes.node };

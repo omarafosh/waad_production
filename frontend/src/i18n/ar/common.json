@@ -1,0 +1,32 @@
+{
+    "common": {
+        "nav": {
+            "home": "الرئيسية",
+            "dashboard": "لوحة التحكم",
+            "rbac": "الصلاحيات",
+            "settings": "الإعدادات"
+        },
+        "actions": {
+            "add": "إضافة",
+            "edit": "تعديل",
+            "delete": "حذف",
+            "view": "عرض",
+            "save": "حفظ",
+            "cancel": "إلغاء",
+            "refresh": "تحديث",
+            "search": "بحث"
+        },
+        "status": {
+            "active": "نشط",
+            "inactive": "غير نشط",
+            "pending": "قيد الانتظار"
+        },
+        "table": {
+            "rowsPerPage": "عدد الصفوف:",
+            "of": "من",
+            "moreThan": "أكثر من"
+        },
+        "error": "حدث خطأ غير متوقع",
+        "success": "تمت العملية بنجاح"
+    }
+}

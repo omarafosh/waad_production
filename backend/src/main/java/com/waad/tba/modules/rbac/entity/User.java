@@ -49,27 +49,17 @@ public class User extends SoftDeleteEntity {
     @Column(unique = true, nullable = false)
     private String username;
 
-    public String getUsername() { return username; }
-
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)
     private String fullName;
 
-    @Column(name = "civil_id", unique = true)
-    private String civilId;
-
     @Column(unique = true, nullable = false)
     private String email;
 
     private String phone;
 
-    /**
-     * Profile image URL (nullable)
-     * Used for avatar display in frontend
-     * Falls back to first letter of name if null
-     */
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
@@ -93,10 +83,6 @@ public class User extends SoftDeleteEntity {
     @Column(name = "employer_id")
     private Long employerId;
 
-    public Long getEmployerId() {
-        return employerId;
-    }
-
     /**
      * Provider ID - for PROVIDER users
      * Links the user to a specific healthcare provider (hospital, clinic, etc.).
@@ -106,45 +92,19 @@ public class User extends SoftDeleteEntity {
     @Column(name = "provider_id")
     private Long providerId;
 
-    public Long getProviderId() { return providerId; }
-
     /**
-     * Company ID - for INSURANCE / TPA users
-     * Links the user to the main TPA organization.
-     */
-    @Column(name = "company_id")
-    private Long companyId;
-
-    /**
-     * Legacy Feature Flag: View Members
-     * Controlled at user level (deprecated, move to FGAC)
-     */
-    @Column(name = "can_view_members")
-    @Builder.Default
-    private Boolean canViewMembers = true;
-
-    /**
-     * Legacy Feature Flag: View Policies
-     * Controlled at user level (deprecated, move to FGAC)
-     */
-    @Column(name = "can_view_benefit_policies")
-    @Builder.Default
-    private Boolean canViewBenefitPolicies = true;
-    /**
-     * Whether the user can see members from all companies contracted with the provider.
-     * Default: true (backwards compatibility and typical behavior).
+     * Flag for providers to see all companies.
+     * If true, the provider user can see members/claims from all employers.
+     * If false, visibility is restricted to permittedOrganizations.
      */
     @Column(name = "allow_all_companies")
     @Builder.Default
     private Boolean allowAllCompanies = true;
 
-    public Boolean getAllowAllCompanies() {
-        return allowAllCompanies;
-    }
 
     /**
      * Specific list of companies/employers this user is permitted to see.
-     * Only used if allowAllCompanies is false.
+     * Used for granular access control.
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -155,10 +115,6 @@ public class User extends SoftDeleteEntity {
     @Builder.Default
     private Set<Organization> permittedOrganizations = new HashSet<>();
 
-    public Set<Organization> getPermittedOrganizations() {
-        return permittedOrganizations;
-    }
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
@@ -167,10 +123,6 @@ public class User extends SoftDeleteEntity {
     )
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
 
     /**
      * Number of consecutive failed login attempts

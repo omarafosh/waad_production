@@ -22,6 +22,7 @@ public class UserResponseDto {
     private String phone;
     private Boolean active;
     private List<RoleResponseDto> roles;
+    private Boolean allowAllCompanies;
 
     // Employer/Provider associations
     private Long employerId;
@@ -32,7 +33,6 @@ public class UserResponseDto {
 
 
     // Provider specific permissions
-    private Boolean allowAllCompanies;
     private java.util.Set<UserEmployerResponseDto> permittedCompanies;
 
     private LocalDateTime createdAt;

@@ -1,0 +1,51 @@
+{
+    "rbac": {
+        "users": {
+            "title": "User Management",
+            "subtitle": "View and manage users and their permissions",
+            "list": "Users List",
+            "add": "Add User",
+            "edit": "Edit User",
+            "view": "View User",
+            "search": {
+                "title": "Search",
+                "placeholder": "Username, Full Name, Email...",
+                "submit": "Search",
+                "reset": "Reset"
+            },
+            "table": {
+                "header": {
+                    "number": "#",
+                    "user": "User",
+                    "email": "Email",
+                    "roles": "Roles",
+                    "affiliation": "Affiliation",
+                    "status": "Status",
+                    "actions": "Actions"
+                },
+                "empty": "No results found",
+                "loading": "Loading users...",
+                "noRoles": "No roles assigned"
+            },
+            "status": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "activate": "Activate",
+                "deactivate": "Deactivate",
+                "toggleSuccess": "User status updated successfully",
+                "toggleError": "Failed to update user status"
+            },
+            "dialog": {
+                "deactivateTitle": "Deactivate User",
+                "activateTitle": "Activate User",
+                "deactivateMessage": "Are you sure you want to deactivate user \"{name}\"? They will not be able to log in.",
+                "activateMessage": "Are you sure you want to activate user \"{name}\"? They will be able to log in again."
+            },
+            "affiliation": {
+                "waad": "WAAD Company",
+                "waadFull": "WAAD (Full Access)",
+                "noProvider": "No Provider Linked"
+            }
+        }
+    }
+}

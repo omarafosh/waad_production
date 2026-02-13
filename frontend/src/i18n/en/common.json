@@ -1,0 +1,32 @@
+{
+    "common": {
+        "nav": {
+            "home": "Home",
+            "dashboard": "Dashboard",
+            "rbac": "RBAC",
+            "settings": "Settings"
+        },
+        "actions": {
+            "add": "Add",
+            "edit": "Edit",
+            "delete": "Delete",
+            "view": "View",
+            "save": "Save",
+            "cancel": "Cancel",
+            "refresh": "Refresh",
+            "search": "Search"
+        },
+        "status": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "pending": "Pending"
+        },
+        "table": {
+            "rowsPerPage": "Rows per page:",
+            "of": "of",
+            "moreThan": "more than"
+        },
+        "error": "An unexpected error occurred",
+        "success": "Operation completed successfully"
+    }
+}

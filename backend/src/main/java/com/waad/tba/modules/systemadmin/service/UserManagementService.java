@@ -98,7 +98,6 @@ public class UserManagementService {
                 .active(dto.getActive())
                 .roles(roles)
                 .employerId(dto.getEmployerId())
-                .companyId(dto.getInsuranceCompanyId())
                 .build();
 
         User saved = userRepository.save(user);
@@ -140,7 +139,6 @@ public class UserManagementService {
         user.setPhone(dto.getPhone());
         user.setActive(dto.getActive());
         user.setEmployerId(dto.getEmployerId());
-        user.setCompanyId(dto.getCompanyId());
 
         // Update roles
         if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
@@ -329,7 +327,6 @@ public class UserManagementService {
                 .emailVerified(user.getEmailVerified())
                 .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toList()))
                 .employerId(user.getEmployerId())
-                .companyId(user.getCompanyId())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

@@ -20,6 +20,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 // third-party
 import * as Yup from 'yup';
 import { Formik } from 'formik';
+import { useIntl } from 'react-intl';
 
 // project imports
 import IconButton from 'components/@extended/IconButton';
@@ -40,6 +41,7 @@ import LoginIcon from '@mui/icons-material/Login';
 export default function AuthLogin({ isDemo = false }) {
   const [checked, setChecked] = useState(false);
   const theme = useTheme();
+  const intl = useIntl();
 
   const { login } = useAuth();
   const { settings } = useCompanySettings();
@@ -66,10 +68,10 @@ export default function AuthLogin({ isDemo = false }) {
           submit: null
         }}
         validationSchema={Yup.object().shape({
-          email: Yup.string().max(255).required('اسم المستخدم مطلوب'),
+          email: Yup.string().max(255).required(intl.formatMessage({ id: 'auth.login.validation.usernameRequired' })),
           password: Yup.string()
-            .required('كلمة المرور مطلوبة')
-            .test('no-leading-trailing-whitespace', 'كلمة المرور لا يمكن أن تبدأ أو تنتهي بمسافات', (value) => value === value?.trim())
+            .required(intl.formatMessage({ id: 'auth.login.validation.passwordRequired' }))
+            .test('no-leading-trailing-whitespace', intl.formatMessage({ id: 'auth.login.validation.passwordWhitespace' }), (value) => value === value?.trim())
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {
@@ -88,15 +90,15 @@ export default function AuthLogin({ isDemo = false }) {
           } catch (err) {
             console.error('Login error:', err);
 
-            let errorMsg = 'بيانات الدخول غير صحيحة. يرجى التأكد من اسم المستخدم وكلمة المرور.';
+            let errorMsg = intl.formatMessage({ id: 'auth.login.errors.invalid' });
 
             // Network Error Handling
             if (!err.response && err.message === 'Network Error') {
-              errorMsg = 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
+              errorMsg = intl.formatMessage({ id: 'auth.login.errors.network' });
             } else if (err.response?.status === 401 || err.response?.status === 403) {
-              errorMsg = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+              errorMsg = intl.formatMessage({ id: 'auth.login.errors.unauthorized' });
             } else if (err.response?.status >= 500) {
-              errorMsg = 'حدث خطأ في الخادم. يرجى المحاولة لاحقاً.';
+              errorMsg = intl.formatMessage({ id: 'auth.login.errors.server' });
             }
 
             setStatus({ success: false });
@@ -112,7 +114,7 @@ export default function AuthLogin({ isDemo = false }) {
               <Grid size={12}>
                 <Stack sx={{ gap: 0.5 }}>
                   <InputLabel htmlFor="email-login" sx={{ fontWeight: 600, fontSize: `${settings?.fontSize || 12}px` }}>
-                    اسم المستخدم
+                    {intl.formatMessage({ id: 'auth.login.username' })}
                   </InputLabel>
                   <OutlinedInput
                     id="email-login"
@@ -121,7 +123,7 @@ export default function AuthLogin({ isDemo = false }) {
                     name="email"
                     onBlur={handleBlur}
                     onChange={handleChange}
-                    placeholder="أدخل اسم المستخدم"
+                    placeholder={intl.formatMessage({ id: 'auth.login.placeholders.username' })}
                     fullWidth
                     error={Boolean(touched.email && errors.email)}
                     startAdornment={
@@ -153,7 +155,7 @@ export default function AuthLogin({ isDemo = false }) {
               <Grid size={12}>
                 <Stack sx={{ gap: 0.5 }}>
                   <InputLabel htmlFor="password-login" sx={{ fontWeight: 600, fontSize: `${settings?.fontSize || 12}px` }}>
-                    كلمة المرور
+                    {intl.formatMessage({ id: 'auth.login.password' })}
                   </InputLabel>
                   <OutlinedInput
                     fullWidth
@@ -182,7 +184,7 @@ export default function AuthLogin({ isDemo = false }) {
                         </IconButton>
                       </InputAdornment>
                     }
-                    placeholder="أدخل كلمة المرور"
+                    placeholder={intl.formatMessage({ id: 'auth.login.placeholders.password' })}
                     sx={{
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderRadius: 2
@@ -216,7 +218,7 @@ export default function AuthLogin({ isDemo = false }) {
                         size="small"
                       />
                     }
-                    label={<Typography variant="body2" color="text.secondary">تذكرني</Typography>}
+                    label={<Typography variant="body2" color="text.secondary">{intl.formatMessage({ id: 'auth.login.rememberMe' })}</Typography>}
                   />
                   <Link
                     variant="body2"
@@ -230,7 +232,7 @@ export default function AuthLogin({ isDemo = false }) {
                       }
                     }}
                   >
-                    نسيت كلمة المرور؟
+                    {intl.formatMessage({ id: 'auth.login.forgotPassword' })}
                   </Link>
                 </Stack>
               </Grid>
@@ -278,7 +280,7 @@ export default function AuthLogin({ isDemo = false }) {
                       }
                     }}
                   >
-                    {isSubmitting ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+                    {isSubmitting ? intl.formatMessage({ id: 'auth.login.submitting' }) : intl.formatMessage({ id: 'auth.login.submit' })}
                   </Button>
                 </AnimateButton>
               </Grid>

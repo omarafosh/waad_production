@@ -30,12 +30,10 @@ public class LoginResponse {
         private String username;
         private String fullName;
         private String email;
-        private String civilId;
         private List<String> roles;      // User's roles (typically ONE role)
         private List<String> permissions; // Flattened permissions for UI Masking
         private Long employerId;         // For EMPLOYER_ADMIN role
         private Long providerId;         // For PROVIDER role
         private String providerName;     // Provider name for display (PROVIDER role)
-        private Long companyId;          // For INSURANCE_ADMIN role (deprecated)
     }
 }

@@ -110,13 +110,11 @@ public class AuthService {
                         .username(user.getUsername())
                         .fullName(user.getFullName())
                         .email(user.getEmail())
-                        .civilId(user.getCivilId()) // Added civilId
                         .roles(roles)
                         .permissions(permissions)
                         .employerId(user.getEmployerId())
                         .providerId(user.getProviderId())
                         .providerName(providerName)
-                        .companyId(user.getCompanyId())
                         .build())
                 .build();
     }
@@ -210,7 +208,6 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .email(request.getEmail())
-                .civilId(request.getCivilId()) // Added civilId
                 .phone(request.getPhone())
                 .active(true)
                 .build();
@@ -251,7 +248,6 @@ public class AuthService {
                 .permissions(flattenPermissions(user))
                 .employerId(user.getEmployerId())
                 .providerId(user.getProviderId())
-                .companyId(user.getCompanyId())
                 .build();
     }
 
@@ -289,7 +285,6 @@ public class AuthService {
                 .employerId(user.getEmployerId())
                 .providerId(user.getProviderId())
                 .providerName(providerName)
-                .companyId(user.getCompanyId())
                 .build();
     }
 

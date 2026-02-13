@@ -369,7 +369,6 @@ public class RbacDataInitializer implements CommandLineRunner {
         User superAdmin = User.builder()
                 .username(username)
                 .email(email)
-                .civilId("0000000000") // Default civilId for superadmin
                 .password(passwordEncoder.encode("Admin@123"))
                 .fullName("System Super Administrator")
                 .active(true)

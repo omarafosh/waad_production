@@ -89,9 +89,8 @@ public class AuthController {
         // This ensures role changes take effect immediately without requiring re-login
         session.setAttribute("userId", userInfo.getId());
         session.setAttribute("username", userInfo.getUsername());
-        // Note: employerId and companyId are user properties (not frequently changed)
+        // Note: employerId is user property (not frequently changed)
         session.setAttribute("employerId", userInfo.getEmployerId());
-        session.setAttribute("companyId", userInfo.getCompanyId());
         
         return ResponseEntity.ok(ApiResponse.success(messageService.getMessage("auth.login.success"), userInfo));
     }

@@ -2,6 +2,7 @@
 
 export { default as GenericDataTable } from '../GenericDataTable';
 export { default as TbaDataTable } from './TbaDataTable';
+export { default as UnifiedTable } from '../common/UnifiedTable';
 export { default as CrudDrawer } from './CrudDrawer';
 export { default as RBACGuard } from './RBACGuard';
 export { default as MemberAvatar } from './MemberAvatar';

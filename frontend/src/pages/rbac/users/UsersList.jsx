@@ -36,6 +36,7 @@ import {
   DialogContentText,
   DialogActions
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 import {
   Add as AddIcon,
   Visibility as VisibilityIcon,
@@ -92,6 +93,7 @@ const getRoleColor = (roleName) => {
 const UsersList = ({ isEmbedded = false }) => {
   const navigate = useNavigate();
   const { refreshKey, triggerRefresh } = useTableRefresh();
+  const intl = useIntl();
 
   // State
   const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ const UsersList = ({ isEmbedded = false }) => {
       console.error('Error fetching users:', error);
       openSnackbar({
         open: true,
-        message: 'خطأ في جلب المستخدمين',
+        message: intl.formatMessage({ id: 'rbac.users.table.errors.fetch' || 'common.error' }),
         variant: 'alert',
         alert: { color: 'error' }
       });
@@ -193,7 +195,7 @@ const UsersList = ({ isEmbedded = false }) => {
 
       openSnackbar({
         open: true,
-        message: response?.message || 'تم تغيير حالة المستخدم بنجاح',
+        message: response?.message || intl.formatMessage({ id: 'rbac.users.status.toggleSuccess' }),
         variant: 'alert',
         alert: { color: 'success' }
       });
@@ -207,7 +209,7 @@ const UsersList = ({ isEmbedded = false }) => {
       console.error('Error toggling user status:', error);
       openSnackbar({
         open: true,
-        message: error?.response?.data?.message || 'فشل تغيير حالة المستخدم',
+        message: error?.response?.data?.message || intl.formatMessage({ id: 'rbac.users.status.toggleError' }),
         variant: 'alert',
         alert: { color: 'error' }
       });
@@ -220,7 +222,7 @@ const UsersList = ({ isEmbedded = false }) => {
     const isActive = user?.active !== false;
     return (
       <Chip
-        label={isActive ? 'نشط' : 'معطل'}
+        label={isActive ? intl.formatMessage({ id: 'rbac.users.status.active' }) : intl.formatMessage({ id: 'rbac.users.status.inactive' })}
         color={isActive ? 'success' : 'default'}
         size="small"
       />
@@ -236,21 +238,21 @@ const UsersList = ({ isEmbedded = false }) => {
       {/* Page Header - Only show if not embedded */}
       {!isEmbedded && (
         <ModernPageHeader
-          title="إدارة المستخدمين"
-          subtitle="عرض وإدارة المستخدمين وصلاحياتهم"
+          title={intl.formatMessage({ id: 'rbac.users.title' })}
+          subtitle={intl.formatMessage({ id: 'rbac.users.subtitle' })}
           icon={PeopleAltIcon}
           breadcrumbs={[
-            { label: 'الرئيسية', path: '/' },
-            { label: 'الصلاحيات', path: '/rbac' },
-            { label: 'المستخدمين' }
+            { label: intl.formatMessage({ id: 'common.nav.home' }), path: '/' },
+            { label: intl.formatMessage({ id: 'common.nav.rbac' }), path: '/rbac' },
+            { label: intl.formatMessage({ id: 'rbac.users.list' }) }
           ]}
           actions={
             <Stack direction="row" spacing={1}>
               <Button variant="outlined" startIcon={<RefreshIcon />} onClick={handleRefresh}>
-                تحديث
+                {intl.formatMessage({ id: 'common.actions.refresh' })}
               </Button>
               <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/rbac/users/create')}>
-                إضافة مستخدم
+                {intl.formatMessage({ id: 'rbac.users.add' })}
               </Button>
             </Stack>
           }
@@ -260,13 +262,13 @@ const UsersList = ({ isEmbedded = false }) => {
       <Grid container spacing={3}>
         {/* Search */}
         <Grid item xs={12}>
-          <MainCard title="البحث">
+          <MainCard title={intl.formatMessage({ id: 'rbac.users.search.title' })}>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="بحث"
-                  placeholder="اسم المستخدم، الاسم الكامل، البريد الإلكتروني..."
+                  label={intl.formatMessage({ id: 'rbac.users.search.title' })}
+                  placeholder={intl.formatMessage({ id: 'rbac.users.search.placeholder' })}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
@@ -274,7 +276,7 @@ const UsersList = ({ isEmbedded = false }) => {
               </Grid>
               <Grid item xs={12} md={2}>
                 <Button fullWidth variant="contained" onClick={handleSearch}>
-                  بحث
+                  {intl.formatMessage({ id: 'rbac.users.search.submit' })}
                 </Button>
               </Grid>
               <Grid item xs={12} md={2}>
@@ -287,7 +289,7 @@ const UsersList = ({ isEmbedded = false }) => {
                     fetchUsers();
                   }}
                 >
-                  إعادة تعيين
+                  {intl.formatMessage({ id: 'rbac.users.search.reset' })}
                 </Button>
               </Grid>
             </Grid>
@@ -300,7 +302,9 @@ const UsersList = ({ isEmbedded = false }) => {
             content={false}
             title={
               <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h5">المستخدمين ({totalElements})</Typography>
+                <Typography variant="h5">
+                  {intl.formatMessage({ id: 'rbac.users.list' })} ({totalElements})
+                </Typography>
                 {loading && <CircularProgress size={24} />}
               </Stack>
             }
@@ -309,30 +313,30 @@ const UsersList = ({ isEmbedded = false }) => {
               <Table aria-label="users table">
                 <TableHead>
                   <TableRow>
-                    <TableCell width="5%">#</TableCell>
-                    <TableCell width="25%">المستخدم</TableCell>
-                    <TableCell width="20%">البريد الإلكتروني</TableCell>
-                    <TableCell width="20%">الأدوار</TableCell>
-                    <TableCell width="15%">الارتباط / التبعية</TableCell>
-                    <TableCell width="10%">الحالة</TableCell>
-                    <TableCell align="center" width="15%">إجراءات</TableCell>
+                    <TableCell width="5%">{intl.formatMessage({ id: 'rbac.users.table.header.number' })}</TableCell>
+                    <TableCell width="25%">{intl.formatMessage({ id: 'rbac.users.table.header.user' })}</TableCell>
+                    <TableCell width="20%">{intl.formatMessage({ id: 'rbac.users.table.header.email' })}</TableCell>
+                    <TableCell width="20%">{intl.formatMessage({ id: 'rbac.users.table.header.roles' })}</TableCell>
+                    <TableCell width="15%">{intl.formatMessage({ id: 'rbac.users.table.header.affiliation' })}</TableCell>
+                    <TableCell width="10%">{intl.formatMessage({ id: 'rbac.users.table.header.status' })}</TableCell>
+                    <TableCell align="center" width="15%">{intl.formatMessage({ id: 'rbac.users.table.header.actions' })}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                         <CircularProgress />
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                          جاري تحميل المستخدمين...
+                          {intl.formatMessage({ id: 'rbac.users.table.loading' })}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                         <Typography variant="h6" color="text.secondary">
-                          لا توجد نتائج
+                          {intl.formatMessage({ id: 'rbac.users.table.empty' })}
                         </Typography>
                         <Button
                           variant="outlined"
@@ -340,7 +344,7 @@ const UsersList = ({ isEmbedded = false }) => {
                           onClick={() => navigate('/rbac/users/create')}
                           sx={{ mt: 2 }}
                         >
-                          إضافة مستخدم
+                          {intl.formatMessage({ id: 'rbac.users.add' })}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -387,7 +391,7 @@ const UsersList = ({ isEmbedded = false }) => {
                             </Stack>
                           ) : (
                             <Typography variant="caption" color="text.disabled">
-                              لا توجد أدوار
+                              {intl.formatMessage({ id: 'rbac.users.table.noRoles' })}
                             </Typography>
                           )}
                         </TableCell>
@@ -396,7 +400,7 @@ const UsersList = ({ isEmbedded = false }) => {
                             <Stack direction="row" spacing={1} alignItems="center">
                               <HomeIcon sx={{ fontSize: 16, color: 'success.main' }} />
                               <Typography variant="body2" color="success.main" fontWeight="bold">
-                                شركة وعد (دخول شامل)
+                                {intl.formatMessage({ id: 'rbac.users.affiliation.waadFull' })}
                               </Typography>
                             </Stack>
                           ) : user?.providerName ? (
@@ -408,7 +412,7 @@ const UsersList = ({ isEmbedded = false }) => {
                             <Stack direction="row" spacing={1} alignItems="center">
                               <HospitalIcon sx={{ fontSize: 16, color: 'error.main' }} />
                               <Typography variant="body2" color="error.main">
-                                بدون مقدم خدمة
+                                {intl.formatMessage({ id: 'rbac.users.affiliation.noProvider' })}
                               </Typography>
                             </Stack>
                           ) : user?.employerName ? (
@@ -420,7 +424,7 @@ const UsersList = ({ isEmbedded = false }) => {
                             <Stack direction="row" spacing={1} alignItems="center">
                               <HomeIcon sx={{ fontSize: 16, color: 'success.main' }} />
                               <Typography variant="body2" color="success.main" fontWeight="bold">
-                                شركة وعد
+                                {intl.formatMessage({ id: 'rbac.users.affiliation.waad' })}
                               </Typography>
                             </Stack>
                           )}
@@ -428,7 +432,7 @@ const UsersList = ({ isEmbedded = false }) => {
                         <TableCell>{getStatusChip(user)}</TableCell>
                         <TableCell align="center">
                           <Stack direction="row" spacing={0.5} justifyContent="center">
-                            <Tooltip title="عرض">
+                            <Tooltip title={intl.formatMessage({ id: 'common.actions.view' })}>
                               <IconButton
                                 size="small"
                                 color="primary"
@@ -437,7 +441,7 @@ const UsersList = ({ isEmbedded = false }) => {
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="تعديل">
+                            <Tooltip title={intl.formatMessage({ id: 'common.actions.edit' })}>
                               <IconButton
                                 size="small"
                                 color="info"
@@ -446,7 +450,7 @@ const UsersList = ({ isEmbedded = false }) => {
                                 <EditIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title={user?.active !== false ? 'تعطيل' : 'تفعيل'}>
+                            <Tooltip title={user?.active !== false ? intl.formatMessage({ id: 'rbac.users.status.deactivate' }) : intl.formatMessage({ id: 'rbac.users.status.activate' })}>
                               <span>
                                 <IconButton
                                   size="small"
@@ -479,9 +483,9 @@ const UsersList = ({ isEmbedded = false }) => {
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={handleRowsPerPageChange}
               rowsPerPageOptions={[10, 20, 50, 100]}
-              labelRowsPerPage="عدد الصفوف:"
+              labelRowsPerPage={intl.formatMessage({ id: 'common.table.rowsPerPage' })}
               labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} من ${count !== -1 ? count : `أكثر من ${to}`}`
+                `${from}-${to} ${intl.formatMessage({ id: 'common.table.of' })} ${count !== -1 ? count : `${intl.formatMessage({ id: 'common.table.moreThan' })} ${to}`}`
               }
             />
           </MainCard>
@@ -492,13 +496,13 @@ const UsersList = ({ isEmbedded = false }) => {
       <ConfirmDialog
         open={toggleDialog.open}
         variant={toggleDialog.user?.active !== false ? 'warning' : 'confirm'}
-        title={toggleDialog.user?.active !== false ? 'تعطيل المستخدم' : 'تفعيل المستخدم'}
+        title={toggleDialog.user?.active !== false ? intl.formatMessage({ id: 'rbac.users.dialog.deactivateTitle' }) : intl.formatMessage({ id: 'rbac.users.dialog.activateTitle' })}
         message={
           toggleDialog.user?.active !== false
-            ? `هل أنت متأكد من تعطيل المستخدم "${toggleDialog.user?.fullName || toggleDialog.user?.username}"؟ لن يتمكن من تسجيل الدخول.`
-            : `هل أنت متأكد من تفعيل المستخدم "${toggleDialog.user?.fullName || toggleDialog.user?.username}"؟ سيتمكن من تسجيل الدخول مرة أخرى.`
+            ? intl.formatMessage({ id: 'rbac.users.dialog.deactivateMessage' }, { name: toggleDialog.user?.fullName || toggleDialog.user?.username })
+            : intl.formatMessage({ id: 'rbac.users.dialog.activateMessage' }, { name: toggleDialog.user?.fullName || toggleDialog.user?.username })
         }
-        confirmText={toggleDialog.user?.active !== false ? 'تعطيل' : 'تفعيل'}
+        confirmText={toggleDialog.user?.active !== false ? intl.formatMessage({ id: 'rbac.users.status.deactivate' }) : intl.formatMessage({ id: 'rbac.users.status.activate' })}
         onConfirm={handleToggleConfirm}
         onCancel={handleToggleClose}
         loading={toggling}

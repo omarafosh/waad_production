@@ -54,6 +54,7 @@ public class MedicalCategory {
      * Soft delete flag
      */
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     /**

@@ -39,7 +39,7 @@ public class BarcodeGeneratorService {
     private EntityManager entityManager;
     
     private final MemberRepository memberRepository;
-    private final com.waad.tba.modules.company.repository.CompanyRepository companyRepository;
+    private final com.waad.tba.common.repository.SystemSettingRepository systemSettingRepository;
 
     /**
      * SELF-HEALING: Ensure required sequences exist in the database.
@@ -75,6 +75,9 @@ public class BarcodeGeneratorService {
      */
     @Transactional
     public String generateForPrincipal() {
+        // Ensure sequence exists (self-healing)
+        ensureSequencesExist();
+        
         // Get current year
         int currentYear = Year.now().getValue();
         
@@ -102,9 +105,9 @@ public class BarcodeGeneratorService {
             throw new IllegalStateException("Card number must be generated before barcode");
         }
         
-        // Fetch System-Wide Prefix from Company Settings (Admin Config)
-        String prefix = companyRepository.findByIsDefaultTrue()
-            .map(com.waad.tba.modules.company.entity.Company::getBarcodePrefix)
+        // Fetch System-Wide Prefix from System Settings
+        String prefix = systemSettingRepository.findBySettingKey("BARCODE_PREFIX")
+            .map(com.waad.tba.common.entity.SystemSetting::getSettingValue)
             .orElse("WAAD");
         
         String barcode = prefix + "-" + member.getCardNumber();

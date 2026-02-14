@@ -26,6 +26,7 @@ import com.waad.tba.modules.rbac.repository.UserRepository;
 import com.waad.tba.security.JwtTokenProvider;
 import com.waad.tba.modules.provider.repository.ProviderRepository;
 import com.waad.tba.modules.rbac.repository.PasswordResetTokenRepository;
+import com.waad.tba.modules.rbac.util.SecurityConstants;
 import com.waad.tba.core.email.EmailService;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,7 +66,7 @@ class AuthServiceTest {
                 .email("test@example.com")
                 .fullName("Test User")
                 .civilId("1234567890")
-                .password("encoded_password")
+                .password(SecurityConstants.TEST_PASSWORD)
                 .active(true)
                 .roles(Set.of())
                 .build();
@@ -76,7 +77,7 @@ class AuthServiceTest {
         // Arrange
         RegisterRequest request = RegisterRequest.builder()
                 .username("newuser")
-                .password("password123")
+                .password(SecurityConstants.TEST_PASSWORD)
                 .fullName("New User")
                 .email("new@example.com")
                 .civilId("9876543210")
@@ -84,7 +85,7 @@ class AuthServiceTest {
 
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("hashed_password");
+        when(passwordEncoder.encode(anyString())).thenReturn(SecurityConstants.TEST_PASSWORD);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
         
         // Mocking login called inside register
@@ -110,7 +111,7 @@ class AuthServiceTest {
         // Arrange
         LoginRequest request = LoginRequest.builder()
                 .identifier("testuser")
-                .password("password123")
+                .password(SecurityConstants.TEST_PASSWORD)
                 .build();
 
         when(userRepository.findByUsernameOrEmail(anyString(), anyString())).thenReturn(Optional.of(testUser));

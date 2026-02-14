@@ -17,11 +17,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/catalog")
@@ -35,8 +34,9 @@ public class ProviderMappingController {
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
     public ResponseEntity<Page<ProviderRawServiceDto>> getUnmappedServices(
             @RequestParam Long providerId,
+            @RequestParam(required = false) Long employerId,
             Pageable pageable) {
-        return ResponseEntity.ok(mappingService.getUnmappedServices(providerId, pageable));
+        return ResponseEntity.ok(mappingService.getUnmappedServices(providerId, employerId, pageable));
     }
 
     @GetMapping("/audit")
@@ -98,6 +98,28 @@ public class ProviderMappingController {
         } catch (Exception e) {
             log.error("Failed to upload raw services", e);
             return ResponseEntity.badRequest().body(ApiResponse.error("Failed to process file: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Import services from provider contract pricing items (price list)
+     * This allows mapping services from insurance documents/contracts
+     */
+    @PostMapping("/import-from-contract")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<ApiResponse> importFromContractPricing(
+            @RequestParam("providerId") Long providerId,
+            @RequestParam(value = "contractId", required = false) Long contractId) {
+        
+        try {
+            int count = mappingService.importFromContractPricing(providerId, contractId);
+            return ResponseEntity.ok(ApiResponse.success(
+                "تم استيراد " + count + " خدمة من قائمة أسعار العقد", 
+                count));
+        } catch (Exception e) {
+            log.error("Failed to import from contract pricing", e);
+            return ResponseEntity.badRequest().body(ApiResponse.error(
+                "فشل استيراد الخدمات من العقد: " + e.getMessage()));
         }
     }
 }

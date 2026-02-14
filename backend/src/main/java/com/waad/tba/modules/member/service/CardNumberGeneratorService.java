@@ -42,7 +42,7 @@ public class CardNumberGeneratorService {
     
     private final MemberRepository memberRepository;
 
-    private final com.waad.tba.modules.company.repository.CompanyRepository companyRepository;
+    private final com.waad.tba.common.repository.SystemSettingRepository systemSettingRepository;
 
     /**
      * Requirement 1: Generate Smart Card Number
@@ -55,11 +55,10 @@ public class CardNumberGeneratorService {
             throw new IllegalArgumentException("Member cannot be null");
         }
 
-        // 1. Get Format from Settings (Company)
-        // STRICT RULE: We use the DEFAULT company for system-wide settings like card format
-        String format = companyRepository.findByIsDefaultTrue()
-                .map(com.waad.tba.modules.company.entity.Company::getCardNumberFormat)
-                .filter(f -> f != null && !f.isBlank())
+        // 1. Get Format from System Settings
+        String format = systemSettingRepository.findBySettingKey("CARD_NUMBER_FORMAT")
+                .map(com.waad.tba.common.entity.SystemSetting::getSettingValue)
+                .filter(f -> !f.isBlank())
                 .orElse("[PRO]-[YEAR]-[EMP_NO][REL_SUFFIX]");
 
         // 0. Dependent Strategy: Inherit from Parent
@@ -200,15 +199,15 @@ public class CardNumberGeneratorService {
     }
 
     private String determineProviderCode(Member member) {
-        // Requirement: First 3 chars of company code from central settings
-        return companyRepository.findByIsDefaultTrue()
-            .map(c -> c.getCode().length() >= 3 ? c.getCode().substring(0, 3).toUpperCase() : c.getCode().toUpperCase())
-            .orElse("TBA");
+        // Requirement: TPA prefix from system settings or fallback
+        return systemSettingRepository.findBySettingKey("TPA_CODE_PREFIX")
+            .map(s -> s.getSettingValue().toUpperCase())
+            .orElse("WAAD");
     }
 
     private String determineCompanyCode(Member member) {
-        return companyRepository.findByIsDefaultTrue()
-            .map(c -> c.getCode().toUpperCase())
+        return systemSettingRepository.findBySettingKey("SYSTEM_IDENTIFIER")
+            .map(s -> s.getSettingValue().toUpperCase())
             .orElse("GEN"); 
     }
 

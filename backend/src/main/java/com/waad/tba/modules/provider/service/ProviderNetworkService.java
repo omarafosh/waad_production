@@ -153,9 +153,9 @@ public class ProviderNetworkService {
         BigDecimal coPayPercent = networkType.getDefaultCoPayPercent();
         
         BigDecimal coverageAmount = requestedAmount.multiply(coveragePercent)
-            .divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+            .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
         BigDecimal coPayAmount = requestedAmount.multiply(coPayPercent)
-            .divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+            .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
         
         return new NetworkCostCalculation(
             networkType,
@@ -181,10 +181,10 @@ public class ProviderNetworkService {
         BigDecimal discountedAmount = requestedAmount;
         if (discountRate.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal discountMultiplier = BigDecimal.ONE.subtract(
-                discountRate.divide(new BigDecimal("100"), 4, BigDecimal.ROUND_HALF_UP)
+                discountRate.divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP)
             );
             discountedAmount = requestedAmount.multiply(discountMultiplier)
-                .setScale(2, BigDecimal.ROUND_HALF_UP);
+                .setScale(2, java.math.RoundingMode.HALF_UP);
         }
         
         NetworkCostCalculation baseCosts = calculateNetworkCosts(discountedAmount, networkType);

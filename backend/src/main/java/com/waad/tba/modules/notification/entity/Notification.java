@@ -37,6 +37,7 @@ public class Notification {
     private NotificationType type;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean read = false;
 
     @Column(name = "reference_id")

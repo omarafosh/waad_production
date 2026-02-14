@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. CLAIMS
-CREATE TABLE claims (
+CREATE TABLE IF NOT EXISTS claims (
     id BIGSERIAL PRIMARY KEY,
     
     visit_id BIGINT NOT NULL,
@@ -67,15 +67,15 @@ CREATE TABLE claims (
     CONSTRAINT fk_claim_preauth FOREIGN KEY (pre_authorization_id) REFERENCES pre_authorizations(id) -- From V1.09
 );
 
-CREATE INDEX idx_claims_visit ON claims(visit_id);
-CREATE INDEX idx_claims_member ON claims(member_id);
-CREATE INDEX idx_claims_status ON claims(status);
-CREATE INDEX idx_claims_provider ON claims(provider_id);
-CREATE INDEX idx_claims_service_date_active ON claims(service_date, active) WHERE active = TRUE; -- From V1.09
-CREATE INDEX idx_claims_financial ON claims(insurance_org_id, status, service_date, approved_amount); -- From V1.09
+CREATE INDEX IF NOT EXISTS idx_claims_visit ON claims(visit_id);
+CREATE INDEX IF NOT EXISTS idx_claims_member ON claims(member_id);
+CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
+CREATE INDEX IF NOT EXISTS idx_claims_provider ON claims(provider_id);
+CREATE INDEX IF NOT EXISTS idx_claims_service_date_active ON claims(service_date, active) WHERE active = TRUE; -- From V1.09
+CREATE INDEX IF NOT EXISTS idx_claims_financial ON claims(insurance_org_id, status, service_date, approved_amount); -- From V1.09
 
 -- 2. CLAIM LINES
-CREATE TABLE claim_lines (
+CREATE TABLE IF NOT EXISTS claim_lines (
     id BIGSERIAL PRIMARY KEY,
     claim_id BIGINT NOT NULL,
     medical_service_id BIGINT NOT NULL,
@@ -104,11 +104,11 @@ CREATE TABLE claim_lines (
     CONSTRAINT fk_cl_service FOREIGN KEY (medical_service_id) REFERENCES medical_services(id)
 );
 
-CREATE INDEX idx_cl_claim ON claim_lines(claim_id);
-CREATE INDEX idx_cl_service ON claim_lines(medical_service_id);
+CREATE INDEX IF NOT EXISTS idx_cl_claim ON claim_lines(claim_id);
+CREATE INDEX IF NOT EXISTS idx_cl_service ON claim_lines(medical_service_id);
 
 -- 3. CLAIM ATTACHMENTS (From V9010)
-CREATE TABLE claim_attachments (
+CREATE TABLE IF NOT EXISTS claim_attachments (
     id BIGSERIAL PRIMARY KEY,
     claim_id BIGINT NOT NULL,
     file_name VARCHAR(500) NOT NULL,
@@ -123,11 +123,11 @@ CREATE TABLE claim_attachments (
     CONSTRAINT fk_claim_attachment_claim FOREIGN KEY (claim_id) REFERENCES claims(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_claim_attachments_claim_id ON claim_attachments(claim_id);
-CREATE INDEX idx_claim_attachments_type ON claim_attachments(attachment_type);
+CREATE INDEX IF NOT EXISTS idx_claim_attachments_claim_id ON claim_attachments(claim_id);
+CREATE INDEX IF NOT EXISTS idx_claim_attachments_type ON claim_attachments(attachment_type);
 
 -- 4. CLAIM AUDIT LOGS (From V9010)
-CREATE TABLE claim_audit_logs (
+CREATE TABLE IF NOT EXISTS claim_audit_logs (
     id BIGSERIAL PRIMARY KEY,
     claim_id BIGINT NOT NULL,
     change_type VARCHAR(50) NOT NULL,
@@ -148,6 +148,6 @@ CREATE TABLE claim_audit_logs (
     CONSTRAINT fk_claim_audit_claim FOREIGN KEY (claim_id) REFERENCES claims(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_claim_audit_claim_id ON claim_audit_logs(claim_id);
-CREATE INDEX idx_claim_audit_timestamp ON claim_audit_logs(timestamp DESC);
-CREATE INDEX idx_claim_audit_actor ON claim_audit_logs(actor_user_id);
+CREATE INDEX IF NOT EXISTS idx_claim_audit_claim_id ON claim_audit_logs(claim_id);
+CREATE INDEX IF NOT EXISTS idx_claim_audit_timestamp ON claim_audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_claim_audit_actor ON claim_audit_logs(actor_user_id);

@@ -29,7 +29,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
 
     // ═══════════════════════════════════════════════════════════════════════════
     // BASIC QUERIES
-    // Note: @Where(clause = "active = true") is automatically applied to all JPA queries
+    // Note: @SQLRestriction("active = true") is automatically applied to all JPA queries
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
@@ -71,7 +71,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
 
     /**
      * Find all inactive services - paginated
-     * Must use NATIVE query to bypass @Where(clause = "active = true")
+     * Must use NATIVE query to bypass @SQLRestriction("active = true")
      */
     @Query(value = "SELECT * FROM medical_services WHERE active = false", nativeQuery = true)
     Page<MedicalService> findByActiveFalse(Pageable pageable);
@@ -301,7 +301,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
 
     /**
      * Unified lookup query for medical service selection
-     * Note: Native Query ALREADY bypasses @Where, keeping explicit check for safety
+     * Note: Native Query ALREADY bypasses @SQLRestriction, keeping explicit check for safety
      */
     @Query(value = """
         SELECT 

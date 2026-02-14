@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. MEDICAL CATEGORIES
-CREATE TABLE medical_categories (
+CREATE TABLE IF NOT EXISTS medical_categories (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
@@ -17,10 +17,10 @@ CREATE TABLE medical_categories (
     CONSTRAINT fk_category_parent FOREIGN KEY (parent_id) REFERENCES medical_categories(id)
 );
 
-CREATE INDEX idx_categories_parent ON medical_categories(parent_id);
+CREATE INDEX IF NOT EXISTS idx_categories_parent ON medical_categories(parent_id);
 
 -- 2. MEDICAL SERVICES
-CREATE TABLE medical_services (
+CREATE TABLE IF NOT EXISTS medical_services (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
@@ -46,11 +46,11 @@ CREATE TABLE medical_services (
     CONSTRAINT fk_service_category FOREIGN KEY (category_id) REFERENCES medical_categories(id)
 );
 
-CREATE INDEX idx_services_category ON medical_services(category_id);
-CREATE INDEX idx_services_name ON medical_services(name);
+CREATE INDEX IF NOT EXISTS idx_services_category ON medical_services(category_id);
+CREATE INDEX IF NOT EXISTS idx_services_name ON medical_services(name);
 
 -- 3. MEDICAL PACKAGES
-CREATE TABLE medical_packages (
+CREATE TABLE IF NOT EXISTS medical_packages (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE medical_packages (
 );
 
 -- 4. MEDICAL PACKAGE ITEMS
-CREATE TABLE medical_package_items (
+CREATE TABLE IF NOT EXISTS medical_package_items (
     id BIGSERIAL PRIMARY KEY,
     package_id BIGINT NOT NULL,
     service_id BIGINT NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE medical_package_items (
 );
 
 -- 5. CPT CODES (From V9010)
-CREATE TABLE cpt_codes (
+CREATE TABLE IF NOT EXISTS cpt_codes (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(20) UNIQUE NOT NULL,
     description_ar VARCHAR(500) NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE cpt_codes (
 );
 
 -- 6. ICD CODES (From V9010)
-CREATE TABLE icd_codes (
+CREATE TABLE IF NOT EXISTS icd_codes (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(20) UNIQUE NOT NULL,
     description_ar VARCHAR(500) NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE icd_codes (
 );
 
 -- 7. COVERAGE RULE CONFIG (From V9005)
-CREATE TABLE coverage_rule_config (
+CREATE TABLE IF NOT EXISTS coverage_rule_config (
     id SERIAL PRIMARY KEY,
     rule_key VARCHAR(100) NOT NULL UNIQUE,
     priority_weight INTEGER NOT NULL,

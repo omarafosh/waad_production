@@ -13,7 +13,7 @@ const MappingCenter = () => {
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
             {/* Header Area */}
-            <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <ModernPageHeader
                     title="نافذة ربط الخدمات الطبية (جسـر)"
                     subtitle="الربط الذكي بين خدمات المزودين والقاموس الموحد لنظام TPA"

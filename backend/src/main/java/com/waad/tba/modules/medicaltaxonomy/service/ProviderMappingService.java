@@ -15,6 +15,9 @@ import com.waad.tba.modules.medicaltaxonomy.repository.ProviderRawServiceReposit
 import com.waad.tba.modules.medicaltaxonomy.repository.ProviderServiceMappingRepository;
 import com.waad.tba.modules.provider.entity.Provider;
 import com.waad.tba.modules.provider.repository.ProviderRepository;
+import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
+import com.waad.tba.modules.providercontract.repository.ProviderContractPricingItemRepository;
+import com.waad.tba.modules.providercontract.repository.ProviderContractRepository;
 import com.waad.tba.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -35,20 +40,56 @@ public class ProviderMappingService {
     private final MappingAuditLogRepository auditLogRepository;
     private final MedicalServiceRepository medicalServiceRepository;
     private final ProviderRepository providerRepository;
+    private final ProviderContractPricingItemRepository pricingItemRepository;
+    private final ProviderContractRepository contractRepository;
 
-    public Page<ProviderRawServiceDto> getUnmappedServices(Long providerId, Pageable pageable) {
+    public Page<ProviderRawServiceDto> getUnmappedServices(Long providerId, Long employerId, Pageable pageable) {
+        if (providerId == null) {
+            return Page.empty(pageable);
+        }
+
+        // Silent Auto-Sync if employer context is provided
+        if (employerId != null) {
+            syncFromActiveContracts(providerId, employerId);
+        }
+
         return rawServiceRepository.findUnmappedServices(providerId, pageable)
                 .map(this::mapToRawDto);
     }
 
+    private void syncFromActiveContracts(Long providerId, Long employerId) {
+        try {
+            List<com.waad.tba.modules.providercontract.entity.ProviderContract> activeContracts = 
+                contractRepository.findValidContracts(providerId, employerId, java.time.LocalDate.now());
+            
+            for (com.waad.tba.modules.providercontract.entity.ProviderContract contract : activeContracts) {
+                importFromContractPricing(providerId, contract.getId());
+            }
+        } catch (Exception e) {
+            log.error("Silent sync failed for provider {} and employer {}", providerId, employerId, e);
+        }
+    }
+
     @Transactional
     public void mapService(MappingRequestDto request, UserPrincipal currentUser) {
-        ProviderRawService rawService = rawServiceRepository.findById(request.getRawServiceId())
-                .orElseThrow(() -> new ResourceNotFoundException("ProviderRawService", "id", request.getRawServiceId()));
-        
+        List<Long> ids = new ArrayList<>();
+        if (request.getRawServiceId() != null) ids.add(request.getRawServiceId());
+        if (request.getRawServiceIds() != null) ids.addAll(request.getRawServiceIds());
+
+        if (ids.isEmpty()) return;
+
         MedicalService masterService = medicalServiceRepository.findById(request.getMasterServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", request.getMasterServiceId()));
 
+        for (Long rawId : ids) {
+            mapSingleService(rawId, masterService, request, currentUser);
+        }
+    }
+
+    private void mapSingleService(Long rawId, MedicalService masterService, MappingRequestDto request, UserPrincipal currentUser) {
+        ProviderRawService rawService = rawServiceRepository.findById(rawId)
+                .orElseThrow(() -> new ResourceNotFoundException("ProviderRawService", "id", rawId));
+        
         Optional<ProviderServiceMapping> existingMappingOpt = mappingRepository.findByProviderIdAndProviderServiceCode(
                 rawService.getProvider().getId(), rawService.getServiceCode());
 
@@ -144,5 +185,65 @@ public class ProviderMappingService {
                 .active(entity.getActive())
                 .createdAt(entity.getCreatedAt())
                 .build();
+    }
+
+    /**
+     * Import services from provider contract pricing items
+     * Creates raw service entries for pricing items that can be mapped to master catalog
+     */
+    @Transactional
+    public int importFromContractPricing(Long providerId, Long contractId) {
+        Provider provider = providerRepository.findById(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider", "id", providerId));
+
+        List<ProviderContractPricingItem> pricingItems;
+        
+        if (contractId != null) {
+            // Import from specific contract
+            pricingItems = pricingItemRepository.findByContractIdAndActiveTrue(contractId);
+        } else {
+            // Import from all active contracts of the provider
+            pricingItems = pricingItemRepository.findAllServicesByProvider(providerId);
+        }
+
+        int count = 0;
+        for (ProviderContractPricingItem item : pricingItems) {
+            // Use service code from medical service or item's own code
+            String code = item.getMedicalService() != null 
+                ? item.getMedicalService().getCode() 
+                : item.getServiceCode();
+            
+            String name = item.getMedicalService() != null
+                ? item.getMedicalService().getName()
+                : item.getServiceName();
+
+            // Skip if no code available
+            if (code == null || code.trim().isEmpty()) {
+                continue;
+            }
+
+            // Check if already exists
+            Optional<ProviderRawService> existing = 
+                rawServiceRepository.findByProviderIdAndServiceCode(providerId, code);
+            
+            if (existing.isPresent()) {
+                continue; // Skip duplicates
+            }
+
+            // Create raw service
+            ProviderRawService raw = ProviderRawService.builder()
+                    .provider(provider)
+                    .serviceCode(code)
+                    .serviceName(name != null ? name : code)
+                    .description(item.getNotes())
+                    .active(true)
+                    .build();
+
+            rawServiceRepository.save(raw);
+            count++;
+        }
+
+        log.info("Imported {} services from contract pricing for provider {}", count, providerId);
+        return count;
     }
 }

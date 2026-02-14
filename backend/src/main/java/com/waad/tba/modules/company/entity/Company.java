@@ -135,6 +135,7 @@ public class Company {
     /**
      * System font size (default 12).
      */
+    @Builder.Default
     @Column(name = "font_size")
     private Integer fontSize = 12;
 

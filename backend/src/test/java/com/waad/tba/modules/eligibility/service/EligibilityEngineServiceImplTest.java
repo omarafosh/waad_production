@@ -11,6 +11,7 @@ import com.waad.tba.modules.provider.entity.Provider;
 import com.waad.tba.modules.provider.repository.ProviderRepository;
 import com.waad.tba.modules.rbac.entity.User;
 import com.waad.tba.security.AuthorizationService;
+import com.waad.tba.modules.rbac.util.SecurityConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -150,7 +151,7 @@ class EligibilityEngineServiceImplTest {
 
         User user = new User();
         user.setId(5L);
-        user.setUsername("testuser");
+        user.setUsername(SecurityConstants.SYSTEM_USER);
 
         when(memberRepository.findById(request.getMemberId())).thenReturn(Optional.of(member));
         when(providerRepository.findById(request.getProviderId())).thenReturn(Optional.of(provider));

@@ -153,7 +153,7 @@ public class ClaimLine {
             this.serviceCode = medicalService.getCode();
             this.serviceName = medicalService.getName();
             this.serviceCategoryId = medicalService.getCategoryId();
-            this.requiresPA = medicalService.isRequiresPA();
+            // requiresPA is now handled by ClaimMapper from BenefitPolicyCoverageService
         }
     }
 

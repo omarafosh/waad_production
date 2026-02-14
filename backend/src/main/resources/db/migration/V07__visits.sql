@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. VISITS
-CREATE TABLE visits (
+CREATE TABLE IF NOT EXISTS visits (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     employer_org_id BIGINT,
@@ -38,13 +38,13 @@ CREATE TABLE visits (
     CONSTRAINT fk_visit_provider FOREIGN KEY (provider_id) REFERENCES providers(id) -- From V1.09
 );
 
-CREATE INDEX idx_visits_member ON visits(member_id);
-CREATE INDEX idx_visits_date ON visits(visit_date);
-CREATE INDEX idx_visits_status ON visits(status);
-CREATE INDEX idx_visits_provider_date ON visits(provider_id, visit_date); -- From V1.09
+CREATE INDEX IF NOT EXISTS idx_visits_member ON visits(member_id);
+CREATE INDEX IF NOT EXISTS idx_visits_date ON visits(visit_date);
+CREATE INDEX IF NOT EXISTS idx_visits_status ON visits(status);
+CREATE INDEX IF NOT EXISTS idx_visits_provider_date ON visits(provider_id, visit_date); -- From V1.09
 
 -- 2. VISIT ATTACHMENTS (From V9010)
-CREATE TABLE visit_attachments (
+CREATE TABLE IF NOT EXISTS visit_attachments (
     id BIGSERIAL PRIMARY KEY,
     visit_id BIGINT NOT NULL,
     file_name VARCHAR(500) NOT NULL,
@@ -59,11 +59,11 @@ CREATE TABLE visit_attachments (
     CONSTRAINT fk_visit_attachment_visit FOREIGN KEY (visit_id) REFERENCES visits(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_visit_attachments_visit_id ON visit_attachments(visit_id);
-CREATE INDEX idx_visit_attachments_type ON visit_attachments(attachment_type);
+CREATE INDEX IF NOT EXISTS idx_visit_attachments_visit_id ON visit_attachments(visit_id);
+CREATE INDEX IF NOT EXISTS idx_visit_attachments_type ON visit_attachments(attachment_type);
 
 -- 3. ELIGIBILITY CHECKS (From V9010)
-CREATE TABLE eligibility_checks (
+CREATE TABLE IF NOT EXISTS eligibility_checks (
     id BIGSERIAL PRIMARY KEY,
     request_id VARCHAR(36) UNIQUE NOT NULL,
     check_timestamp TIMESTAMP NOT NULL,
@@ -102,6 +102,6 @@ CREATE TABLE eligibility_checks (
     CONSTRAINT fk_eligibility_visit FOREIGN KEY (visit_id) REFERENCES visits(id)
 );
 
-CREATE INDEX idx_eligibility_request_id ON eligibility_checks(request_id);
-CREATE INDEX idx_eligibility_member_id ON eligibility_checks(member_id);
-CREATE INDEX idx_eligibility_policy_id ON eligibility_checks(policy_id);
+CREATE INDEX IF NOT EXISTS idx_eligibility_request_id ON eligibility_checks(request_id);
+CREATE INDEX IF NOT EXISTS idx_eligibility_member_id ON eligibility_checks(member_id);
+CREATE INDEX IF NOT EXISTS idx_eligibility_policy_id ON eligibility_checks(policy_id);

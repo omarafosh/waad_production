@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.modules.claim.repository.ClaimRepository;
-import com.waad.tba.modules.company.repository.CompanyRepository;
 import com.waad.tba.common.repository.OrganizationRepository;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.rbac.repository.PermissionRepository;
@@ -31,7 +30,6 @@ public class SystemAdminService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
-    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional

@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. PRE-AUTHORIZATIONS
-CREATE TABLE pre_authorizations (
+CREATE TABLE IF NOT EXISTS pre_authorizations (
     id BIGSERIAL PRIMARY KEY,
     pre_auth_number VARCHAR(50) NOT NULL UNIQUE,
     reference_number VARCHAR(50),
@@ -71,16 +71,16 @@ CREATE TABLE pre_authorizations (
     CONSTRAINT fk_preauth_category FOREIGN KEY (service_category_id) REFERENCES medical_categories(id)
 );
 
-CREATE INDEX idx_preauth_member ON pre_authorizations(member_id);
-CREATE INDEX idx_preauth_provider ON pre_authorizations(provider_id);
-CREATE INDEX idx_preauth_status ON pre_authorizations(status);
-CREATE INDEX idx_preauth_visit ON pre_authorizations(visit_id);
-CREATE INDEX idx_preauth_service ON pre_authorizations(medical_service_id);
-CREATE INDEX idx_preauth_request_date ON pre_authorizations(request_date);
-CREATE INDEX idx_preauth_number ON pre_authorizations(pre_auth_number);
+CREATE INDEX IF NOT EXISTS idx_preauth_member ON pre_authorizations(member_id);
+CREATE INDEX IF NOT EXISTS idx_preauth_provider ON pre_authorizations(provider_id);
+CREATE INDEX IF NOT EXISTS idx_preauth_status ON pre_authorizations(status);
+CREATE INDEX IF NOT EXISTS idx_preauth_visit ON pre_authorizations(visit_id);
+CREATE INDEX IF NOT EXISTS idx_preauth_service ON pre_authorizations(medical_service_id);
+CREATE INDEX IF NOT EXISTS idx_preauth_request_date ON pre_authorizations(request_date);
+CREATE INDEX IF NOT EXISTS idx_preauth_number ON pre_authorizations(pre_auth_number);
 
 -- 2. PRE-AUTHORIZATION ATTACHMENTS (V9010 + V9024)
-CREATE TABLE pre_authorization_attachments (
+CREATE TABLE IF NOT EXISTS pre_authorization_attachments (
     id BIGSERIAL PRIMARY KEY,
     pre_authorization_id BIGINT NOT NULL,
     
@@ -102,11 +102,11 @@ CREATE TABLE pre_authorization_attachments (
     CONSTRAINT fk_preauth_attachment_preauth FOREIGN KEY (pre_authorization_id) REFERENCES pre_authorizations(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_preauth_attachments_preauth_id ON pre_authorization_attachments(pre_authorization_id);
-CREATE INDEX idx_preauth_attachments_type ON pre_authorization_attachments(attachment_type);
+CREATE INDEX IF NOT EXISTS idx_preauth_attachments_preauth_id ON pre_authorization_attachments(pre_authorization_id);
+CREATE INDEX IF NOT EXISTS idx_preauth_attachments_type ON pre_authorization_attachments(attachment_type);
 
 -- 3. PRE-AUTHORIZATION AUDIT (V9010 + V9024 + V9025)
-CREATE TABLE pre_authorization_audit (
+CREATE TABLE IF NOT EXISTS pre_authorization_audit (
     id BIGSERIAL PRIMARY KEY,
     pre_authorization_id BIGINT NOT NULL,
     action VARCHAR(100) NOT NULL, -- Fixed from V9024 to potentially bigger size if strictly V9010
@@ -133,9 +133,9 @@ CREATE TABLE pre_authorization_audit (
     CONSTRAINT fk_preauth_audit_preauth FOREIGN KEY (pre_authorization_id) REFERENCES pre_authorizations(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_preauth_audit_preauth_id ON pre_authorization_audit(pre_authorization_id);
-CREATE INDEX idx_preauth_audit_action ON pre_authorization_audit(action);
-CREATE INDEX idx_preauth_audit_created_at ON pre_authorization_audit(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_preauth_audit_preauth_id ON pre_authorization_audit(pre_authorization_id);
+CREATE INDEX IF NOT EXISTS idx_preauth_audit_action ON pre_authorization_audit(action);
+CREATE INDEX IF NOT EXISTS idx_preauth_audit_created_at ON pre_authorization_audit(created_at DESC);
 
 -- Trigger for updated_at (From V1.09)
 CREATE OR REPLACE FUNCTION update_updated_at_column()

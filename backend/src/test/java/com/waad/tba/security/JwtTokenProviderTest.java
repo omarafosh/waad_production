@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.waad.tba.modules.rbac.util.SecurityConstants;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -25,7 +26,7 @@ class JwtTokenProviderTest {
     @InjectMocks
     private JwtTokenProvider jwtTokenProvider;
 
-    private final String secret = "ThisIsALongEnoughSecretKeyForTestingPurposesOnly123456";
+    private final String secret = SecurityConstants.TEST_SECRET;
     private final long expiration = 3600000; // 1 hour
 
     @BeforeEach

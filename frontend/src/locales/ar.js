@@ -302,7 +302,7 @@ const ar = {
     login: 'تسجيل الدخول',
     logout: 'تسجيل الخروج',
     username: 'اسم المستخدم',
-    password: 'كلمة المرور',
+    passwordLabel: 'كلمة المرور',
     rememberMe: 'تذكرني',
     forgotPassword: 'نسيت كلمة المرور؟',
     profile: 'الملف الشخصي',

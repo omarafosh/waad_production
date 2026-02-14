@@ -291,7 +291,6 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND p.active = true " +
            "AND p.contract.active = true " +
            "AND p.contract.status = 'ACTIVE' " +
-           "AND p.medicalService IS NOT NULL " +
            "AND p.contract.startDate <= CURRENT_DATE " +
            "AND (p.contract.endDate IS NULL OR p.contract.endDate >= CURRENT_DATE)")
     List<ProviderContractPricingItem> findAllServicesByProvider(

@@ -210,7 +210,7 @@ public class BenefitPolicyCoverageService {
         return Optional.of(CoverageInfo.builder()
             .covered(true)
             .coveragePercent(policy.getDefaultCoveragePercent())
-            .requiresPreApproval(service.isRequiresPA())
+            .requiresPreApproval(DEFAULT_REQUIRES_PA)
             .ruleType("POLICY_DEFAULT")
             .serviceName(service.getName())
             .active(true)

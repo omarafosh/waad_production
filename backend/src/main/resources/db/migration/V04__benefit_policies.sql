@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. BENEFIT POLICIES
-CREATE TABLE benefit_policies (
+CREATE TABLE IF NOT EXISTS benefit_policies (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     policy_code VARCHAR(50),
@@ -43,12 +43,12 @@ CREATE TABLE benefit_policies (
     CONSTRAINT fk_policy_insurance FOREIGN KEY (insurance_org_id) REFERENCES organizations(id)
 );
 
-CREATE INDEX idx_benefit_policy_employer ON benefit_policies(employer_org_id);
-CREATE INDEX idx_benefit_policy_status ON benefit_policies(status);
-CREATE INDEX idx_benefit_policy_dates ON benefit_policies(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_benefit_policy_employer ON benefit_policies(employer_org_id);
+CREATE INDEX IF NOT EXISTS idx_benefit_policy_status ON benefit_policies(status);
+CREATE INDEX IF NOT EXISTS idx_benefit_policy_dates ON benefit_policies(start_date, end_date);
 
 -- 2. BENEFIT POLICY RULES
-CREATE TABLE benefit_policy_rules (
+CREATE TABLE IF NOT EXISTS benefit_policy_rules (
     id BIGSERIAL PRIMARY KEY,
     benefit_policy_id BIGINT NOT NULL,
     
@@ -84,28 +84,28 @@ CREATE TABLE benefit_policy_rules (
     )
 );
 
-CREATE INDEX idx_bpr_policy ON benefit_policy_rules(benefit_policy_id);
-CREATE INDEX idx_bpr_category ON benefit_policy_rules(medical_category_id);
-CREATE INDEX idx_bpr_service ON benefit_policy_rules(medical_service_id);
-CREATE INDEX idx_bpr_package ON benefit_policy_rules(medical_package_id);
-CREATE INDEX idx_bpr_active ON benefit_policy_rules(active);
-CREATE INDEX idx_bpr_encounter_type ON benefit_policy_rules(encounter_type);
+CREATE INDEX IF NOT EXISTS idx_bpr_policy ON benefit_policy_rules(benefit_policy_id);
+CREATE INDEX IF NOT EXISTS idx_bpr_category ON benefit_policy_rules(medical_category_id);
+CREATE INDEX IF NOT EXISTS idx_bpr_service ON benefit_policy_rules(medical_service_id);
+CREATE INDEX IF NOT EXISTS idx_bpr_package ON benefit_policy_rules(medical_package_id);
+CREATE INDEX IF NOT EXISTS idx_bpr_active ON benefit_policy_rules(active);
+CREATE INDEX IF NOT EXISTS idx_bpr_encounter_type ON benefit_policy_rules(encounter_type);
 
 -- Consolidated partial unique indexes from V9005
-CREATE UNIQUE INDEX idx_unique_service_rule ON benefit_policy_rules (benefit_policy_id, medical_service_id, encounter_type) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_service_rule ON benefit_policy_rules (benefit_policy_id, medical_service_id, encounter_type) 
 WHERE medical_service_id IS NOT NULL AND encounter_type IS NOT NULL;
 
-CREATE UNIQUE INDEX idx_unique_service_rule_null_encounter ON benefit_policy_rules (benefit_policy_id, medical_service_id) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_service_rule_null_encounter ON benefit_policy_rules (benefit_policy_id, medical_service_id) 
 WHERE medical_service_id IS NOT NULL AND encounter_type IS NULL;
 
-CREATE UNIQUE INDEX idx_unique_category_rule ON benefit_policy_rules (benefit_policy_id, medical_category_id, encounter_type) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_category_rule ON benefit_policy_rules (benefit_policy_id, medical_category_id, encounter_type) 
 WHERE medical_category_id IS NOT NULL AND encounter_type IS NOT NULL;
 
-CREATE UNIQUE INDEX idx_unique_category_rule_null_encounter ON benefit_policy_rules (benefit_policy_id, medical_category_id) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_category_rule_null_encounter ON benefit_policy_rules (benefit_policy_id, medical_category_id) 
 WHERE medical_category_id IS NOT NULL AND encounter_type IS NULL;
 
-CREATE UNIQUE INDEX idx_unique_package_rule ON benefit_policy_rules (benefit_policy_id, medical_package_id, encounter_type) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_package_rule ON benefit_policy_rules (benefit_policy_id, medical_package_id, encounter_type) 
 WHERE medical_package_id IS NOT NULL AND encounter_type IS NOT NULL;
 
-CREATE UNIQUE INDEX idx_unique_package_rule_null_encounter ON benefit_policy_rules (benefit_policy_id, medical_package_id) 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_package_rule_null_encounter ON benefit_policy_rules (benefit_policy_id, medical_package_id) 
 WHERE medical_package_id IS NOT NULL AND encounter_type IS NULL;

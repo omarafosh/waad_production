@@ -12,8 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MappingRequestDto {
-    @NotNull(message = "Provider Raw Service ID is required")
     private Long rawServiceId;
+    
+    private java.util.List<Long> rawServiceIds;
     
     @NotNull(message = "Master Service ID is required")
     private Long masterServiceId;

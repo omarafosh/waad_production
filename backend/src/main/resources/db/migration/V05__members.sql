@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS lifecycle_logs (
 CREATE INDEX IF NOT EXISTS idx_lifecycle_entity ON lifecycle_logs(entity_type, entity_id);
 
 -- 3. الجدول الرئيسي للمستفيدين (Members)
-CREATE TABLE members (
+CREATE TABLE IF NOT EXISTS members (
     id BIGSERIAL PRIMARY KEY,
     
     -- الهيكل الهرمي (أصيل / تابع)
@@ -111,16 +111,16 @@ CREATE TABLE members (
     CONSTRAINT uk_member_civil_id UNIQUE (civil_id) -- إضافة قيد التفرد للهوية
 );
 
-CREATE INDEX idx_members_parent ON members(parent_id);
-CREATE INDEX idx_members_employer ON members(employer_org_id);
-CREATE INDEX idx_members_barcode ON members(barcode);
-CREATE INDEX idx_members_active ON members(active);
-CREATE INDEX idx_members_civil_id ON members(civil_id);
-CREATE INDEX idx_members_status ON members(status);
-CREATE INDEX idx_members_full_name_lower ON members(LOWER(full_name));
+CREATE INDEX IF NOT EXISTS idx_members_parent ON members(parent_id);
+CREATE INDEX IF NOT EXISTS idx_members_employer ON members(employer_org_id);
+CREATE INDEX IF NOT EXISTS idx_members_barcode ON members(barcode);
+CREATE INDEX IF NOT EXISTS idx_members_active ON members(active);
+CREATE INDEX IF NOT EXISTS idx_members_civil_id ON members(civil_id);
+CREATE INDEX IF NOT EXISTS idx_members_status ON members(status);
+CREATE INDEX IF NOT EXISTS idx_members_full_name_lower ON members(LOWER(full_name));
 
 -- 4. وثائق المستفيد (Member Documents)
-CREATE TABLE member_documents (
+CREATE TABLE IF NOT EXISTS member_documents (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     document_type VARCHAR(50) NOT NULL,
@@ -138,7 +138,7 @@ CREATE TABLE member_documents (
 );
 
 -- 5. سمات المستفيد (Member Attributes)
-CREATE TABLE member_attributes (
+CREATE TABLE IF NOT EXISTS member_attributes (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     attribute_code VARCHAR(100) NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE member_attributes (
 );
 
 -- 6. الأمراض المزمنة للمستفيد (Member Chronic Conditions)
-CREATE TABLE member_chronic_conditions (
+CREATE TABLE IF NOT EXISTS member_chronic_conditions (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     condition_type VARCHAR(50) NOT NULL,
@@ -194,7 +194,7 @@ CREATE TABLE member_chronic_conditions (
 CREATE INDEX idx_mcc_member_id ON member_chronic_conditions(member_id);
 
 -- 7. سجلات استيراد الأعضاء (Member Import Logs)
-CREATE TABLE member_import_logs (
+CREATE TABLE IF NOT EXISTS member_import_logs (
     id BIGSERIAL PRIMARY KEY,
     import_batch_id VARCHAR(64) UNIQUE NOT NULL,
     file_name VARCHAR(500),
@@ -217,7 +217,7 @@ CREATE TABLE member_import_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE member_import_errors (
+CREATE TABLE IF NOT EXISTS member_import_errors (
     id BIGSERIAL PRIMARY KEY,
     import_log_id BIGINT NOT NULL,
     row_number INTEGER NOT NULL,
@@ -230,7 +230,7 @@ CREATE TABLE member_import_errors (
 );
 
 -- 8. تاريخ سير العمل (Workflow History)
-CREATE TABLE member_workflow_history (
+CREATE TABLE IF NOT EXISTS member_workflow_history (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     from_status VARCHAR(255),

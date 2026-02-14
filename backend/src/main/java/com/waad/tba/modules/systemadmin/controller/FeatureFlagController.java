@@ -22,7 +22,6 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SUPER_ADMIN')")
-@CrossOrigin(origins = "*")
 public class FeatureFlagController {
 
     private final FeatureFlagService featureFlagService;

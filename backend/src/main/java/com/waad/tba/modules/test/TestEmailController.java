@@ -39,7 +39,7 @@ public class TestEmailController {
                 
                 Best regards,
                 TBA-WAAD Team""");
-            return ResponseEntity.ok("✅ Email sent successfully to: " + to);
+            return ResponseEntity.ok("✅ Email sent successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("❌ Failed to send email: " + e.getMessage());
         }

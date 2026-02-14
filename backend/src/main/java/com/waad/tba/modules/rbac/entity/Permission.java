@@ -38,8 +38,12 @@ public class Permission {
     @Column(name = "module", length = 50)
     private String module;
 
+    @Column(name = "module_name", length = 100)
+    private String moduleName;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 50)
+    @Builder.Default
     private PermissionCategory category = PermissionCategory.GENERAL;
 
     @CreatedDate

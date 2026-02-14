@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. PROVIDER ACCOUNTS
-CREATE TABLE provider_accounts (
+CREATE TABLE IF NOT EXISTS provider_accounts (
     id BIGSERIAL PRIMARY KEY,
     provider_id BIGINT NOT NULL,
     account_number VARCHAR(50) UNIQUE NOT NULL,
@@ -26,11 +26,11 @@ CREATE TABLE provider_accounts (
     CONSTRAINT fk_provider_account_provider FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_provider_accounts_provider_id ON provider_accounts(provider_id);
-CREATE UNIQUE INDEX idx_provider_accounts_account_number ON provider_accounts(account_number);
+CREATE INDEX IF NOT EXISTS idx_provider_accounts_provider_id ON provider_accounts(provider_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_accounts_account_number ON provider_accounts(account_number);
 
 -- 2. SETTLEMENT BATCHES
-CREATE TABLE settlement_batches (
+CREATE TABLE IF NOT EXISTS settlement_batches (
     id BIGSERIAL PRIMARY KEY,
     batch_number VARCHAR(50) UNIQUE NOT NULL,
     provider_account_id BIGINT NOT NULL, -- Renamed from provider_id in V9027, FK updated? V9027 didn't update FK, we should.
@@ -80,12 +80,12 @@ CREATE TABLE settlement_batches (
     -- CONSTRAINT fk_settlement_batch_account FOREIGN KEY (provider_account_id) REFERENCES provider_accounts(id)
 );
 
-CREATE INDEX idx_settlement_batches_provider_id ON settlement_batches(provider_account_id);
-CREATE INDEX idx_settlement_batches_status ON settlement_batches(status);
-CREATE UNIQUE INDEX idx_settlement_batches_batch_number ON settlement_batches(batch_number);
+CREATE INDEX IF NOT EXISTS idx_settlement_batches_provider_id ON settlement_batches(provider_account_id);
+CREATE INDEX IF NOT EXISTS idx_settlement_batches_status ON settlement_batches(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_settlement_batches_batch_number ON settlement_batches(batch_number);
 
 -- 3. SETTLEMENT BATCH ITEMS
-CREATE TABLE settlement_batch_items (
+CREATE TABLE IF NOT EXISTS settlement_batch_items (
     id BIGSERIAL PRIMARY KEY,
     settlement_batch_id BIGINT NOT NULL, -- Renamed from batch_id in V9027
     claim_id BIGINT NOT NULL,
@@ -99,11 +99,11 @@ CREATE TABLE settlement_batch_items (
     CONSTRAINT fk_settlement_item_claim FOREIGN KEY (claim_id) REFERENCES claims(id)
 );
 
-CREATE INDEX idx_settlement_items_batch_id ON settlement_batch_items(settlement_batch_id);
-CREATE INDEX idx_settlement_items_claim_id ON settlement_batch_items(claim_id);
+CREATE INDEX IF NOT EXISTS idx_settlement_items_batch_id ON settlement_batch_items(settlement_batch_id);
+CREATE INDEX IF NOT EXISTS idx_settlement_items_claim_id ON settlement_batch_items(claim_id);
 
 -- 4. ACCOUNT TRANSACTIONS (From V9008)
-CREATE TABLE account_transactions (
+CREATE TABLE IF NOT EXISTS account_transactions (
     id BIGSERIAL PRIMARY KEY,
     provider_account_id BIGINT NOT NULL,
     transaction_type VARCHAR(20) NOT NULL CHECK (transaction_type IN ('CREDIT', 'DEBIT')),
@@ -117,9 +117,9 @@ CREATE TABLE account_transactions (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_account_transactions_provider_account ON account_transactions(provider_account_id);
-CREATE INDEX idx_account_transactions_reference ON account_transactions(reference_type, reference_id);
-CREATE INDEX idx_account_transactions_created_at ON account_transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_account_transactions_provider_account ON account_transactions(provider_account_id);
+CREATE INDEX IF NOT EXISTS idx_account_transactions_reference ON account_transactions(reference_type, reference_id);
+CREATE INDEX IF NOT EXISTS idx_account_transactions_created_at ON account_transactions(created_at DESC);
 
 -- IMMUTABILITY TRIGGER (V9008)
 CREATE OR REPLACE FUNCTION prevent_account_transaction_modification()

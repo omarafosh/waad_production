@@ -42,7 +42,7 @@ public class ChangePasswordController {
         log.info("Change password request received for user: {}", authentication.getName());
         
         // Validate password confirmation
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+        if (!java.util.Objects.equals(request.getNewPassword(), request.getConfirmPassword())) {
             throw new IllegalArgumentException("كلمتا المرور غير متطابقتين");
         }
 

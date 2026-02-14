@@ -1,5 +1,10 @@
 import axios from 'utils/axios';
 
+/**
+ * Helper function to unwrap ApiResponse
+ */
+const unwrap = (response) => response.data?.data || response.data;
+
 export const medicalCatalogService = {
     // === Raw Services & Mapping ===
 
@@ -8,8 +13,9 @@ export const medicalCatalogService = {
      * @param {Object} params - { providerId, page, size, searchTerm }
      */
     getUnmappedServices: async (params) => {
+        // params: { providerId, employerId, page, size, searchTerm }
         const response = await axios.get('/catalog/unmapped', { params });
-        return response.data;
+        return unwrap(response);
     },
 
     /**
@@ -42,6 +48,18 @@ export const medicalCatalogService = {
      */
     getCatalogStats: async () => {
         const response = await axios.get('/catalog/stats');
+        return response.data;
+    },
+
+    /**
+     * Import services from provider contract pricing
+     * @param {Long} providerId
+     * @param {Long} contractId - optional, if null imports from all active contracts
+     */
+    importFromContract: async (providerId, contractId = null) => {
+        const params = { providerId };
+        if (contractId) params.contractId = contractId;
+        const response = await axios.post('/catalog/import-from-contract', null, { params });
         return response.data;
     },
 

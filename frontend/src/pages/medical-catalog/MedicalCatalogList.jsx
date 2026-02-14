@@ -598,18 +598,6 @@ const MedicalCatalogList = () => {
                     refetch();
                 }}
             />
-
-            {/* Smart Reclassification Modal */}
-            <SmartClassificationModal
-                open={reclassifyModal.open}
-                onClose={() => setReclassifyModal({ ...reclassifyModal, open: false })}
-                service={reclassifyModal.service}
-                categories={categories}
-                initialNewCategoryId={reclassifyModal.newCategoryId}
-                onSuccess={() => {
-                    refetch();
-                }}
-            />
         </Box>
     );
 };

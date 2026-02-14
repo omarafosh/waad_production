@@ -3,12 +3,22 @@
 Analyze Excel pricing file and compare with database services
 Helps debug import failures by showing which services are missing
 """
-import pandas as pd
-import sys
 import os
+import sys
+import pandas as pd
+import json
 
-def analyze_excel_file(file_path):
+def analyze_excel(file_path):
     """Analyze Excel file structure and content"""
+    # Security: Sanitize file_path to prevent path traversal
+    # Ensure it only refers to the file name if we expect files in a specific dir,
+    # or at least normalize it.
+    safe_path = os.path.normpath(file_path)
+    
+    if not os.path.exists(safe_path):
+        print(f"Error: File {safe_path} not found")
+        return
+    
     print("=" * 80)
     print("📊 Excel Pricing File Analysis")
     print("=" * 80)

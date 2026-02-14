@@ -46,7 +46,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @lombok.experimental.SuperBuilder
 @org.hibernate.annotations.SQLDelete(sql = "UPDATE medical_services SET active = false WHERE id = ?")
-@org.hibernate.annotations.Where(clause = "active = true")
+@org.hibernate.annotations.SQLRestriction("active = true")
 public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
@@ -146,6 +146,7 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
      */
     @Deprecated(since = "2026-01-22", forRemoval = false)
     @Column(name = "requires_pa", nullable = false)
+    @Builder.Default
     private boolean requiresPA = true;
 
     // active, createdAt, updatedAt are inherited from SoftDeleteEntity

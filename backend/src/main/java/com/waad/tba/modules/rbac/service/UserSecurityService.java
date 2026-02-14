@@ -57,7 +57,7 @@ public class UserSecurityService {
         log.info("Password change requested for user ID: {}", userId);
         
         // Validate passwords match
-        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+        if (!java.util.Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
         }
         
@@ -179,7 +179,7 @@ public class UserSecurityService {
         log.info("Password reset with token: {}", dto.getToken().substring(0, 8) + "...");
         
         // Validate passwords match
-        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+        if (!java.util.Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
         }
         

@@ -21,7 +21,6 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('SUPER_ADMIN')")
-@CrossOrigin(origins = "*")
 public class AuditLogController {
 
     private final AuditLogService auditLogService;

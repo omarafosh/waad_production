@@ -8,6 +8,7 @@ import com.waad.tba.modules.member.dto.MemberImportResultDto;
 import com.waad.tba.modules.member.service.ExcelColumnMappingService;
 import com.waad.tba.modules.member.service.MemberExcelImportService;
 import com.waad.tba.modules.member.service.MemberExcelTemplateService;
+import com.waad.tba.modules.rbac.util.SecurityConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -176,7 +177,7 @@ public class MemberExcelTemplateController {
 
             // Fetch current user details BEFORE going async
             com.waad.tba.modules.rbac.entity.User currentUser = authorizationService.getCurrentUser();
-            String username = currentUser != null ? currentUser.getUsername() : "system";
+            String username = currentUser != null ? currentUser.getUsername() : SecurityConstants.SYSTEM_USER;
             Long userId = currentUser != null ? currentUser.getId() : null;
 
             // Trigger background import with stable file and user context

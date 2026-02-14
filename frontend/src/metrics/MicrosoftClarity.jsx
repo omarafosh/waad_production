@@ -12,12 +12,17 @@ function loadMicrosoftClarity(clarityId) {
   const script = document.createElement('script');
   script.async = true;
   script.id = 'microsoft-clarity-script';
+
+  // Security: Sanitize clarityId to prevent XSS injection
+  // Clarity IDs are typically alphanumeric (e.g., 'abcdef123')
+  const safeClarityId = clarityId.replace(/[^a-zA-Z0-9]/g, '');
+
   script.innerHTML = `
     (function(c,l,a,r,i,t,y) {
       c[a] = c[a] || function() { (c[a].q = c[a].q || []).push(arguments) };
       t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
       y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-    })(window, document, "clarity", "script", "${clarityId}");
+    })(window, document, "clarity", "script", "${safeClarityId}");
   `;
   document.body.appendChild(script);
 }

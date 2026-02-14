@@ -5,7 +5,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. PROVIDERS
-CREATE TABLE providers (
+CREATE TABLE IF NOT EXISTS providers (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     license_number VARCHAR(100) NOT NULL UNIQUE,
@@ -37,12 +37,12 @@ CREATE TABLE providers (
     updated_by VARCHAR(100)
 );
 
-CREATE INDEX idx_providers_type ON providers(provider_type);
-CREATE INDEX idx_providers_license ON providers(license_number);
+CREATE INDEX IF NOT EXISTS idx_providers_type ON providers(provider_type);
+CREATE INDEX IF NOT EXISTS idx_providers_license ON providers(license_number);
 -- CREATE INDEX idx_providers_name_trgm ON providers USING gin (to_tsvector('english', name)); -- Optional if extension enabled
 
 -- 2. PROVIDER DOCUMENTS
-CREATE TABLE provider_documents (
+CREATE TABLE IF NOT EXISTS provider_documents (
     id BIGSERIAL PRIMARY KEY,
     provider_id BIGINT NOT NULL,
     type VARCHAR(50) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE provider_documents (
 );
 
 -- 3. PROVIDER CONTRACTS
-CREATE TABLE provider_contracts (
+CREATE TABLE IF NOT EXISTS provider_contracts (
     id BIGSERIAL PRIMARY KEY,
     contract_code VARCHAR(50) NOT NULL UNIQUE,
     contract_number VARCHAR(100),
@@ -105,13 +105,13 @@ CREATE TABLE provider_contracts (
     CONSTRAINT fk_pc_employer_fixed FOREIGN KEY (employer_id) REFERENCES organizations(id)
 );
 
-CREATE INDEX idx_contracts_provider_id ON provider_contracts(provider_id);
-CREATE INDEX idx_contracts_employer_id ON provider_contracts(employer_id);
-CREATE INDEX idx_contracts_status ON provider_contracts(status);
-CREATE INDEX idx_contracts_contract_code ON provider_contracts(contract_code);
+CREATE INDEX IF NOT EXISTS idx_contracts_provider_id ON provider_contracts(provider_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_employer_id ON provider_contracts(employer_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_status ON provider_contracts(status);
+CREATE INDEX IF NOT EXISTS idx_contracts_contract_code ON provider_contracts(contract_code);
 
 -- 4. PROVIDER CONTRACT PRICING ITEMS
-CREATE TABLE provider_contract_pricing_items (
+CREATE TABLE IF NOT EXISTS provider_contract_pricing_items (
     id BIGSERIAL PRIMARY KEY,
     contract_id BIGINT NOT NULL,
     
@@ -155,14 +155,14 @@ CREATE TABLE provider_contract_pricing_items (
     CONSTRAINT fk_pcpi_service FOREIGN KEY (medical_service_id) REFERENCES medical_services(id)
 );
 
-CREATE INDEX idx_pcpi_contract ON provider_contract_pricing_items(contract_id);
-CREATE INDEX idx_pcpi_category ON provider_contract_pricing_items(medical_category_id);
-CREATE INDEX idx_pcpi_service ON provider_contract_pricing_items(medical_service_id);
-CREATE INDEX idx_pricing_service_name ON provider_contract_pricing_items(service_name);
-CREATE INDEX idx_pricing_active ON provider_contract_pricing_items(active);
+CREATE INDEX IF NOT EXISTS idx_pcpi_contract ON provider_contract_pricing_items(contract_id);
+CREATE INDEX IF NOT EXISTS idx_pcpi_category ON provider_contract_pricing_items(medical_category_id);
+CREATE INDEX IF NOT EXISTS idx_pcpi_service ON provider_contract_pricing_items(medical_service_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_service_name ON provider_contract_pricing_items(service_name);
+CREATE INDEX IF NOT EXISTS idx_pricing_active ON provider_contract_pricing_items(active);
 
 -- 5. PROVIDER SERVICES (Junction - V9030)
-CREATE TABLE provider_services (
+CREATE TABLE IF NOT EXISTS provider_services (
     id BIGSERIAL PRIMARY KEY,
     provider_id BIGINT NOT NULL,
     service_code VARCHAR(50) NOT NULL,
@@ -174,11 +174,11 @@ CREATE TABLE provider_services (
     CONSTRAINT fk_provider_services_provider FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_provider_services_provider ON provider_services(provider_id);
-CREATE INDEX idx_provider_services_code ON provider_services(service_code);
+CREATE INDEX IF NOT EXISTS idx_provider_services_provider ON provider_services(provider_id);
+CREATE INDEX IF NOT EXISTS idx_provider_services_code ON provider_services(service_code);
 
 -- 6. PROVIDER ALLOWED EMPLOYERS (Network)
-CREATE TABLE provider_allowed_employers (
+CREATE TABLE IF NOT EXISTS provider_allowed_employers (
     id BIGSERIAL PRIMARY KEY,
     provider_id BIGINT NOT NULL,
     employer_id BIGINT NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE provider_allowed_employers (
 );
 
 -- 7. PROVIDER SERVICE MAPPINGS
-CREATE TABLE provider_service_mappings (
+CREATE TABLE IF NOT EXISTS provider_service_mappings (
     id BIGSERIAL PRIMARY KEY,
     provider_id BIGINT NOT NULL,
     provider_service_code VARCHAR(100) NOT NULL,
@@ -207,7 +207,7 @@ CREATE TABLE provider_service_mappings (
 );
 
 -- 8. REVIEWER COMPANIES
-CREATE TABLE reviewer_companies (
+CREATE TABLE IF NOT EXISTS reviewer_companies (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     medical_director VARCHAR(255),

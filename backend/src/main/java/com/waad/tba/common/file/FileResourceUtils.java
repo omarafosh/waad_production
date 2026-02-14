@@ -26,6 +26,34 @@ import java.util.concurrent.TimeUnit;
 public class FileResourceUtils {
 
     /**
+     * Sanitizes a filename to prevent Path Traversal and other security issues.
+     * 
+     * @param filename Raw filename
+     * @return Sanitized filename
+     */
+    public static String sanitizeFilename(String filename) {
+        if (filename == null) return null;
+        // Remove path navigation and suspicious characters: \ / : * ? " < > |
+        return filename.replaceAll("[\\\\/:*?\"<>|]", "_")
+                      .replaceAll("\\.\\.+", ".");
+    }
+
+    /**
+     * Sanitizes a folder path to prevent Path Traversal.
+     * 
+     * @param path Raw folder path
+     * @return Sanitized folder path
+     */
+    public static String sanitizePath(String path) {
+        if (path == null) return null;
+        // Prevent directory traversal and normalize separators
+        return path.replace("\\", "/")
+                  .replaceAll("\\.\\.+", "")
+                  .replaceAll("^/", "")
+                  .replaceAll("/+", "/");
+    }
+
+    /**
      * Builds an optimized ResponseEntity for a file.
      * 
      * @param bytes File content bytes
@@ -38,8 +66,8 @@ public class FileResourceUtils {
             return ResponseEntity.notFound().build();
         }
 
-        // 1. Generate ETag based on content hash (Professional Caching)
-        String etag = DigestUtils.md5DigestAsHex(bytes);
+        // 1. Generate ETag based on SHA-256 hash (Secured from MD5)
+        String etag = generateSHA256(bytes);
 
         // 2. Check for Conditional GET (304 Not Modified)
         if (request.checkNotModified(etag)) {
@@ -56,6 +84,17 @@ public class FileResourceUtils {
                 .eTag(etag)
                 .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic().immutable())
                 .body(bytes);
+    }
+
+    private static String generateSHA256(byte[] bytes) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(bytes);
+            return java.util.HexFormat.of().formatHex(hash);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            log.warn("SHA-256 not available, falling back to byte length string");
+            return String.valueOf(bytes.length);
+        }
     }
 
     private static MediaType detectMediaType(String fileName) {

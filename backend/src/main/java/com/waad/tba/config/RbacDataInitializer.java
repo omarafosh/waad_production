@@ -59,6 +59,15 @@ public class RbacDataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-password}")
+    private String initialAdminPassword;
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-username:superadmin}")
+    private String initialAdminUsername;
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-email:superadmin@tba.sa}")
+    private String initialAdminEmail;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -349,8 +358,8 @@ public class RbacDataInitializer implements CommandLineRunner {
     private void ensureSuperAdminUser(Map<String, Role> roleMap) {
         log.info("👤 Initializing super admin user...");
         
-        String username = "superadmin";
-        String email = "superadmin@tba.sa";
+        String username = initialAdminUsername;
+        String email = initialAdminEmail;
         
         // Check if superadmin user already exists
         Optional<User> existingUser = userRepository.findByUsername(username);
@@ -370,7 +379,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                 .username(username)
                 .email(email)
                 .civilId("0000000000") // Default civilId for superadmin
-                .password(passwordEncoder.encode("Admin@123"))
+                .password(passwordEncoder.encode(initialAdminPassword))
                 .fullName("System Super Administrator")
                 .active(true)
                 .roles(new HashSet<>(Collections.singletonList(superAdminRole)))

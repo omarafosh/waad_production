@@ -43,7 +43,7 @@ import com.waad.tba.modules.rbac.entity.User;
 import com.waad.tba.security.AuthorizationService;
 import com.waad.tba.security.ProviderContextGuard;
 
-import com.waad.tba.modules.company.repository.CompanyRepository;
+import com.waad.tba.common.repository.SystemSettingRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,7 +113,7 @@ public class ClaimService {
     
     // Phase 1: SLA tracking services
     private final com.waad.tba.common.service.BusinessDaysCalculatorService businessDaysCalculator;
-    private final CompanyRepository companyRepository;
+    private final SystemSettingRepository systemSettingRepository;
     
     // Phase 9: Architectural Guards (System Invariants)
     private final ArchitecturalGuardService architecturalGuard;
@@ -1199,10 +1199,9 @@ public class ClaimService {
         // Transition to SUBMITTED status
         claimStateMachine.transition(claim, ClaimStatus.SUBMITTED, currentUser);
         
-        // ✅ PHASE 1: Calculate SLA expected completion date
-        // Retrieve SLA from default company settings (fallback to 7 days)
-        int slaDays = companyRepository.findByIsDefaultTrue()
-                .map(com.waad.tba.modules.company.entity.Company::getClaimSlaDays)
+        // Retrieve SLA from system settings (fallback to 7 days)
+        int slaDays = systemSettingRepository.findBySettingKey("CLAIM_SLA_DAYS")
+                .map(com.waad.tba.common.entity.SystemSetting::getValueAsInteger)
                 .orElse(7);
         LocalDate submissionDate = LocalDate.now();
         LocalDate expectedCompletionDate = businessDaysCalculator.calculateExpectedCompletionDate(submissionDate, slaDays);

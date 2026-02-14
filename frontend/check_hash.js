@@ -1,14 +1,22 @@
 const bcrypt = require('bcryptjs');
 
-const password = 'Admin@123';
-const hashFromFile = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+// Security: Remove hardcoded credentials. Pass as command line argument: node check_hash.js "<password>" "<hash>"
+const password = process.argv[2];
+const hashFromFile = process.argv[3];
+
+if (!password || !hashFromFile) {
+    console.log('Usage: node check_hash.js "<password>" "<hash>"');
+    process.exit(1);
+}
+
+console.log(`Checking password for: ${password}`);
 
 // Compare
 bcrypt.compare(password, hashFromFile).then((res) => {
-    console.log(`Matching '${password}' against hash '${hashFromFile}': ${res}`);
+    console.log(`Matching against hash: ${res}`);
 
     // Generate new hash just in case
     const salt = bcrypt.genSaltSync(10);
     const newHash = bcrypt.hashSync(password, salt);
-    console.log(`New hash for '${password}': ${newHash}`);
+    console.log(`New hash: ${newHash}`);
 });

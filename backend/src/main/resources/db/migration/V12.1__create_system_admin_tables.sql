@@ -6,7 +6,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. AUDIT LOGS (سجلات التدقيق العامة)
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGSERIAL PRIMARY KEY,
     timestamp TIMESTAMP NOT NULL,
     user_id BIGINT,
@@ -19,9 +19,9 @@ CREATE TABLE audit_logs (
     user_agent TEXT
 );
 
-CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
-CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
 
 -- 2. إضافة عمود details لجدول user_audit_log الموجود
 ALTER TABLE user_audit_log ADD COLUMN IF NOT EXISTS details TEXT;

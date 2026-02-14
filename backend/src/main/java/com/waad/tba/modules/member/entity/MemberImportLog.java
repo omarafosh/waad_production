@@ -140,16 +140,22 @@ public class MemberImportLog {
     }
 
     /**
-     * Mark as completed
+     * Mark as completed with statistics
      */
-    public void markCompleted() {
+    public void markCompleted(int created, int updated, int skipped, int error) {
         this.completedAt = LocalDateTime.now();
+        this.createdCount = created;
+        this.updatedCount = updated;
+        this.skippedCount = skipped;
+        this.errorCount = error;
+        this.totalRows = created + updated + skipped + error;
+        
         if (startedAt != null) {
             this.processingTimeMs = java.time.Duration.between(startedAt, completedAt).toMillis();
         }
         
-        if (errorCount != null && errorCount > 0) {
-            this.status = createdCount > 0 || updatedCount > 0 ? ImportStatus.PARTIAL : ImportStatus.FAILED;
+        if (errorCount > 0) {
+            this.status = (createdCount > 0 || updatedCount > 0) ? ImportStatus.PARTIAL : ImportStatus.FAILED;
         } else {
             this.status = ImportStatus.COMPLETED;
         }

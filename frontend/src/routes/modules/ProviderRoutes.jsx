@@ -3,7 +3,7 @@ import Loadable from 'components/Loadable';
 import { createRoute, ROLES } from '../utils/routeUtils';
 
 // Lazy Imports
-const ProvidersList = Loadable(lazy(() => import('pages/providers/ProvidersList')));
+const ProvidersList = Loadable(lazy(() => import('pages/providers/ProvidersListUnified')));
 const ProviderCreate = Loadable(lazy(() => import('pages/providers/ProviderCreate')));
 const ProviderEdit = Loadable(lazy(() => import('pages/providers/ProviderEdit')));
 const ProviderView = Loadable(lazy(() => import('pages/providers/ProviderView')));

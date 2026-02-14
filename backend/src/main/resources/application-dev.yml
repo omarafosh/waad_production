@@ -25,9 +25,9 @@ spring:
   # 🚀 Flyway (Development)
   # ==============================
   flyway:
-    enabled: true
-    validate-on-migrate: false  # Allow checksum changes in dev
-    clean-disabled: false       # Allow clean in dev
+    enabled: false
+    validate-on-migrate: false
+    clean-disabled: false
 
 # ==============================
 # 🌐 Server (Development)
@@ -54,7 +54,7 @@ app:
   
   frontend:
     cors:
-      allowed-origins: http://localhost:3000,http://localhost:5173
+      allowed-origins: http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174
 
 # ==============================
 # 📘 Swagger (Development - ENABLED)

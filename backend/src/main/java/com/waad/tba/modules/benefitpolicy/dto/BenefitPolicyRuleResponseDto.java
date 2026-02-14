@@ -24,7 +24,7 @@ public class BenefitPolicyRuleResponseDto {
                                      Long medicalServiceId, String medicalServiceCode, String medicalServiceNameAr, String medicalServiceNameEn, 
                                      Integer coveragePercent, Integer effectiveCoveragePercent, BigDecimal amountLimit, Integer timesLimit, 
                                      Integer waitingPeriodDays, boolean requiresPreApproval, String label, String notes, 
-                                     VisitType encounterType, boolean active, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                     VisitType encounterType, boolean active, boolean deleted, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.benefitPolicyId = benefitPolicyId;
         this.benefitPolicyName = benefitPolicyName;
@@ -47,6 +47,7 @@ public class BenefitPolicyRuleResponseDto {
         this.notes = notes;
         this.encounterType = encounterType;
         this.active = active;
+        this.deleted = deleted;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }

@@ -172,7 +172,7 @@ public class BenefitPolicyRule {
     /**
      * Whether this rule is soft-deleted (System status)
      */
-    @Column(name = "is_deleted", nullable = false)
+    @Column(name = "deleted", nullable = false)
     @Builder.Default
     private boolean deleted = false;
 

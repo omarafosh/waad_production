@@ -1,0 +1,49 @@
+package com.waad.tba.modules.rbac.service;
+
+import com.waad.tba.modules.rbac.dto.PermissionCreateDto;
+import com.waad.tba.modules.rbac.dto.PermissionResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+
+/**
+ * واجهة خدمة الصلاحيات (Permission Service Interface).
+ */
+public interface PermissionService {
+
+    /**
+     * جلب كافة الصلاحيات.
+     */
+    List<PermissionResponseDto> findAll();
+
+    /**
+     * جلب صلاحية بواسطة المعرف (ID).
+     */
+    PermissionResponseDto findById(Long id);
+
+    /**
+     * إنشاء صلاحية جديدة.
+     */
+    PermissionResponseDto create(PermissionCreateDto dto);
+
+    /**
+     * تحديث بيانات صلاحية موجودة.
+     */
+    PermissionResponseDto update(Long id, PermissionCreateDto dto);
+
+    /**
+     * حذف صلاحية.
+     */
+    void delete(Long id);
+
+    /**
+     * البحث عن الصلاحيات.
+     */
+    List<PermissionResponseDto> search(String query);
+
+    /**
+     * جلب الصلاحيات بنظام الصفحات.
+     */
+    Page<PermissionResponseDto> findAllPaginated(Pageable pageable);
+}

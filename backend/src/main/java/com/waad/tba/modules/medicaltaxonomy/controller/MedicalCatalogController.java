@@ -1,7 +1,7 @@
 package com.waad.tba.modules.medicaltaxonomy.controller;
 
 import com.waad.tba.common.dto.ApiResponse;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderServiceMapping;
 import com.waad.tba.modules.medicaltaxonomy.repository.ProviderServiceMappingRepository;
 import com.waad.tba.modules.medicaltaxonomy.service.MedicalCatalogService;
@@ -26,10 +26,10 @@ public class MedicalCatalogController {
     @GetMapping("/resolve")
     @PreAuthorize("hasAnyAuthority('VIEW_TAXONOMY', 'MANAGE_CLAIMS')")
     @Operation(summary = "Resolve provider code to master service", description = "Check how a specific provider code maps to our master catalog.")
-    public ResponseEntity<ApiResponse<MedicalService>> resolveMapping(
+    public ResponseEntity<ApiResponse<EnterpriseMedicalService>> resolveMapping(
             @RequestParam Long providerId,
             @RequestParam String providerServiceCode) {
-        MedicalService service = catalogService.resolveService(providerId, providerServiceCode);
+        EnterpriseMedicalService service = (EnterpriseMedicalService) catalogService.resolveService(providerId, providerServiceCode);
         return ResponseEntity.ok(ApiResponse.success(service));
     }
 

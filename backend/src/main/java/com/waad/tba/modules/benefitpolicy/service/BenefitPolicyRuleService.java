@@ -5,28 +5,26 @@ import com.waad.tba.common.exception.ResourceNotFoundException;
 import com.waad.tba.modules.benefitpolicy.dto.*;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicyRule;
-import org.springframework.cache.annotation.CacheEvict;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRuleRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicalpackage.MedicalPackage;
+import com.waad.tba.modules.medicalpackage.MedicalPackageRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
- * Service for managing Benefit Policy Rules.
- * Handles CRUD operations and coverage lookups for claims/eligibility.
+ * Service for managing Benefit Policy Rules (REFACTORED for Unified Dictionary).
  */
 @Slf4j
 @Service
@@ -36,8 +34,8 @@ public class BenefitPolicyRuleService {
 
     private final BenefitPolicyRuleRepository ruleRepository;
     private final BenefitPolicyRepository policyRepository;
-    private final MedicalCategoryRepository categoryRepository;
-    private final MedicalServiceRepository serviceRepository;
+    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalPackageRepository packageRepository;
     private final CoveragePriorityService priorityService;
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -173,28 +171,22 @@ public class BenefitPolicyRuleService {
      * @return The applicable rule, or empty if not covered
      */
     @Transactional(readOnly = true)
-    public Optional<BenefitPolicyRuleResponseDto> findCoverageForService(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
-        // Get the service to find its category
-        MedicalService service = serviceRepository.findById(serviceId)
+    public Optional<BenefitPolicyRuleResponseDto> findCoverageForService(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+        EnterpriseMedicalService service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", serviceId));
         
-        // MedicalService has categoryId, not category entity
-        Long categoryId = service.getCategoryId();
+        String category = service.getCategory();
 
-        // Find best matching rule (prioritized based on config weights)
-        return findBestMatchingRule(policyId, serviceId, categoryId, encounterType)
+        return findBestMatchingRule(policyId, serviceId, category, encounterType)
                 .map(BenefitPolicyRuleResponseDto::fromEntity);
     }
 
-    /**
-     * Internal helper to find best matching rule using dynamic priorities.
-     */
     private Optional<BenefitPolicyRule> findBestMatchingRule(
-            Long policyId, Long serviceId, Long categoryId, 
+            Long policyId, UUID serviceId, String category, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         List<BenefitPolicyRule> applicableRules = ruleRepository.findApplicableRulesForService(
-            policyId, serviceId, java.util.Collections.emptyList(), categoryId, encounterType);
+            policyId, serviceId, java.util.Collections.emptyList(), category, encounterType);
         
         if (applicableRules.isEmpty()) {
             return Optional.empty();
@@ -208,10 +200,7 @@ public class BenefitPolicyRuleService {
             });
     }
 
-    /**
-     * Calculates the weight of a rule based on how well it matches the request and its config weight.
-     */
-    private Integer calculateRuleWeight(BenefitPolicyRule rule, Long requestedServiceId, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
+    private Integer calculateRuleWeight(BenefitPolicyRule rule, UUID requestedServiceId, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
         boolean isServiceMatch = rule.getMedicalService() != null && rule.getMedicalService().getId().equals(requestedServiceId);
         boolean isPackageMatch = rule.getMedicalPackage() != null;
         boolean isCategoryMatch = rule.getMedicalCategory() != null && rule.getMedicalService() == null && rule.getMedicalPackage() == null;
@@ -232,30 +221,20 @@ public class BenefitPolicyRuleService {
         return priorityService.getWeight(ruleKey, fallback);
     }
 
-    /**
-     * Check if a service is covered under a policy
-     */
     @Transactional(readOnly = true)
-    public boolean isServiceCovered(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public boolean isServiceCovered(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType).isPresent();
     }
 
-    /**
-     * Check if a service requires pre-approval under a policy
-     */
     @Transactional(readOnly = true)
-    public boolean requiresPreApproval(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public boolean requiresPreApproval(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType)
                 .map(BenefitPolicyRuleResponseDto::isRequiresPreApproval)
                 .orElse(false);
     }
 
-    /**
-     * Get coverage percentage for a service under a policy
-     * Returns 0 if not covered
-     */
     @Transactional(readOnly = true)
-    public int getCoveragePercent(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public int getCoveragePercent(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType)
                 .map(BenefitPolicyRuleResponseDto::getEffectiveCoveragePercent)
                 .orElse(0);
@@ -270,17 +249,14 @@ public class BenefitPolicyRuleService {
      */
     @CacheEvict(value = "coverageResolution", allEntries = true)
     public BenefitPolicyRuleResponseDto create(Long policyId, BenefitPolicyRuleCreateDto dto) {
-        log.info("Creating rule for policy {} - category: {}, service: {}", 
-                policyId, dto.getMedicalCategoryId(), dto.getMedicalServiceId());
+        log.info("Creating rule for policy {} - category: {}, service: {}, package: {}", 
+                policyId, dto.getMedicalCategory(), dto.getMedicalServiceId(), dto.getMedicalPackageId());
 
-        // Validate policy exists
         BenefitPolicy policy = policyRepository.findById(policyId)
                 .orElseThrow(() -> new ResourceNotFoundException("BenefitPolicy", "id", policyId));
 
-        // Validate category XOR service (exactly one must be set)
-        validateTargetXor(dto.getMedicalCategoryId(), dto.getMedicalServiceId());
+        validateTargetAtLeastOne(dto);
 
-        // Build the rule
         BenefitPolicyRule rule = BenefitPolicyRule.builder()
                 .benefitPolicy(policy)
                 .coveragePercent(dto.getCoveragePercent())
@@ -293,27 +269,23 @@ public class BenefitPolicyRuleService {
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .build();
 
-        // Set category or service
-        if (dto.getMedicalCategoryId() != null) {
-            MedicalCategory category = categoryRepository.findById(dto.getMedicalCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "id", dto.getMedicalCategoryId()));
-            
-            // Check for duplicate category rule
-            if (ruleRepository.existsCategoryRule(policyId, dto.getMedicalCategoryId(), dto.getEncounterType(), null)) {
-                throw new BusinessRuleException("A rule for this category already exists in this policy for the specified encounter type");
-            }
-            
-            rule.setMedicalCategory(category);
-        } else {
-            MedicalService service = serviceRepository.findById(dto.getMedicalServiceId())
+        if (dto.getMedicalServiceId() != null) {
+            EnterpriseMedicalService service = serviceRepository.findById(dto.getMedicalServiceId())
                     .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", dto.getMedicalServiceId()));
             
-            // Check for duplicate service rule
             if (ruleRepository.existsServiceRule(policyId, dto.getMedicalServiceId(), dto.getEncounterType(), null)) {
                 throw new BusinessRuleException("A rule for this service already exists in this policy for the specified encounter type");
             }
-            
             rule.setMedicalService(service);
+        } else if (dto.getMedicalPackageId() != null) {
+            MedicalPackage pkg = packageRepository.findById(dto.getMedicalPackageId())
+                    .orElseThrow(() -> new ResourceNotFoundException("MedicalPackage", "id", dto.getMedicalPackageId()));
+            rule.setMedicalPackage(pkg);
+        } else if (dto.getMedicalCategory() != null) {
+            if (ruleRepository.findActiveByCategoryAndEncounter(policyId, dto.getMedicalCategory(), dto.getEncounterType()).isPresent()) {
+                throw new BusinessRuleException("A rule for this category already exists in this policy for the specified encounter type");
+            }
+            rule.setMedicalCategory(dto.getMedicalCategory());
         }
 
         BenefitPolicyRule saved = ruleRepository.save(rule);
@@ -480,20 +452,13 @@ public class BenefitPolicyRuleService {
         }
     }
 
-    private void validateTargetXor(Long categoryId, Long serviceId) {
-        boolean hasCategory = categoryId != null;
-        boolean hasService = serviceId != null;
+    private void validateTargetAtLeastOne(BenefitPolicyRuleCreateDto dto) {
+        boolean hasCategory = dto.getMedicalCategory() != null;
+        boolean hasService = dto.getMedicalServiceId() != null;
+        boolean hasPackage = dto.getMedicalPackageId() != null;
 
-        if (hasCategory && hasService) {
-            throw new BusinessRuleException(
-                "Rule must target either a category OR a service, not both. " +
-                "Remove one of: medicalCategoryId or medicalServiceId");
-        }
-
-        if (!hasCategory && !hasService) {
-            throw new BusinessRuleException(
-                "Rule must target at least a category or a service. " +
-                "Provide either medicalCategoryId or medicalServiceId");
+        if (!hasCategory && !hasService && !hasPackage) {
+            throw new BusinessRuleException("Rule must target at least a category, service, or package.");
         }
     }
 

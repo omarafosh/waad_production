@@ -88,19 +88,24 @@ CREATE TABLE IF NOT EXISTS members (
     eligibility_updated_at TIMESTAMP,
     
     -- البيانات الوصفية والصور
-    photo_url VARCHAR(1000), -- تم دمج profile_photo_path هنا
+    photo_url VARCHAR(1000),
     notes VARCHAR(2000),
     
     -- أعمدة عامة (Global Columns)
-    version BIGINT DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 0,
     valid_from TIMESTAMP,
     valid_to TIMESTAMP,
     
     -- التدقيق (Audit)
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    created_by VARCHAR(255),
-    updated_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+    
+    -- Soft Delete Support
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(100),
     
     CONSTRAINT fk_members_parent FOREIGN KEY (parent_id) REFERENCES members(id) ON DELETE CASCADE,
     CONSTRAINT fk_members_employer FOREIGN KEY (employer_org_id) REFERENCES organizations(id),
@@ -108,7 +113,13 @@ CREATE TABLE IF NOT EXISTS members (
     CONSTRAINT fk_members_policy FOREIGN KEY (benefit_policy_id) REFERENCES benefit_policies(id),
     CONSTRAINT uk_member_card_number UNIQUE (card_number),
     CONSTRAINT uk_member_barcode UNIQUE (barcode),
-    CONSTRAINT uk_member_civil_id UNIQUE (civil_id) -- إضافة قيد التفرد للهوية
+    CONSTRAINT uk_member_civil_id UNIQUE (civil_id),
+    
+    -- Enum Constraints
+    CONSTRAINT chk_member_status CHECK (status IN ('ACTIVE', 'SUSPENDED', 'TERMINATED', 'PENDING', 'DRAFT', 'PENDING_VERIFICATION')),
+    CONSTRAINT chk_member_gender CHECK (gender IN ('MALE', 'FEMALE', 'UNDEFINED')),
+    CONSTRAINT chk_member_relationship CHECK (relationship IN ('WIFE', 'HUSBAND', 'SON', 'DAUGHTER', 'FATHER', 'MOTHER', 'BROTHER', 'SISTER', 'SPOUSE', 'CHILD', 'PARENT', 'OTHER')),
+    CONSTRAINT chk_member_marital_status CHECK (marital_status IN ('SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED', 'OTHER'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_members_parent ON members(parent_id);
@@ -191,7 +202,7 @@ CREATE TABLE IF NOT EXISTS member_chronic_conditions (
     CONSTRAINT fk_mcc_member FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_mcc_member_id ON member_chronic_conditions(member_id);
+CREATE INDEX IF NOT EXISTS idx_mcc_member_id ON member_chronic_conditions(member_id);
 
 -- 7. سجلات استيراد الأعضاء (Member Import Logs)
 CREATE TABLE IF NOT EXISTS member_import_logs (

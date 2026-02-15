@@ -9,8 +9,8 @@ import com.waad.tba.modules.provider.entity.Provider;
 import com.waad.tba.modules.provider.repository.ProviderRepository;
 import com.waad.tba.modules.providercontract.service.ProviderContractService;
 import com.waad.tba.modules.provider.dto.EffectivePriceResponseDto;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.visit.entity.Visit;
@@ -52,7 +52,7 @@ public class PreAuthorizationService {
     private final PreAuthorizationRepository preAuthorizationRepository;
     private final ProviderRepository providerRepository;
     private final MemberRepository memberRepository;
-    private final MedicalServiceRepository medicalServiceRepository;
+    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
     private final VisitRepository visitRepository;
     private final ProviderContractService providerContractService;
     private final PreAuthorizationAuditService auditService;
@@ -125,8 +125,7 @@ public class PreAuthorizationService {
 
         // ═══════════════════════════════════════════════════════════════════════════
         // STEP 3: Validate MedicalService (ARCHITECTURAL LAW: No free-text services)
-        // ═══════════════════════════════════════════════════════════════════════════
-        MedicalService service = medicalServiceRepository.findById(dto.getMedicalServiceId())
+        EnterpriseMedicalService service = medicalServiceRepository.findById(dto.getMedicalServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "ARCHITECTURAL VIOLATION: Medical Service not found with ID: " + dto.getMedicalServiceId() + 
                     ". Service MUST be selected from catalog."));
@@ -140,7 +139,7 @@ public class PreAuthorizationService {
         // Providers can submit PreAuthorization for ANY service - the insurance company
         // will decide whether to approve based on policy rules.
         
-        log.info("[PRE-AUTH] Medical Service validated: {} ({})", service.getCode(), service.getName());
+        log.info("[PRE-AUTH] Medical Service validated: {} ({})", service.getCode(), service.getNameAr());
 
         // ═══════════════════════════════════════════════════════════════════════════
         // STEP 4: Get Contract Price (ARCHITECTURAL LAW: No manual pricing)
@@ -188,8 +187,8 @@ public class PreAuthorizationService {
 
         // Determine service type from category or use default
         String serviceType = "MEDICAL";
-        if (service.getCategoryId() != null) {
-            serviceType = "CATEGORY_" + service.getCategoryId();
+        if (service.getCategory() != null) {
+            serviceType = "CATEGORY_" + service.getCategory();
         }
 
         PreAuthorization preAuth = PreAuthorization.builder()
@@ -200,9 +199,9 @@ public class PreAuthorizationService {
                 .visit(visit)                        // FK to Visit
                 .medicalService(service)             // FK to MedicalService (NO FREE-TEXT)
                 .serviceCode(service.getCode())      // Denormalized snapshot
-                .serviceName(service.getName())      // Denormalized snapshot
+                .serviceName(service.getNameAr())      // Denormalized snapshot
                 .serviceType(serviceType)            // Legacy column (required by database)
-                .serviceCategoryId(service.getCategoryId())
+                .serviceCategory(service.getCategory())
                 .requestDate(requestDate)
                 .expectedServiceDate(requestDate)    // Default: same as request date
                 .expiryDate(expiryDate)
@@ -296,7 +295,7 @@ public class PreAuthorizationService {
         // Fetch related entities for response
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -356,7 +355,7 @@ public class PreAuthorizationService {
         // Fetch related entities for response
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -392,7 +391,7 @@ public class PreAuthorizationService {
         // Fetch related entities for response
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -420,7 +419,7 @@ public class PreAuthorizationService {
         // Fetch related entities for response
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -468,7 +467,7 @@ public class PreAuthorizationService {
 
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -483,7 +482,7 @@ public class PreAuthorizationService {
 
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -629,7 +628,7 @@ public class PreAuthorizationService {
         
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -677,7 +676,7 @@ public class PreAuthorizationService {
         // Fetch related entities for response
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -720,7 +719,7 @@ public class PreAuthorizationService {
 
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
 
         return mapToResponseDto(preAuth, member, provider, service);
     }
@@ -772,7 +771,7 @@ public class PreAuthorizationService {
      * Map to response DTO with full details (CANONICAL REBUILD 2026-01-16)
      */
     private PreAuthorizationResponseDto mapToResponseDto(PreAuthorization preAuth, Member member, 
-                                                         Provider provider, MedicalService service) {
+                                                         Provider provider, EnterpriseMedicalService service) {
         Integer daysUntilExpiry = null;
         if (preAuth.getExpiryDate() != null) {
             daysUntilExpiry = (int) ChronoUnit.DAYS.between(LocalDate.now(), preAuth.getExpiryDate());
@@ -804,8 +803,8 @@ public class PreAuthorizationService {
                 // Medical Service info (from Contract)
                 .medicalServiceId(service != null ? service.getId() : null)
                 .serviceCode(preAuth.getServiceCode())
-                .serviceName(service != null ? service.getName() : null)
-                .serviceCategoryId(preAuth.getServiceCategoryId())
+                .serviceName(service != null ? service.getNameAr() : null)
+                .serviceCategory(preAuth.getServiceCategory())
                 .requiresPA(preAuth.getRequiresPA())
                 // Diagnosis
                 .diagnosisCode(preAuth.getDiagnosisCode())
@@ -853,7 +852,7 @@ public class PreAuthorizationService {
         // Fetch related entities for complete display
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
-        MedicalService service = preAuth.getMedicalService();
+        EnterpriseMedicalService service = preAuth.getMedicalService();
         
         // Fallback: try to find service by code if not loaded
         if (service == null && preAuth.getServiceCode() != null) {

@@ -120,9 +120,11 @@ const UnifiedMemberEdit = () => {
     relationship: '',
     employerId: '',
     employeeNumber: '',
+    policyNumber: '',
+    benefitPolicyId: '',
+    startDate: null,
+    endDate: null,
     joinDate: null,
-    occupation: '',
-    maritalStatus: '',
     occupation: '',
     maritalStatus: '',
     status: 'ACTIVE',
@@ -134,7 +136,8 @@ const UnifiedMemberEdit = () => {
 
   // Lookup Data
   const [employers, setEmployers] = useState([]);
-  const [benefitPolicies, setBenefitPolicies] = useState([]);
+  const [activePolicy, setActivePolicy] = useState(null);
+  const [isLoadingPolicy, setIsLoadingPolicy] = useState(false);
   const [isPrincipal, setIsPrincipal] = useState(false);
 
   /**
@@ -179,6 +182,10 @@ const UnifiedMemberEdit = () => {
         relationship: data.relationship || '',
         employerId: data.employerId || '',
         employeeNumber: data.employeeNumber || '',
+        policyNumber: data.policyNumber || '',
+        benefitPolicyId: data.benefitPolicyId || '',
+        startDate: data.startDate ? dayjs(data.startDate) : null,
+        endDate: data.endDate ? dayjs(data.endDate) : null,
         joinDate: data.joinDate ? dayjs(data.joinDate) : null,
         occupation: data.occupation || '',
         status: data.status || 'ACTIVE',
@@ -194,14 +201,56 @@ const UnifiedMemberEdit = () => {
     }
   };
 
+  const fetchEffectivePolicy = async (employerId, initial = false) => {
+    if (!employerId) {
+      setActivePolicy(null);
+      return;
+    }
+
+    try {
+      setIsLoadingPolicy(true);
+      const res = await axiosClient.get('/benefit-policies/effective', {
+        params: { employerOrgId: employerId, date: dayjs().format('YYYY-MM-DD') }
+      });
+
+      const policy = res.data?.data;
+      if (policy) {
+        setActivePolicy(policy);
+        if (!initial) {
+          setForm(prev => ({
+            ...prev,
+            benefitPolicyId: policy.id,
+            policyNumber: policy.policyCode || '',
+            startDate: policy.startDate ? dayjs(policy.startDate) : null,
+            endDate: policy.endDate ? dayjs(policy.endDate) : null
+          }));
+        }
+      } else {
+        setActivePolicy(null);
+      }
+    } catch (error) {
+      console.error('Error fetching effective policy:', error);
+      setActivePolicy(null);
+    } finally {
+      setIsLoadingPolicy(false);
+    }
+  };
+
+  const handleEmployerChange = async (employerId) => {
+    setForm(prev => ({ ...prev, employerId }));
+    await fetchEffectivePolicy(employerId);
+  };
+
+  useEffect(() => {
+    if (form.employerId && isPrincipal) {
+      fetchEffectivePolicy(form.employerId, true);
+    }
+  }, [form.employerId, isPrincipal]);
+
   const fetchLookupData = async () => {
     try {
-      const [orgsRes, policiesRes] = await Promise.all([
-        axiosClient.get('/employers/selectors'),
-        axiosClient.get('/benefit-policies', { params: { size: 1000 } })
-      ]);
+      const orgsRes = await axiosClient.get('/employers/selectors');
       setEmployers(orgsRes.data?.data || []);
-      setBenefitPolicies(policiesRes.data?.data?.content || []);
     } catch (error) {
       console.error('Error fetching lookup data:', error);
     }
@@ -302,6 +351,8 @@ const UnifiedMemberEdit = () => {
         status: form.status || 'ACTIVE',
         startDate: form.startDate ? dayjs(form.startDate).format('YYYY-MM-DD') : null,
         endDate: form.endDate ? dayjs(form.endDate).format('YYYY-MM-DD') : null,
+        policyNumber: form.policyNumber || null,
+        benefitPolicyId: form.benefitPolicyId || null,
         notes: form.notes || null,
       };
 
@@ -490,9 +541,11 @@ const UnifiedMemberEdit = () => {
                 form={form}
                 errors={errors}
                 handleChange={handleChange}
-                isPrincipal={isPrincipal}
+                onEmployerChange={handleEmployerChange}
+                isPrincipal={true}
                 employers={employers}
-                benefitPolicies={benefitPolicies}
+                activePolicy={activePolicy}
+                isLoadingPolicy={isLoadingPolicy}
               />
             )}
           </div>

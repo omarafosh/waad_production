@@ -33,6 +33,8 @@ const UnifiedMemberCreate = () => {
   const [searchParams] = useSearchParams();
   const [tabValue, setTabValue] = useState(0);
   const [employers, setEmployers] = useState([]);
+  const [activePolicy, setActivePolicy] = useState(null);
+  const [isLoadingPolicy, setIsLoadingPolicy] = useState(false);
 
   // Form State using Custom Hook
   const {
@@ -50,6 +52,10 @@ const UnifiedMemberCreate = () => {
     maritalStatus: '',
     employerId: '',
     employeeNumber: '',
+    policyNumber: '',
+    benefitPolicyId: '',
+    startDate: dayjs().startOf('year'),
+    endDate: dayjs().endOf('year'),
     joinDate: null,
     occupation: '',
     institutionId: '',
@@ -85,8 +91,58 @@ const UnifiedMemberCreate = () => {
     }
   };
 
+  const fetchEffectivePolicy = async (employerId) => {
+    if (!employerId) {
+      setActivePolicy(null);
+      updateForm({
+        benefitPolicyId: '',
+        policyNumber: '',
+        startDate: null,
+        endDate: null
+      });
+      return;
+    }
+
+    try {
+      setIsLoadingPolicy(true);
+      const res = await axiosClient.get('/benefit-policies/effective', {
+        params: { employerOrgId: employerId, date: dayjs().format('YYYY-MM-DD') }
+      });
+
+      const policy = res.data?.data;
+      if (policy) {
+        setActivePolicy(policy);
+        updateForm({
+          benefitPolicyId: policy.id,
+          policyNumber: policy.policyCode || '',
+          startDate: policy.startDate ? dayjs(policy.startDate) : null,
+          endDate: policy.endDate ? dayjs(policy.endDate) : null
+        });
+      } else {
+        setActivePolicy(null);
+        updateForm({
+          benefitPolicyId: '',
+          policyNumber: '',
+          startDate: null,
+          endDate: null
+        });
+        openSnackbar({
+          message: 'لا توجد وثيقة منافع فعالة لهذا الطرف حالياً',
+          variant: 'alert',
+          alert: { color: 'warning' }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching effective policy:', error);
+      setActivePolicy(null);
+    } finally {
+      setIsLoadingPolicy(false);
+    }
+  };
+
   const handleEmployerChange = (employerId) => {
     updateForm({ employerId });
+    fetchEffectivePolicy(employerId);
   };
 
   const handlePhotoChange = (file, preview) => {
@@ -115,6 +171,9 @@ const UnifiedMemberCreate = () => {
         ...form,
         fullName: form.fullName.trim(),
         birthDate: form.birthDate ? dayjs(form.birthDate).format('YYYY-MM-DD') : (isFastTrack ? '1900-01-01' : null),
+        startDate: form.startDate ? dayjs(form.startDate).format('YYYY-MM-DD') : null,
+        endDate: form.endDate ? dayjs(form.endDate).format('YYYY-MM-DD') : null,
+        joinDate: form.joinDate ? dayjs(form.joinDate).format('YYYY-MM-DD') : null,
         gender: form.gender || (isFastTrack ? 'UNDEFINED' : null),
         maritalStatus: form.maritalStatus || (isFastTrack ? 'SINGLE' : null),
         type: 'PRINCIPAL'
@@ -144,7 +203,7 @@ const UnifiedMemberCreate = () => {
       return (errors.fullName ? 1 : 0) + (errors.birthDate ? 1 : 0) + (errors.gender ? 1 : 0);
     }
     if (index === 1) {
-      return (errors.employerId ? 1 : 0);
+      return (errors.employerId ? 1 : 0) + (errors.benefitPolicyId ? 1 : 0) + (errors.policyNumber ? 1 : 0) + (errors.startDate ? 1 : 0) + (errors.endDate ? 1 : 0);
     }
     if (index === 2) {
       return (errors.phone ? 1 : 0) + (errors.email ? 1 : 0);
@@ -317,6 +376,8 @@ const UnifiedMemberCreate = () => {
                 onEmployerChange={handleEmployerChange}
                 isPrincipal={true}
                 employers={employers}
+                activePolicy={activePolicy}
+                isLoadingPolicy={isLoadingPolicy}
               />
             )}
 

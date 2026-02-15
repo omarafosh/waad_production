@@ -193,7 +193,7 @@ public class ProviderSettlementReportDto {
         /**
          * Medical Service
          */
-        private Long medicalServiceId;
+        private java.util.UUID medicalServiceId;
         private String serviceCode;
         private String serviceName;
         private String serviceCategory;

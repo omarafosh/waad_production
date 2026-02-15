@@ -258,7 +258,7 @@ const GisirMappingWorkspace = () => {
                                     <Autocomplete
                                         size="small"
                                         options={employers}
-                                        getOptionLabel={(option) => option.name || ''}
+                                        getOptionLabel={(option) => option.label || option.name || ''}
                                         value={employers.find(e => e.id === selectedEmployerId) || null}
                                         onChange={(_, newValue) => {
                                             setSelectedEmployerId(newValue ? newValue.id : '');

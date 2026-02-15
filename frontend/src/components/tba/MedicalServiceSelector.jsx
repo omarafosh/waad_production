@@ -340,7 +340,23 @@ const MedicalServiceSelector = ({
         selectOnFocus
         blurOnSelect
         autoHighlight
-        filterOptions={(x) => x} // Disable client-side filtering - server handles it
+        freeSolo // Allow custom text entry
+        filterOptions={(options, params) => {
+          const filtered = options;
+
+          // Suggest the creation of a new value
+          if (params.inputValue !== '' && !options.some(option => option.name === params.inputValue)) {
+            filtered.push({
+              inputValue: params.inputValue,
+              name: `إضافة "${params.inputValue}"`,
+              code: 'NEW',
+              id: 'custom-new',
+              isCustom: true
+            });
+          }
+
+          return filtered;
+        }}
         sx={{
           '& .MuiAutocomplete-inputRoot': {
             paddingLeft: 1

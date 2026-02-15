@@ -4,8 +4,8 @@ import com.waad.tba.common.exception.ArchitecturalViolationException;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicyRule;
 import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimLine;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.preauthorization.entity.PreAuthorization;
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ArchitecturalGuardService {
 
-    private final MedicalServiceRepository medicalServiceRepository;
+    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MEDICAL SERVICE GUARDS
@@ -58,14 +58,14 @@ public class ArchitecturalGuardService {
      * Validate MedicalService has a category.
      * RULE: Every MedicalService MUST belong to a MedicalCategory
      */
-    public void guardServiceHasCategory(MedicalService service) {
+    public void guardServiceHasCategory(EnterpriseMedicalService service) {
         if (service == null) {
-            throw new ArchitecturalViolationException("MedicalService", "Service cannot be null");
+            throw new ArchitecturalViolationException("EnterpriseMedicalService", "Service cannot be null");
         }
-        if (service.getCategoryId() == null) {
+        if (service.getCategory() == null) {
             throw ArchitecturalViolationException.serviceWithoutCategory(service.getCode());
         }
-        log.trace("✅ Guard passed: Service {} has category {}", service.getCode(), service.getCategoryId());
+        log.trace("✅ Guard passed: Service {} has category {}", service.getCode(), service.getCategory());
     }
 
     /**
@@ -81,12 +81,12 @@ public class ArchitecturalGuardService {
      * Validate a service by ID has category assigned.
      * Used for pre-validation before entity access.
      */
-    public void guardServiceHasCategory(Long serviceId) {
+    public void guardServiceHasCategory(java.util.UUID serviceId) {
         if (serviceId == null) {
             return; // Skip null service IDs
         }
         medicalServiceRepository.findById(serviceId).ifPresent(service -> {
-            if (service.getCategoryId() == null) {
+            if (service.getCategory() == null) {
                 throw ArchitecturalViolationException.serviceWithoutCategory(service.getCode());
             }
         });
@@ -150,12 +150,12 @@ public class ArchitecturalGuardService {
      * Validate service IDs provided for claim creation (ID-based).
      * Called before entity is created.
      */
-    public void guardClaimHasServices(List<Long> serviceIds) {
+    public void guardClaimHasServices(java.util.List<java.util.UUID> serviceIds) {
         if (serviceIds == null || serviceIds.isEmpty()) {
             throw ArchitecturalViolationException.claimWithoutService(null);
         }
         // Also validate each service has a category
-        for (Long serviceId : serviceIds) {
+        for (java.util.UUID serviceId : serviceIds) {
             guardServiceHasCategory(serviceId);
         }
     }
@@ -211,7 +211,7 @@ public class ArchitecturalGuardService {
      * Validate medicalServiceId is provided for preauth creation (ID-based).
      * Called before entity is created.
      */
-    public void guardPreAuthHasService(Long medicalServiceId) {
+    public void guardPreAuthHasService(java.util.UUID medicalServiceId) {
         if (medicalServiceId == null) {
             throw new ArchitecturalViolationException(
                 "SERVICE_REQUIRED",
@@ -357,7 +357,7 @@ public class ArchitecturalGuardService {
      * @param visitId The visit ID from DTO
      * @param serviceIds List of medical service IDs from DTO lines
      */
-    public void guardClaimCreation(Long visitId, List<Long> serviceIds) {
+    public void guardClaimCreation(Long visitId, java.util.List<java.util.UUID> serviceIds) {
         log.debug("🔒 Running architectural guards for Claim creation (ID-based)");
         guardClaimHasVisit(visitId);
         guardClaimHasServices(serviceIds);
@@ -369,7 +369,7 @@ public class ArchitecturalGuardService {
      * @param visitId The visit ID from DTO
      * @param medicalServiceId The medical service ID from DTO
      */
-    public void guardPreAuthCreation(Long visitId, Long medicalServiceId) {
+    public void guardPreAuthCreation(Long visitId, java.util.UUID medicalServiceId) {
         log.debug("🔒 Running architectural guards for PreAuthorization creation (ID-based)");
         guardPreAuthHasVisit(visitId);
         guardPreAuthHasService(medicalServiceId);
@@ -381,7 +381,7 @@ public class ArchitecturalGuardService {
      * @param serviceId Optional service ID
      * @param categoryId Optional category ID (at least one must be provided)
      */
-    public void guardRuleCreation(Long serviceId, Long categoryId) {
+    public void guardRuleCreation(java.util.UUID serviceId, Long categoryId) {
         log.debug("🔒 Running architectural guards for Rule creation (ID-based)");
         if (serviceId == null && categoryId == null) {
             throw ArchitecturalViolationException.ruleWithoutTarget(null);

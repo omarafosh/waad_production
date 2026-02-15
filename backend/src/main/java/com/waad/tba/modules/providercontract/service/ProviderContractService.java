@@ -12,9 +12,9 @@ import com.waad.tba.modules.providercontract.entity.ProviderContract.ContractSta
 import com.waad.tba.modules.providercontract.entity.ProviderContract.PricingModel;
 import com.waad.tba.modules.providercontract.repository.ProviderContractRepository;
 import com.waad.tba.modules.provider.dto.EffectivePriceResponseDto;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.provider.dto.ProviderServiceDto;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.benefitpolicy.service.BenefitPolicyRuleService;
@@ -55,7 +55,7 @@ public class ProviderContractService {
     private final ProviderRepository providerRepository;
     private final OrganizationRepository organizationRepository;
     private final ProviderContractPricingItemService pricingItemService;
-    private final MedicalServiceRepository medicalServiceRepository;
+    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
     private final MemberRepository memberRepository;
     private final BenefitPolicyRuleService benefitPolicyRuleService;
     private final ClaimRepository claimRepository;
@@ -268,7 +268,7 @@ public class ProviderContractService {
         Provider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found: " + providerId));
         
-        MedicalService service = medicalServiceRepository.findByCode(serviceCode)
+        EnterpriseMedicalService service = medicalServiceRepository.findByCode(serviceCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Medical Service not found: " + serviceCode));
         
         // Find active contract
@@ -280,7 +280,7 @@ public class ProviderContractService {
                     .providerId(providerId)
                     .providerName(provider.getName())
                     .serviceCode(serviceCode)
-                    .serviceName(service.getName())
+                    .serviceName(service.getNameAr())
                     .hasContract(false)
                     .message("No active contract found for provider")
                     .build();
@@ -294,7 +294,7 @@ public class ProviderContractService {
                     .providerId(providerId)
                     .providerName(provider.getName())
                     .serviceCode(serviceCode)
-                    .serviceName(service.getName())
+                    .serviceName(service.getNameAr())
                     .contractId(contract.getId())
                     .hasContract(false)
                     .message("Service not found in provider contract")
@@ -305,7 +305,7 @@ public class ProviderContractService {
                 .providerId(providerId)
                 .providerName(provider.getName())
                 .serviceCode(serviceCode)
-                .serviceName(service.getName())
+                .serviceName(service.getNameAr())
                 .contractId(contract.getId())
                 .contractPrice(pricingItem.getContractPrice())
                 .basePrice(pricingItem.getBasePrice())

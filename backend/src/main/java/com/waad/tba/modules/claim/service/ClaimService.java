@@ -230,7 +230,7 @@ public class ClaimService {
         // ═══════════════════════════════════════════════════════════════════════════
         // ARCHITECTURAL GUARD: Validate system invariants before processing
         // ═══════════════════════════════════════════════════════════════════════════
-        List<Long> serviceIds = dto.getLines() != null 
+        List<java.util.UUID> serviceIds = dto.getLines() != null 
             ? dto.getLines().stream().map(ClaimLineDto::getMedicalServiceId).toList()
             : List.of();
         architecturalGuard.guardClaimCreation(dto.getVisitId(), serviceIds);

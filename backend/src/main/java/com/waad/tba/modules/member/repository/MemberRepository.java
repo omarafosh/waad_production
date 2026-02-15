@@ -468,6 +468,11 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
     List<Member> findByParentIdAndRelationship(Long parentId, Member.Relationship relationship);
 
     /**
+     * Count dependents by parent ID and relationship.
+     */
+    long countByParentIdAndRelationship(Long parentId, Member.Relationship relationship);
+
+    /**
      * Check if a member has any dependents.
      * 
      * @param principalId Principal member ID

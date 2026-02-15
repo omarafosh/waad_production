@@ -1,7 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 01. الأساس الأمني والصلاحيات (Auth & RBAC Module - Clean Baseline)
 -- ═══════════════════════════════════════════════════════════════════════════
--- يشمل هذا الملف: الأدوار، الصلاحيات، المستخدمين، رموز التنشيط، ورموز التحديث.
 
 -- 1. الأدوار (Roles)
 CREATE TABLE IF NOT EXISTS roles (
@@ -10,9 +9,21 @@ CREATE TABLE IF NOT EXISTS roles (
     name_ar VARCHAR(100),
     description VARCHAR(500),
     description_ar VARCHAR(500),
+    
+    -- Audit & Versioning (Matches SoftDeleteEntity.java)
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    version BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+    
+    -- Soft Delete Extensions (Optional but standard in Waad Refactoring)
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(100),
+    valid_from TIMESTAMP,
+    valid_to TIMESTAMP
 );
 
 -- 2. الصلاحيات (Permissions)
@@ -23,10 +34,23 @@ CREATE TABLE IF NOT EXISTS permissions (
     description VARCHAR(500),
     description_ar VARCHAR(500),
     module VARCHAR(50),
+    module_name VARCHAR(100), -- Missing column identified in Entity
     category VARCHAR(50) DEFAULT 'GENERAL',
-    active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    
+    -- Audit & Versioning
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    version BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+    
+    -- Soft Delete Extensions
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(100),
+    valid_from TIMESTAMP,
+    valid_to TIMESTAMP
 );
 
 -- 3. المستخدمين (Users)
@@ -36,16 +60,15 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     full_name VARCHAR(200) NOT NULL,
-    civil_id VARCHAR(20) UNIQUE, -- توحيد مسمى الهوية الوطنية
+    civil_id VARCHAR(50) UNIQUE,
     phone VARCHAR(50),
     profile_image_url VARCHAR(255),
     
-    active BOOLEAN NOT NULL DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE,
     password_changed_at TIMESTAMP,
-    
     failed_login_count INTEGER DEFAULT 0 NOT NULL,
     locked_until TIMESTAMP,
+    last_login_at TIMESTAMP,
     
     -- سياق المؤسسة (Organization Context)
     company_id BIGINT,
@@ -57,9 +80,20 @@ CREATE TABLE IF NOT EXISTS users (
     can_view_members BOOLEAN DEFAULT TRUE,
     can_view_benefit_policies BOOLEAN DEFAULT TRUE,
     
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    last_login_at TIMESTAMP
+    -- Audit & Versioning
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    version BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+    
+    -- Soft Delete Extensions
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(100),
+    valid_from TIMESTAMP,
+    valid_to TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -85,7 +119,6 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 );
 
 -- 6. رموز الأمان (Security Tokens)
-
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -110,7 +143,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 -- 7. رموز التحديث (Refresh Tokens)
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id BIGSERIAL PRIMARY KEY,
-    users_id BIGINT NOT NULL, -- تم التوحيد إلى users_id كما في V31
+    users_id BIGINT NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
     expiry_date TIMESTAMP NOT NULL,
     revoked BOOLEAN DEFAULT FALSE NOT NULL,
@@ -118,14 +151,11 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     CONSTRAINT fk_refresh_token_user FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_refresh_token_user ON refresh_tokens(users_id);
-
 -- 8. التدقيق والسجلات (Audit & Logs)
-
 CREATE TABLE IF NOT EXISTS user_login_attempts (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT,
-    username VARCHAR(50),
+    username VARCHAR(100),
     ip_address VARCHAR(45),
     user_agent VARCHAR(500),
     success BOOLEAN NOT NULL,
@@ -137,6 +167,7 @@ CREATE TABLE IF NOT EXISTS user_audit_log (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     action VARCHAR(100) NOT NULL,
+    details TEXT, -- Missing column identified in Entity
     performed_by BIGINT,
     performed_by_username VARCHAR(100),
     old_value JSONB,
@@ -148,7 +179,6 @@ CREATE TABLE IF NOT EXISTS user_audit_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_audit_log_user_id ON user_audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_audit_log_action ON user_audit_log(action);
 CREATE INDEX IF NOT EXISTS idx_user_audit_log_created_at ON user_audit_log(created_at DESC);
 
 -- 9. تهيئة الأدوار الأساسية (Default Roles)

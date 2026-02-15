@@ -5,20 +5,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import com.waad.tba.common.entity.SoftDeleteEntity;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "permissions")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
-public class Permission {
+@EqualsAndHashCode(callSuper = true)
+@SQLDelete(sql = "UPDATE permissions SET active = false, deleted = true, deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("active = true")
+public class Permission extends SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,11 +47,4 @@ public class Permission {
     @Column(name = "category", length = 50)
     @Builder.Default
     private PermissionCategory category = PermissionCategory.GENERAL;
-
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 }

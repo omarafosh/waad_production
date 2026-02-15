@@ -9,6 +9,6 @@ import lombok.Data;
 @Data
 public class SimulationRequestDto {
     private Long policyId;
-    private Long serviceId;
+    private java.util.UUID serviceId;
     private VisitType encounterType;
 }

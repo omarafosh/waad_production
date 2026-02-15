@@ -6,10 +6,9 @@ import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.modules.benefitpolicy.entity.CoverageDistribution;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
 import com.waad.tba.modules.benefitpolicy.repository.CoverageDistributionRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -27,7 +26,7 @@ public class CoverageDistributionService {
     private final CoverageDistributionRepository distributionRepository;
     private final BenefitPolicyRepository policyRepository;
     private final MedicalCategoryRepository categoryRepository;
-    private final MedicalServiceRepository serviceRepository;
+    private final EnterpriseMedicalServiceRepository serviceRepository;
 
     @Transactional(readOnly = true)
     public List<CoverageDistributionDto> findByPolicyId(Long policyId) {
@@ -45,25 +44,26 @@ public class CoverageDistributionService {
         BenefitPolicy policy = policyRepository.findById(policyId)
                 .orElseThrow(() -> new BusinessRuleException("Policy not found: " + policyId));
 
-        MedicalCategory category = null;
-        if (dto.getCategoryId() != null) {
-            category = categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new BusinessRuleException("Category not found: " + dto.getCategoryId()));
+        String categoryCode = dto.getCategoryId();
+        if (categoryCode != null && !categoryCode.isBlank()) {
+            if (!categoryRepository.existsByCode(categoryCode)) {
+                throw new BusinessRuleException("Category not found: " + categoryCode);
+            }
         }
 
-        MedicalService service = null;
+        EnterpriseMedicalService service = null;
         if (dto.getServiceId() != null) {
             service = serviceRepository.findById(dto.getServiceId())
                     .orElseThrow(() -> new BusinessRuleException("Service not found: " + dto.getServiceId()));
         }
 
-        if (category == null && service == null) {
+        if (categoryCode == null && service == null) {
             throw new BusinessRuleException("Distribution must target either a Category or a Service");
         }
 
         CoverageDistribution distribution = CoverageDistribution.builder()
                 .benefitPolicy(policy)
-                .medicalCategory(category)
+                .medicalCategory(categoryCode)
                 .medicalService(service)
                 .limitAmount(dto.getLimitAmount())
                 .active(true)

@@ -1,9 +1,9 @@
 package com.waad.tba.modules.medicaltaxonomy.service;
 
 import com.waad.tba.common.exception.BusinessRuleException;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderServiceMapping;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.ProviderServiceMappingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import java.util.Optional;
 public class MedicalCatalogService {
 
     private final ProviderServiceMappingRepository mappingRepository;
-    private final MedicalServiceRepository masterServiceRepository;
+    private final EnterpriseMedicalServiceRepository masterServiceRepository;
     private final com.waad.tba.modules.provider.repository.ProviderRepository providerRepository;
 
     /**
@@ -44,7 +44,7 @@ public class MedicalCatalogService {
      */
     @Transactional(readOnly = true)
     @Cacheable(value = "serviceResolution", key = "{#providerId, #providerServiceCode}")
-    public MedicalService resolveService(Long providerId, String providerServiceCode) {
+    public EnterpriseMedicalService resolveService(Long providerId, String providerServiceCode) {
         log.debug("Resolving service mapping for provider {} with code {}", providerId, providerServiceCode);
 
         // 1. Try to find an explicit mapping
@@ -55,8 +55,7 @@ public class MedicalCatalogService {
         }
 
         // 2. FALLBACK: Check if the provider is already using a Master Service Code
-        // Some providers (especially large ones) might already use the system's standard codes.
-        Optional<MedicalService> masterService = masterServiceRepository.findByCode(providerServiceCode);
+        Optional<EnterpriseMedicalService> masterService = masterServiceRepository.findByCode(providerServiceCode);
         if (masterService.isPresent()) {
             log.info("ℹ️ No explicit mapping found for code '{}', but it matches a Master Service. Using as direct match.", providerServiceCode);
             return masterService.get();
@@ -72,9 +71,9 @@ public class MedicalCatalogService {
     /**
      * Check if a service is a Master Service.
      */
-    public boolean isMaster(Long serviceId) {
+    public boolean isMaster(java.util.UUID serviceId) {
         return masterServiceRepository.findById(serviceId)
-                .map(MedicalService::isMaster)
+                .map(EnterpriseMedicalService::isMaster)
                 .orElse(false);
     }
 
@@ -93,7 +92,7 @@ public class MedicalCatalogService {
         for (var entry : request.getMappings()) {
             try {
                 // Find master service
-                MedicalService masterService = masterServiceRepository.findByCode(entry.getMasterServiceCode())
+                EnterpriseMedicalService masterService = masterServiceRepository.findByCode(entry.getMasterServiceCode())
                         .orElseThrow(() -> new BusinessRuleException("Master service not found: " + entry.getMasterServiceCode()));
 
                 // Check for existing mapping

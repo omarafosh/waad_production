@@ -8,12 +8,11 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 /**
  * DTO for creating a new Provider Contract Pricing Item.
- * 
- * @version 1.0
- * @since 2024-12-24
+ * (REFACTORED 2026-02-15 - UNIFIED DICTIONARY)
  */
 @Data
 @Builder
@@ -22,15 +21,26 @@ import java.time.LocalDate;
 public class ProviderContractPricingItemCreateDto {
 
     /**
-     * Medical service ID (required)
+     * Medical service ID - UUID (optional if serviceName provided)
      */
-    @NotNull(message = "Medical service ID is required")
-    private Long medicalServiceId;
+    private UUID medicalServiceId;
 
     /**
-     * Optional category override
+     * Service Name (Required if medicalServiceId is null)
      */
-    private Long medicalCategoryId;
+    @Size(max = 255)
+    private String serviceName;
+
+    /**
+     * Service Code (Optional, auto-generated if null)
+     */
+    @Size(max = 50)
+    private String serviceCode;
+
+    /**
+     * Optional category override (String code)
+     */
+    private String categoryName;
 
     /**
      * Standard/list price (required)

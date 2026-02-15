@@ -9,48 +9,16 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
- * DTO for returning Benefit Policy Rule information.
+ * DTO for returning Benefit Policy Rule information (REFACTORED for Unified Dictionary).
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BenefitPolicyRuleResponseDto {
-
-    public BenefitPolicyRuleResponseDto() {}
-
-    public BenefitPolicyRuleResponseDto(Long id, Long benefitPolicyId, String benefitPolicyName, String ruleType, 
-                                     Long medicalCategoryId, String medicalCategoryCode, String medicalCategoryNameAr, String medicalCategoryNameEn, 
-                                     Long medicalServiceId, String medicalServiceCode, String medicalServiceNameAr, String medicalServiceNameEn, 
-                                     Integer coveragePercent, Integer effectiveCoveragePercent, BigDecimal amountLimit, Integer timesLimit, 
-                                     Integer waitingPeriodDays, boolean requiresPreApproval, String label, String notes, 
-                                     VisitType encounterType, boolean active, boolean deleted, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
-        this.benefitPolicyId = benefitPolicyId;
-        this.benefitPolicyName = benefitPolicyName;
-        this.ruleType = ruleType;
-        this.medicalCategoryId = medicalCategoryId;
-        this.medicalCategoryCode = medicalCategoryCode;
-        this.medicalCategoryNameAr = medicalCategoryNameAr;
-        this.medicalCategoryNameEn = medicalCategoryNameEn;
-        this.medicalServiceId = medicalServiceId;
-        this.medicalServiceCode = medicalServiceCode;
-        this.medicalServiceNameAr = medicalServiceNameAr;
-        this.medicalServiceNameEn = medicalServiceNameEn;
-        this.coveragePercent = coveragePercent;
-        this.effectiveCoveragePercent = effectiveCoveragePercent;
-        this.amountLimit = amountLimit;
-        this.timesLimit = timesLimit;
-        this.waitingPeriodDays = waitingPeriodDays;
-        this.requiresPreApproval = requiresPreApproval;
-        this.label = label;
-        this.notes = notes;
-        this.encounterType = encounterType;
-        this.active = active;
-        this.deleted = deleted;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     private Long id;
     
@@ -59,42 +27,38 @@ public class BenefitPolicyRuleResponseDto {
     private String benefitPolicyName;
     
     // Target info
-    private String ruleType; // "CATEGORY" or "SERVICE"
+    private String ruleType; // "CATEGORY", "SERVICE", or "PACKAGE"
     
-    // Category info (if category rule)
-    private Long medicalCategoryId;
-    private String medicalCategoryCode;
-    private String medicalCategoryNameAr;
-    private String medicalCategoryNameEn;
+    // Category info (String-based in Unified Dictionary)
+    private String medicalCategory;
     
-    // Service info (if service rule)
-    private Long medicalServiceId;
+    // Service info (UUID-based in Unified Dictionary)
+    private UUID medicalServiceId;
     private String medicalServiceCode;
     private String medicalServiceNameAr;
     private String medicalServiceNameEn;
     
+    // Package info
+    private Long medicalPackageId;
+    private String medicalPackageName;
+    
     // Coverage settings
     private Integer coveragePercent;
-    private Integer effectiveCoveragePercent; // Resolved value (including fallback)
+    private Integer effectiveCoveragePercent;
     private BigDecimal amountLimit;
     private Integer timesLimit;
     private Integer waitingPeriodDays;
     private boolean requiresPreApproval;
     
-    // Display label
     private String label;
-    
     private String notes;
     private VisitType encounterType;
     private boolean active;
-    private boolean deleted; // New Field
+    private boolean deleted;
     
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    /**
-     * Factory method to create DTO from entity
-     */
     public static BenefitPolicyRuleResponseDto fromEntity(BenefitPolicyRule rule) {
         BenefitPolicyRuleResponseDtoBuilder builder = BenefitPolicyRuleResponseDto.builder()
                 .id(rule.getId())
@@ -107,39 +71,33 @@ public class BenefitPolicyRuleResponseDto {
                 .notes(rule.getNotes())
                 .encounterType(rule.getEncounterType())
                 .active(rule.isActive())
-                .deleted(rule.isDeleted()) // Map new field
+                .deleted(rule.isDeleted())
                 .createdAt(rule.getCreatedAt())
                 .updatedAt(rule.getUpdatedAt())
                 .label(rule.getLabel());
 
-        // Parent policy
         if (rule.getBenefitPolicy() != null) {
             builder.benefitPolicyId(rule.getBenefitPolicy().getId())
                    .benefitPolicyName(rule.getBenefitPolicy().getName());
         }
 
-        // Determine rule type and set appropriate fields
         if (rule.isCategoryRule()) {
             builder.ruleType("CATEGORY");
-            if (rule.getMedicalCategory() != null) {
-                builder.medicalCategoryId(rule.getMedicalCategory().getId())
-                       .medicalCategoryCode(rule.getMedicalCategory().getCode())
-                       .medicalCategoryNameAr(rule.getMedicalCategory().getName())
-                       .medicalCategoryNameEn(rule.getMedicalCategory().getName());
-            }
+            builder.medicalCategory(rule.getMedicalCategory());
         } else if (rule.isServiceRule()) {
             builder.ruleType("SERVICE");
             if (rule.getMedicalService() != null) {
                 builder.medicalServiceId(rule.getMedicalService().getId())
                        .medicalServiceCode(rule.getMedicalService().getCode())
-                       .medicalServiceNameAr(rule.getMedicalService().getName())
-                       .medicalServiceNameEn(rule.getMedicalService().getName());
-                
-                // Set category ID if service has it (category details need to be fetched separately)
-                if (rule.getMedicalService().getCategoryId() != null) {
-                    builder.medicalCategoryId(rule.getMedicalService().getCategoryId());
-                    // Category code/name would need separate repository fetch - omitting for now
-                }
+                       .medicalServiceNameAr(rule.getMedicalService().getNameAr())
+                       .medicalServiceNameEn(rule.getMedicalService().getNameEn())
+                       .medicalCategory(rule.getMedicalService().getCategory());
+            }
+        } else if (rule.isPackageRule()) {
+            builder.ruleType("PACKAGE");
+            if (rule.getMedicalPackage() != null) {
+                builder.medicalPackageId(rule.getMedicalPackage().getId())
+                       .medicalPackageName(rule.getMedicalPackage().getName());
             }
         }
 

@@ -27,7 +27,7 @@ public interface ProviderServiceMappingRepository extends JpaRepository<Provider
     /**
      * Find all mappings linked to a specific Master Service.
      */
-    List<ProviderServiceMapping> findByMasterServiceId(Long masterServiceId);
+    List<ProviderServiceMapping> findByMasterServiceId(java.util.UUID masterServiceId);
     
 
     /**

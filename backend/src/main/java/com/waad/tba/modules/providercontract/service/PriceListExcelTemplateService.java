@@ -5,8 +5,8 @@ import com.waad.tba.common.excel.dto.ExcelImportResult.ImportError;
 import com.waad.tba.common.excel.dto.ExcelImportResult.ImportError.ErrorType;
 import com.waad.tba.common.excel.dto.ExcelImportResult.ImportSummary;
 import com.waad.tba.common.exception.BusinessRuleException;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.providercontract.dto.*;
 import com.waad.tba.modules.providercontract.entity.ProviderContract;
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
@@ -51,7 +51,7 @@ public class PriceListExcelTemplateService {
     
     private final ProviderContractRepository contractRepository;
     private final ProviderContractPricingItemRepository pricingRepository;
-    private final MedicalServiceRepository medicalServiceRepository;
+    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
     
     private static final String SHEET_NAME = "Pricing_Template";
     
@@ -545,7 +545,7 @@ public class PriceListExcelTemplateService {
         }
         
         // Create pricing item - WITH medical service lookup attempt
-        MedicalService medicalService = null;
+        EnterpriseMedicalService medicalService = null;
         
         // 1. Try lookup by Code
         if (serviceCode != null && !serviceCode.isEmpty()) {
@@ -554,8 +554,10 @@ public class PriceListExcelTemplateService {
         
         // 2. Fallback: Try lookup by Name (if code didn't match)
         if (medicalService == null && serviceName != null) {
-            medicalService = medicalServiceRepository.findByName(serviceName).orElse(null);
-            // Also try English name if needed, but repository findByName usually checks primary name
+            medicalService = medicalServiceRepository.findByNameAr(serviceName).orElse(null);
+            if (medicalService == null) {
+                medicalService = medicalServiceRepository.findByNameEn(serviceName).orElse(null);
+            }
         }
         
         // Return constructed object

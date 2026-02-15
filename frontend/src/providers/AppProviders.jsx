@@ -5,6 +5,11 @@ import { Suspense } from 'react';
 // MUI X Date Pickers
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en-gb'; // English locale for Gregorian calendar
+
+// Configure dayjs globally to use English numerals and Gregorian calendar
+dayjs.locale('en-gb');
 
 // project imports
 import ThemeCustomization from 'themes';
@@ -34,7 +39,7 @@ const AppProviders = ({ children }) => {
                     <ThemeCustomization>
                         <RTLLayout>
                             <Locales>
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
                                     <ScrollTop>
                                         <AuthProvider>
                                             <EmployerFilterProvider>

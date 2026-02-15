@@ -1,8 +1,8 @@
 package com.waad.tba.modules.medicalpackage;
 
 import com.waad.tba.modules.medicalpackage.dto.MedicalPackageSelectorDto;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class MedicalPackageService {
 
     private final MedicalPackageRepository packageRepository;
-    private final MedicalServiceRepository serviceRepository;
+    private final EnterpriseMedicalServiceRepository serviceRepository;
 
     public List<MedicalPackageSelectorDto> getSelectorOptions() {
         return packageRepository.findByActive(true).stream()
@@ -72,9 +72,9 @@ public class MedicalPackageService {
             .build();
 
         if (dto.getServiceIds() != null && !dto.getServiceIds().isEmpty()) {
-            Set<MedicalService> services = new HashSet<>();
-            for (Long serviceId : dto.getServiceIds()) {
-                MedicalService service = serviceRepository.findById(serviceId)
+            Set<EnterpriseMedicalService> services = new HashSet<>();
+            for (java.util.UUID serviceId : dto.getServiceIds()) {
+                EnterpriseMedicalService service = serviceRepository.findById(serviceId)
                     .orElseThrow(() -> new RuntimeException("Medical service not found with id: " + serviceId));
                 services.add(service);
             }
@@ -100,9 +100,9 @@ public class MedicalPackageService {
         existingPackage.setActive(dto.getActive() != null ? dto.getActive() : true);
 
         if (dto.getServiceIds() != null) {
-            Set<MedicalService> services = new HashSet<>();
-            for (Long serviceId : dto.getServiceIds()) {
-                MedicalService service = serviceRepository.findById(serviceId)
+            Set<EnterpriseMedicalService> services = new HashSet<>();
+            for (java.util.UUID serviceId : dto.getServiceIds()) {
+                EnterpriseMedicalService service = serviceRepository.findById(serviceId)
                     .orElseThrow(() -> new RuntimeException("Medical service not found with id: " + serviceId));
                 services.add(service);
             }

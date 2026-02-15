@@ -1,6 +1,6 @@
 package com.waad.tba.modules.claim.entity;
 
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,16 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
- * ClaimLine Entity (CANONICAL REBUILD 2026-01-16)
- * 
- * ARCHITECTURAL LAW:
- * - Each line MUST reference a MedicalService (FK) - NO free-text services
- * - Unit price is AUTO-RESOLVED from Provider Contract - NO manual entry
- * - Total price is SERVER-CALCULATED: quantity × unitPrice
- * 
- * Data Flow: MedicalService (from Contract) → ContractPrice (auto) → TotalPrice (calculated)
+ * ClaimLine Entity (CANONICAL REBUILD 2026-02-15 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "claim_lines", indexes = {
@@ -38,43 +32,32 @@ public class ClaimLine {
     @JoinColumn(name = "claim_id", nullable = false)
     private Claim claim;
 
-    // ==================== MEDICAL SERVICE (CONTRACT-DRIVEN) ====================
+    // ==================== MEDICAL SERVICE (ENTERPRISE DICTIONARY) ====================
     
     /**
-     * Medical Service (FK)
-     * ARCHITECTURAL LAW: Service MUST be selected from Provider Contract - NO free-text
+     * Enterprise Medical Service (FK)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id", nullable = false)
-    private MedicalService medicalService;
+    private EnterpriseMedicalService medicalService;
 
     /**
-     * Service code (denormalized snapshot for reports/queries)
+     * Service code (denormalized snapshot)
      */
     @Column(name = "service_code", length = 50, nullable = false)
     private String serviceCode;
     
     /**
-     * Service name (denormalized snapshot at claim time)
+     * Service name (denormalized snapshot)
      */
     @Column(name = "service_name", length = 255)
     private String serviceName;
     
     /**
-     * Medical Category ID (MANDATORY - ARCHITECTURAL LAW)
-     * 
-     * RULE: Coverage resolution requires BOTH category AND service.
-     * The same service can have different coverage in different categories.
-     * This field MUST be populated from the selected MedicalService.categoryId.
+     * Medical Category (MANDATORY - UNIFIED DICTIONARY)
      */
-    @Column(name = "service_category_id", nullable = false)
-    private Long serviceCategoryId;
-    
-    /**
-     * Medical Category Name (denormalized snapshot for reports)
-     */
-    @Column(name = "service_category_name", length = 200)
-    private String serviceCategoryName;
+    @Column(name = "service_category", nullable = false, length = 100)
+    private String serviceCategory;
 
     // ==================== QUANTITY & PRICING ====================
 
@@ -146,14 +129,13 @@ public class ClaimLine {
     }
     
     /**
-     * Populate denormalized fields from MedicalService
+     * Populate denormalized fields from EnterpriseMedicalService
      */
     private void populateDenormalizedFields() {
         if (medicalService != null) {
             this.serviceCode = medicalService.getCode();
-            this.serviceName = medicalService.getName();
-            this.serviceCategoryId = medicalService.getCategoryId();
-            // requiresPA is now handled by ClaimMapper from BenefitPolicyCoverageService
+            this.serviceName = medicalService.getNameAr(); // Default to Arabic name for snapshot
+            this.serviceCategory = medicalService.getCategory();
         }
     }
 
@@ -170,28 +152,18 @@ public class ClaimLine {
      * Validate architectural rules
      */
     private void validateArchitecturalRules() {
-        // RULE: MedicalService is MANDATORY
+        // RULE: EnterpriseMedicalService is MANDATORY
         if (medicalService == null) {
-            throw new IllegalStateException("ARCHITECTURAL VIOLATION: ClaimLine MUST reference a MedicalService");
+            throw new IllegalStateException("ARCHITECTURAL VIOLATION: ClaimLine MUST reference an EnterpriseMedicalService");
         }
         
-        // RULE: Category is MANDATORY (must come from service)
-        if (serviceCategoryId == null) {
+        // RULE: Category is MANDATORY
+        if (serviceCategory == null || serviceCategory.isBlank()) {
             throw new IllegalStateException(
-                "ARCHITECTURAL VIOLATION: ClaimLine MUST have a medical category. " +
-                "Service selection without category is not allowed.");
+                "ARCHITECTURAL VIOLATION: ClaimLine MUST have a medical category.");
         }
         
-        // RULE: Service must belong to the selected category
-        if (medicalService.getCategoryId() != null && 
-            !medicalService.getCategoryId().equals(serviceCategoryId)) {
-            throw new IllegalStateException(
-                "ARCHITECTURAL VIOLATION: Medical service does not belong to the selected category. " +
-                "Service categoryId=" + medicalService.getCategoryId() + 
-                ", selected categoryId=" + serviceCategoryId);
-        }
-        
-        // RULE: Unit price must be set (from contract)
+        // RULE: Unit price must be set
         if (unitPrice == null || unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("ARCHITECTURAL VIOLATION: Unit price must be resolved from Provider Contract");
         }

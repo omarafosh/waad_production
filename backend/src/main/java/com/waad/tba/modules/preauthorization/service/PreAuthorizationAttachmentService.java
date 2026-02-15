@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
-import com.waad.tba.common.util.FileResourceUtils;
+import com.waad.tba.common.file.FileResourceUtils;
 
 /**
  * Service for managing PreAuthorization Attachments

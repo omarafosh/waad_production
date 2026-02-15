@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+import java.util.UUID;
+
 /**
  * ClaimLine DTO (CANONICAL REBUILD 2026-01-16)
  * 
@@ -30,8 +32,7 @@ public class ClaimLineDto {
      * OPTIONAL: Medical Service ID (Master Code)
      * If not provided, providerServiceCode MUST be present for resolution.
      */
-    @Positive(message = "Medical Service ID must be positive")
-    private Long medicalServiceId;
+    private UUID medicalServiceId;
 
     /**
      * OPTIONAL: Provider-specific service code
@@ -61,14 +62,9 @@ public class ClaimLineDto {
     private String serviceName;
     
     /**
-     * Service category ID
+     * Service category (Unified Dictionary)
      */
-    private Long serviceCategoryId;
-    
-    /**
-     * Service category name
-     */
-    private String serviceCategoryName;
+    private String serviceCategory;
     
     /**
      * Unit price from Provider Contract (READ-ONLY)

@@ -66,7 +66,8 @@ import {
   Cancel as TerminateIcon,
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Category as CategoryIcon
 } from '@mui/icons-material';
 
 // Project Components
@@ -351,8 +352,8 @@ const ProviderContractView = () => {
     onSuccess: () => {
       enqueueSnackbar('تم إضافة الخدمة بنجاح', { variant: 'success' });
       queryClient.invalidateQueries(['provider-contract-pricing', id]);
-      setAddPricingDialogOpen(false);
-      setPricingForm({ medicalServiceId: null, basePrice: '', contractPrice: '', notes: '' });
+      // setAddPricingDialogOpen(false); // Controlled by handleAddPricingSubmit options
+      setPricingForm({ medicalServiceId: null, medicalCategoryId: null, basePrice: '', contractPrice: '', notes: '' });
     },
     onError: (err) => {
       enqueueSnackbar(err.message || 'فشل إضافة الخدمة', { variant: 'error' });
@@ -452,17 +453,34 @@ const ProviderContractView = () => {
     setAddPricingDialogOpen(true);
   }, []);
 
-  const handleAddPricingSubmit = useCallback(() => {
-    if (!pricingForm.medicalServiceId || !pricingForm.basePrice || !pricingForm.contractPrice) return;
+  const handleAddPricingSubmit = useCallback((stayOpen = false) => {
+    // Validation: Require either ID (standard) or Name (custom)
+    if ((!pricingForm.medicalServiceId && !pricingForm.serviceName) || !pricingForm.basePrice || !pricingForm.contractPrice) return;
 
-    addPricingMutation.mutate({
-      medicalServiceId: pricingForm.medicalServiceId.id,
+    // For custom services, category is MANDATORY
+    if (!pricingForm.medicalServiceId && !pricingForm.medicalCategoryId) {
+      enqueueSnackbar('يجب اختيار التصنيف للخدمات المخصصة', { variant: 'warning' });
+      return;
+    }
+
+    const payload = {
+      medicalServiceId: pricingForm.medicalServiceId ? pricingForm.medicalServiceId.id : null,
+      serviceName: pricingForm.serviceName || null,
       medicalCategoryId: pricingForm.medicalCategoryId?.id || null,
+      categoryName: pricingForm.medicalCategoryId?.name || null,
       basePrice: parseFloat(pricingForm.basePrice),
       contractPrice: parseFloat(pricingForm.contractPrice),
       notes: pricingForm.notes
+    };
+
+    addPricingMutation.mutate(payload, {
+      onSuccess: () => {
+        if (!stayOpen) {
+          setAddPricingDialogOpen(false);
+        }
+      }
     });
-  }, [addPricingMutation, pricingForm]);
+  }, [addPricingMutation, pricingForm, enqueueSnackbar]);
 
   const handleOpenEditPricing = useCallback((item) => {
     setSelectedPricingItem(item);
@@ -903,23 +921,50 @@ const ProviderContractView = () => {
             <MedicalServiceSelector
               value={pricingForm.medicalServiceId}
               onChange={(newValue) => {
-                setPricingForm({
-                  ...pricingForm,
-                  medicalServiceId: newValue,
-                  basePrice: newValue ? (newValue.basePrice ?? '') : '',
-                  contractPrice: '',
-                  medicalCategoryId: null // Reset category when service changes
-                });
+                // Handle Custom Entry (New Service)
+                if (newValue && (newValue.isCustom || typeof newValue === 'string')) {
+                  const customName = newValue.inputValue || newValue;
+                  setPricingForm({
+                    ...pricingForm,
+                    medicalServiceId: null, // No ID for custom
+                    serviceName: customName,
+                    basePrice: '',
+                    contractPrice: '',
+                    medicalCategoryId: null
+                  });
+                } else {
+                  // Handle Standard Selection
+                  setPricingForm({
+                    ...pricingForm,
+                    medicalServiceId: newValue,
+                    serviceName: null,
+                    basePrice: newValue ? (newValue.basePrice ?? '') : '',
+                    contractPrice: '',
+                    medicalCategoryId: null // Reset category when service changes
+                  });
+                }
               }}
               required
               label="الخدمة الطبية *"
               size="medium"
             />
 
+            {/* Show Default Category Info */}
+            {pricingForm.medicalServiceId?.categoryName && (
+              <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px dashed', borderColor: 'divider' }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CategoryIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    التصنيف التلقائي: <strong>{pricingForm.medicalServiceId.categoryName}</strong>
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
+
             {/* Category Override (Optional) */}
             <Autocomplete
               options={medicalCategories || []}
-              getOptionLabel={(option) => option.nameAr || option.nameEn || option.name || ''}
+              getOptionLabel={(option) => option.name || option.nameAr || option.nameEn || ''}
               groupBy={(option) => option.parentId ? 'تصنيف فرعي' : 'تصنيف رئيسي'}
               renderOption={(props, option) => {
                 const { key, ...otherProps } = props;
@@ -927,7 +972,7 @@ const ProviderContractView = () => {
                   <li key={key} {...otherProps}>
                     <Stack>
                       <Typography variant="body2" fontWeight={option.parentId ? 400 : 600}>
-                        {option.code} - {option.nameAr}
+                        {option.code} - {option.name || option.nameAr}
                       </Typography>
                       {option.nameEn && (
                         <Typography variant="caption" color="text.secondary">
@@ -948,35 +993,41 @@ const ProviderContractView = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="التصنيف الطبي (اختياري)"
-                  helperText="اختر تصنيفاً مختلفاً عن التصنيف الافتراضي للخدمة"
+                  label="تغيير التصنيف (اختياري)"
+                  placeholder="اختر تصنيفاً مختلفاً عن التصنيف التلقائي"
+                  size="small"
                 />
               )}
             />
 
-            <TextField
-              label="السعر الأساسي"
-              type="number"
-              fullWidth
-              value={pricingForm.basePrice}
-              onChange={(e) => setPricingForm({ ...pricingForm, basePrice: e.target.value })}
-              required
-              helperText="السعر المرجعي للخدمة"
-            />
-
-            <TextField
-              label="سعر العقد (المتفق عليه)"
-              type="number"
-              fullWidth
-              value={pricingForm.contractPrice}
-              onChange={(e) => setPricingForm({ ...pricingForm, contractPrice: e.target.value })}
-              required
-              helperText={
-                pricingForm.basePrice && pricingForm.contractPrice
-                  ? `نسبة الخصم: ${Math.round(((pricingForm.basePrice - pricingForm.contractPrice) / pricingForm.basePrice) * 100)}%`
-                  : ''
-              }
-            />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="السعر الأساسي"
+                  type="number"
+                  fullWidth
+                  value={pricingForm.basePrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, basePrice: e.target.value })}
+                  required
+                  helperText="السعر المرجعي"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="سعر العقد (المتفق عليه)"
+                  type="number"
+                  fullWidth
+                  value={pricingForm.contractPrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, contractPrice: e.target.value })}
+                  required
+                  helperText={
+                    pricingForm.basePrice && pricingForm.contractPrice
+                      ? `خصم: ${Math.round(((pricingForm.basePrice - pricingForm.contractPrice) / pricingForm.basePrice) * 100)}%`
+                      : 'أدخل السعر المتفق عليه'
+                  }
+                />
+              </Grid>
+            </Grid>
 
             <TextField
               label="ملاحظات"
@@ -988,14 +1039,22 @@ const ProviderContractView = () => {
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddPricingDialogOpen(false)}>إلغاء</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setAddPricingDialogOpen(false)} color="inherit">إلغاء</Button>
+          <Box sx={{ flexGrow: 1 }} />
           <Button
-            onClick={handleAddPricingSubmit}
-            variant="contained"
-            disabled={!pricingForm.medicalServiceId || !pricingForm.contractPrice || addPricingMutation.isLoading}
+            onClick={() => handleAddPricingSubmit(true)}
+            variant="outlined"
+            disabled={(!pricingForm.medicalServiceId && !pricingForm.serviceName) || !pricingForm.contractPrice || addPricingMutation.isLoading}
           >
-            {addPricingMutation.isLoading ? <CircularProgress size={20} /> : 'إضافة'}
+            حفظ وإضافة آخر
+          </Button>
+          <Button
+            onClick={() => handleAddPricingSubmit(false)}
+            variant="contained"
+            disabled={(!pricingForm.medicalServiceId && !pricingForm.serviceName) || !pricingForm.contractPrice || addPricingMutation.isLoading}
+          >
+            {addPricingMutation.isLoading ? <CircularProgress size={20} /> : 'إضافة وإغلاق'}
           </Button>
         </DialogActions>
       </Dialog>

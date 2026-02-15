@@ -1,338 +1,72 @@
 package com.waad.tba.common.excel.service;
 
-import com.waad.tba.common.exception.BusinessRuleException;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.springframework.stereotype.Service;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 
 /**
- * Unified service for parsing Excel import files
- * 
- * Provides common utilities for reading cells, validating file format, etc.
+ * واجهة خدمة تحليل ملفات Excel.
+ * توفر عمليات عامة لقراءة وفحص ملفات الإكسل بشكل مجرد.
  */
-@Slf4j
-@Service
-public class ExcelParserService {
-    
-    /**
-     * Validate Excel file format
-     */
-    public void validateExcelFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new BusinessRuleException("الملف فارغ");
-        }
-        
-        String filename = file.getOriginalFilename();
-        if (filename == null || 
-            (!filename.toLowerCase().endsWith(".xlsx") && !filename.toLowerCase().endsWith(".xls"))) {
-            throw new BusinessRuleException(
-                "نوع الملف غير صحيح. يجب أن يكون ملف Excel (.xlsx أو .xls)"
-            );
-        }
-    }
-    
-    /**
-     * Open workbook from multipart file
-     */
-    public Workbook openWorkbook(MultipartFile file) throws IOException {
-        validateExcelFile(file);
-        try (InputStream inputStream = file.getInputStream()) {
-            return WorkbookFactory.create(inputStream);
-        }
-    }
+public interface ExcelParserService {
 
     /**
-     * Open workbook from local file
+     * التحقق من صحة ملف Excel.
      */
-    public Workbook openWorkbook(java.io.File file) throws IOException {
-        if (file == null || !file.exists()) {
-            throw new IOException("Excel file does not exist on disk");
-        }
-        return WorkbookFactory.create(file);
-    }
-    
-    /**
-     * Get first data sheet (skip metadata sheet, lookup sheets, etc.)
-     * Searches for: "Data", "Members", "الأعضاء", "المنتفعين", "Sheet1" (case-insensitive)
-     */
-    public Sheet getDataSheet(Workbook workbook) {
-        // 1. Explicitly look for "Data" sheet first (Trimmed)
-        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-            String sheetName = workbook.getSheetName(i).trim();
-            if (sheetName.equalsIgnoreCase("Data")) {
-                log.info("[ExcelParser] Found requested data sheet: {}", sheetName);
-                return workbook.getSheetAt(i);
-            }
-        }
+    void validateExcelFile(MultipartFile file);
 
-        String[] possibleNames = {"Members", "الأعضاء", "المنتفعين", "الاعضاء", "Sheet1", "البيانات"};
-        
-        // 2. Try other common names
-        for (String name : possibleNames) {
-            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-                String sheetName = workbook.getSheetName(i);
-                if (sheetName.equalsIgnoreCase(name) || sheetName.toLowerCase().contains(name.toLowerCase())) {
-                    if (!workbook.isSheetHidden(i)) {
-                        log.info("[ExcelParser] Found data sheet by name: {}", sheetName);
-                        return workbook.getSheetAt(i);
-                    }
-                }
-            }
-        }
-        
-        // 2. Otherwise, get first visible sheet that isn't a lookup sheet
-        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-            String sheetName = workbook.getSheetName(i).toLowerCase();
-            if (!workbook.isSheetHidden(i) && 
-                !sheetName.contains("lookup") && 
-                !sheetName.contains("جهات") && 
-                !sheetName.contains("قوالب")) {
-                log.info("[ExcelParser] Falling back to first visible data-like sheet: {}", workbook.getSheetName(i));
-                return workbook.getSheetAt(i);
-            }
-        }
-        
-        // 3. Absolute fallback: first visible sheet
-        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-            if (!workbook.isSheetHidden(i)) {
-                return workbook.getSheetAt(i);
-            }
-        }
-        
-        throw new BusinessRuleException(
-            "لم يتم العثور على ورقة بيانات صالحة في الملف"
-        );
-    }
-    
     /**
-     * Check if row is empty
+     * فتح كتاب عمل (Workbook) من ملف Multipart.
      */
-    public boolean isEmptyRow(Row row) {
-        if (row == null) {
-            return true;
-        }
-        
-        for (int i = 0; i < row.getLastCellNum(); i++) {
-            Cell cell = row.getCell(i);
-            if (cell != null && cell.getCellType() != CellType.BLANK) {
-                String value = getCellValueAsString(cell);
-                if (value != null && !value.trim().isEmpty()) {
-                    return false;
-                }
-            }
-        }
-        
-        return true;
-    }
-    
+    Workbook openWorkbook(MultipartFile file) throws IOException;
+
     /**
-     * Get cell value as string (handles all cell types)
+     * فتح كتاب عمل (Workbook) من ملف محلي.
      */
-    public String getCellValueAsString(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        
-        try {
-            switch (cell.getCellType()) {
-                case STRING:
-                    return cell.getStringCellValue().trim();
-                    
-                case NUMERIC:
-                    if (DateUtil.isCellDateFormatted(cell)) {
-                        Date date = cell.getDateCellValue();
-                        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString();
-                    } else {
-                        double numValue = cell.getNumericCellValue();
-                        // Return as integer if it's a whole number
-                        if (numValue == Math.floor(numValue)) {
-                            return String.valueOf((long) numValue);
-                        }
-                        return String.valueOf(numValue);
-                    }
-                    
-                case BOOLEAN:
-                    return String.valueOf(cell.getBooleanCellValue());
-                    
-                case FORMULA:
-                    try {
-                        return cell.getStringCellValue().trim();
-                    } catch (Exception e) {
-                        try {
-                            double numValue = cell.getNumericCellValue();
-                            if (numValue == Math.floor(numValue)) {
-                                return String.valueOf((long) numValue);
-                            }
-                            return String.valueOf(numValue);
-                        } catch (Exception ex) {
-                            return null;
-                        }
-                    }
-                    
-                case BLANK:
-                default:
-                    return null;
-            }
-        } catch (Exception e) {
-            log.warn("[ExcelParser] Error reading cell value: {}", e.getMessage());
-            return null;
-        }
-    }
-    
+    Workbook openWorkbook(java.io.File file) throws IOException;
+
     /**
-     * Get cell value as LocalDate
+     * جلب ورقة البيانات الأولى الصالحة.
      */
-    public LocalDate getCellValueAsDate(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        
-        try {
-            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                Date date = cell.getDateCellValue();
-                return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            } else if (cell.getCellType() == CellType.STRING) {
-                String dateStr = cell.getStringCellValue().trim();
-                return LocalDate.parse(dateStr);
-            }
-        } catch (Exception e) {
-            log.warn("[ExcelParser] Error parsing date from cell: {}", e.getMessage());
-        }
-        
-        return null;
-    }
-    
+    Sheet getDataSheet(Workbook workbook);
+
     /**
-     * Get cell value as Integer
+     * التحقق مما إذا كان الصف فارغاً.
      */
-    public Integer getCellValueAsInteger(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        
-        try {
-            if (cell.getCellType() == CellType.NUMERIC) {
-                return (int) cell.getNumericCellValue();
-            } else if (cell.getCellType() == CellType.STRING) {
-                String value = cell.getStringCellValue().trim();
-                if (!value.isEmpty()) {
-                    return Integer.parseInt(value);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("[ExcelParser] Error parsing integer from cell: {}", e.getMessage());
-        }
-        
-        return null;
-    }
-    
+    boolean isEmptyRow(Row row);
+
     /**
-     * Get cell value as Double
+     * جلب قيمة الخلية كنص.
      */
-    public Double getCellValueAsDouble(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        
-        try {
-            if (cell.getCellType() == CellType.NUMERIC) {
-                return cell.getNumericCellValue();
-            } else if (cell.getCellType() == CellType.STRING) {
-                String value = cell.getStringCellValue().trim();
-                if (!value.isEmpty()) {
-                    return Double.parseDouble(value);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("[ExcelParser] Error parsing double from cell: {}", e.getMessage());
-        }
-        
-        return null;
-    }
-    
+    String getCellValueAsString(Cell cell);
+
     /**
-     * Get cell value as Boolean
+     * جلب قيمة الخلية كـ LocalDate.
      */
-    public Boolean getCellValueAsBoolean(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        
-        try {
-            if (cell.getCellType() == CellType.BOOLEAN) {
-                return cell.getBooleanCellValue();
-            } else if (cell.getCellType() == CellType.STRING) {
-                String value = cell.getStringCellValue().trim().toLowerCase();
-                if (value.equals("true") || value.equals("yes") || value.equals("1") || 
-                    value.equals("نعم") || value.equals("صحيح")) {
-                    return true;
-                } else if (value.equals("false") || value.equals("no") || value.equals("0") || 
-                           value.equals("لا") || value.equals("خطأ")) {
-                    return false;
-                }
-            } else if (cell.getCellType() == CellType.NUMERIC) {
-                return cell.getNumericCellValue() != 0;
-            }
-        } catch (Exception e) {
-            log.warn("[ExcelParser] Error parsing boolean from cell: {}", e.getMessage());
-        }
-        
-        return null;
-    }
-    
+    LocalDate getCellValueAsDate(Cell cell);
+
     /**
-     * Find column index by header name (case-insensitive, handles Arabic/English)
-     * 
-     * ENHANCED: Handles multi-line headers (e.g., "الاسم الكامل\nfull_name")
+     * جلب قيمة الخلية كـ Integer.
      */
-    public Integer findColumnIndex(Row headerRow, String... headerNames) {
-        if (headerRow == null || headerNames == null || headerNames.length == 0) {
-            return null;
-        }
-        
-        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
-            Cell cell = headerRow.getCell(i);
-            if (cell == null) continue;
-            
-            String headerValue = getCellValueAsString(cell);
-            if (headerValue == null) continue;
-            
-            // Remove asterisks (for required fields) and normalize
-            headerValue = headerValue.replace("*", "").trim();
-            
-            // Handle multi-line headers: split by newline and check each part
-            String[] headerParts = headerValue.split("[\\r\\n]+");
-            
-            for (String name : headerNames) {
-                String nameLower = name.toLowerCase().trim();
-                
-                // Check full header value
-                if (headerValue.equalsIgnoreCase(name) || 
-                    headerValue.toLowerCase().contains(nameLower) || 
-                    nameLower.contains(headerValue.toLowerCase())) {
-                    return i;
-                }
-                
-                // Check each part of multi-line header
-                for (String part : headerParts) {
-                    String partTrimmed = part.trim();
-                    if (partTrimmed.equalsIgnoreCase(name) ||
-                        partTrimmed.toLowerCase().contains(nameLower) ||
-                        nameLower.contains(partTrimmed.toLowerCase())) {
-                        return i;
-                    }
-                }
-            }
-        }
-        
-        return null;
-    }
+    Integer getCellValueAsInteger(Cell cell);
+
+    /**
+     * جلب قيمة الخلية كـ Double.
+     */
+    Double getCellValueAsDouble(Cell cell);
+
+    /**
+     * جلب قيمة الخلية كـ Boolean.
+     */
+    Boolean getCellValueAsBoolean(Cell cell);
+
+    /**
+     * البحث عن مؤشر العمود بواسطة اسم الهيدر.
+     */
+    Integer findColumnIndex(Row headerRow, String... headerNames);
 }

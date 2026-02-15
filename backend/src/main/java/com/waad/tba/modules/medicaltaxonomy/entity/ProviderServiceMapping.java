@@ -1,5 +1,6 @@
 package com.waad.tba.modules.medicaltaxonomy.entity;
 
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
 import com.waad.tba.modules.provider.entity.Provider;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,7 +47,7 @@ public class ProviderServiceMapping {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "master_service_id", nullable = false)
-    private MedicalService masterService;
+    private EnterpriseMedicalService masterService;
 
     /**
      * Optional: mapping confidence level (0.0 to 1.0)

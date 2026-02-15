@@ -2,7 +2,7 @@ package com.waad.tba.modules.member.controller;
 
 import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.common.excel.dto.ExcelImportResult;
-import com.waad.tba.modules.member.dto.ExcelColumnDetectionDto;
+import com.waad.tba.common.excel.dto.ExcelColumnDetectionDto;
 import com.waad.tba.modules.member.dto.MemberImportPreviewDto;
 import com.waad.tba.modules.member.dto.MemberImportResultDto;
 import com.waad.tba.modules.member.service.ExcelColumnMappingService;

@@ -216,16 +216,16 @@ public class ProviderContractController {
      * CRITICAL: This is the ONLY way to get services for claims/preauth creation
      * Direct MedicalService queries are NOT allowed for this purpose
      */
-    @GetMapping("/provider/{providerId}/categories/{categoryId}/services")
+    @GetMapping("/provider/{providerId}/categories/{categoryName}/services")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PROVIDER') or hasRole('PROVIDER_USER') or hasAuthority('VIEW_PROVIDER_CONTRACTS') or hasAuthority('CREATE_CLAIMS') or hasAuthority('CREATE_PRE_AUTHORIZATIONS')")
     @Operation(summary = "Get contracted services by category", 
                description = "Get medical services for a category in provider's active contract. Use this for claims/preauth creation.")
     public ResponseEntity<ApiResponse<List<ProviderContractPricingItemService.ContractServiceDto>>> getContractedServicesByCategory(
             @Parameter(description = "Provider ID") @PathVariable Long providerId,
-            @Parameter(description = "Category ID") @PathVariable Long categoryId) {
+            @Parameter(description = "Category Name") @PathVariable String categoryName) {
 
-        log.debug("REST request to get contracted services for provider: {}, category: {}", providerId, categoryId);
-        List<ProviderContractPricingItemService.ContractServiceDto> result = pricingService.findServicesByProviderAndCategory(providerId, categoryId);
+        log.debug("REST request to get contracted services for provider: {}, category: {}", providerId, categoryName);
+        List<ProviderContractPricingItemService.ContractServiceDto> result = pricingService.findServicesByProviderAndCategory(providerId, categoryName);
         return ResponseEntity.ok(ApiResponse.success("Contracted services retrieved", result));
     }
 

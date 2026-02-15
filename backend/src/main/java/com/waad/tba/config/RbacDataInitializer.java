@@ -59,7 +59,7 @@ public class RbacDataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-password}")
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-password:Admin@123}")
     private String initialAdminPassword;
 
     @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-username:superadmin}")
@@ -365,6 +365,11 @@ public class RbacDataInitializer implements CommandLineRunner {
         Optional<User> existingUser = userRepository.findByUsername(username);
         
         if (existingUser.isPresent()) {
+            log.info("   👤 User {} already exists. Synchronizing password...", username);
+            User admin = existingUser.get();
+            admin.setPassword(passwordEncoder.encode(initialAdminPassword));
+            admin.setEmail(email); // Also sync email just in case
+            userRepository.save(admin);
             return;
         }
         

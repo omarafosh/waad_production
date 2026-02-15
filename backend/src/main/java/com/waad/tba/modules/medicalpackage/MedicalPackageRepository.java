@@ -37,5 +37,5 @@ public interface MedicalPackageRepository extends JpaRepository<MedicalPackage, 
     List<MedicalPackage> search(@Param("query") String query);
 
     @Query("SELECT mp FROM MedicalPackage mp JOIN mp.services s WHERE s.id = :serviceId AND mp.active = true")
-    List<MedicalPackage> findActivePackagesForService(@Param("serviceId") Long serviceId);
+    List<MedicalPackage> findActivePackagesForService(@Param("serviceId") java.util.UUID serviceId);
 }

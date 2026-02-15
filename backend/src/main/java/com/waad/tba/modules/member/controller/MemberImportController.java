@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.waad.tba.common.dto.ApiResponse;
-import com.waad.tba.modules.member.dto.ExcelColumnDetectionDto;
+import com.waad.tba.common.excel.dto.ExcelColumnDetectionDto;
 import com.waad.tba.modules.member.dto.MemberImportPreviewDto;
 import com.waad.tba.modules.member.dto.MemberImportResultDto;
 import com.waad.tba.modules.member.entity.MemberImportLog;

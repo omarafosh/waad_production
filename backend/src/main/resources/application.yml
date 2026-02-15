@@ -158,6 +158,11 @@ jwt:
 # ==============================
 app:
   security:
+    # Initial Super Admin Configuration
+    initial-admin-password: ${INITIAL_ADMIN_PASSWORD:Admin@123}
+    initial-admin-username: ${INITIAL_ADMIN_USERNAME:superadmin}
+    initial-admin-email: ${INITIAL_ADMIN_EMAIL:superadmin@tba.sa}
+
     # Password reset token validity (in hours)
     password-reset-token-validity-hours: ${PASSWORD_RESET_TOKEN_VALIDITY_HOURS:1}
     

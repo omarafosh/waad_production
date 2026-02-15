@@ -551,30 +551,6 @@ const menuItem = [
         icon: MedicalServicesIcon,
         children: [
           {
-            id: 'medical-categories',
-            title: 'التصنيفات الطبية',
-            titleEn: 'Medical Categories',
-            type: 'item',
-            url: '/medical-categories',
-            icon: CategoryIcon,
-          },
-          {
-            id: 'medical-services',
-            title: 'الخدمات الطبية',
-            titleEn: 'Medical Services',
-            type: 'item',
-            url: '/medical-services',
-            icon: MedicalServicesIcon,
-          },
-          {
-            id: 'medical-packages',
-            title: 'الحزم الطبية',
-            titleEn: 'Medical Packages',
-            type: 'item',
-            url: '/medical-packages',
-            icon: InventoryIcon,
-          },
-          {
             id: 'mapping-center',
             title: 'ربط الخدمات',
             titleEn: 'Mapping Center',
@@ -589,6 +565,14 @@ const menuItem = [
             type: 'item',
             url: '/medical-catalog/list',
             icon: DashboardIcon,
+          },
+          {
+            id: 'medical-categories',
+            title: 'التصنيفات الطبية',
+            titleEn: 'Medical Categories',
+            type: 'item',
+            url: '/medical-categories',
+            icon: CategoryIcon,
           }
         ]
       },

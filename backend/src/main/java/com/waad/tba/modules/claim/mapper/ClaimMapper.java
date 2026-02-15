@@ -7,8 +7,8 @@ import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimAttachment;
 import com.waad.tba.modules.claim.entity.ClaimLine;
 import com.waad.tba.common.repository.OrganizationRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.service.MedicalCatalogService;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
@@ -38,7 +38,7 @@ public class ClaimMapper {
     private final OrganizationRepository organizationRepository;
     private final PreAuthorizationRepository preAuthorizationRepository;
     private final VisitRepository visitRepository;
-    private final MedicalServiceRepository medicalServiceRepository;
+    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
     private final MedicalCatalogService medicalCatalogService;
     private final ProviderContractService providerContractService;
     private final ProviderRepository providerRepository;
@@ -139,10 +139,10 @@ public class ClaimMapper {
         Member member = visit.getMember();
         
         for (ClaimLineDto lineDto : dto.getLines()) {
-            // Resolve MedicalService using Catalog Service (Phase 1 Integration)
-            MedicalService medicalService;
+            // Resolve MedicalService using Catalog Service
+            EnterpriseMedicalService medicalService;
             if (lineDto.getMedicalServiceId() != null) {
-                // Direct ID provided
+                // Direct ID provided (now UUID)
                 medicalService = medicalServiceRepository.findById(lineDto.getMedicalServiceId())
                         .orElseThrow(() -> new IllegalArgumentException("MedicalService not found with id: " + lineDto.getMedicalServiceId()));
             } else if (lineDto.getProviderServiceCode() != null) {
@@ -173,7 +173,7 @@ public class ClaimMapper {
             Integer patientCopayPercentSnapshot = coveragePercentSnapshot != null ? (100 - coveragePercentSnapshot) : null;
             
             if (requiresPA) {
-                servicesRequiringPA.add(medicalService.getName() + " (" + medicalService.getCode() + ")");
+                servicesRequiringPA.add(medicalService.getNameAr() + " (" + medicalService.getCode() + ")");
             }
             
             BigDecimal unitPrice = priceResponse.getContractPrice();
@@ -183,22 +183,19 @@ public class ClaimMapper {
             // ═══════════════════════════════════════════════════════════════════════════
             // CANONICAL: Category ID resolution - prefer DTO, validate against service
             // ═══════════════════════════════════════════════════════════════════════════
-            Long serviceCategoryId = lineDto.getServiceCategoryId() != null 
-                    ? lineDto.getServiceCategoryId() 
-                    : medicalService.getCategoryId();
+            String serviceCategory = lineDto.getServiceCategory() != null 
+                    ? lineDto.getServiceCategory() 
+                    : medicalService.getCategory();
             
-            String serviceCategoryName = lineDto.getServiceCategoryName();
+            String serviceCategoryName = lineDto.getServiceCategory();
             
-            // ═══════════════════════════════════════════════════════════════════════════
             // ARCHITECTURAL GUARD: Validate that service belongs to selected category
-            // This is a HARD FAILURE - protects against Postman attacks or frontend bugs
-            // ═══════════════════════════════════════════════════════════════════════════
-            if (lineDto.getServiceCategoryId() != null && medicalService.getCategoryId() != null) {
-                if (!lineDto.getServiceCategoryId().equals(medicalService.getCategoryId())) {
+            if (lineDto.getServiceCategory() != null && medicalService.getCategory() != null) {
+                if (!lineDto.getServiceCategory().equals(medicalService.getCategory())) {
                     log.error("🚫 ARCHITECTURAL VIOLATION: Service {} does not belong to category {}. Service's actual category: {}",
-                            medicalService.getCode(), lineDto.getServiceCategoryId(), medicalService.getCategoryId());
+                            medicalService.getCode(), lineDto.getServiceCategory(), medicalService.getCategory());
                     throw new IllegalArgumentException(
-                        "الخدمة الطبية '" + medicalService.getName() + "' (" + medicalService.getCode() + 
+                        "الخدمة الطبية '" + medicalService.getNameAr() + "' (" + medicalService.getCode() + 
                         ") لا تنتمي للتصنيف الطبي المختار. يرجى التأكد من اختيار التصنيف الصحيح.");
                 }
             }
@@ -207,10 +204,9 @@ public class ClaimMapper {
                     .claim(claim)
                     .medicalService(medicalService)
                     .serviceCode(medicalService.getCode())
-                    .serviceName(medicalService.getName())
-                    .providerServiceCode(lineDto.getProviderServiceCode()) // Original code from DTO
-                    .serviceCategoryId(serviceCategoryId)
-                    .serviceCategoryName(serviceCategoryName)
+                    .serviceName(medicalService.getNameAr())
+                    .providerServiceCode(lineDto.getProviderServiceCode())
+                    .serviceCategory(serviceCategory)
                     .requiresPA(requiresPA)
                     .coveragePercentSnapshot(coveragePercentSnapshot)
                     .patientCopayPercentSnapshot(patientCopayPercentSnapshot)
@@ -229,8 +225,8 @@ public class ClaimMapper {
             lines.add(line);
             totalRequestedAmount = totalRequestedAmount.add(lineTotal);
             
-            log.info("  ✅ Line: {} x {} @ {} = {} (categoryId={}, requiresPA={}, coverage={}%, copay={}%)", 
-                    medicalService.getCode(), quantity, unitPrice, lineTotal, serviceCategoryId, requiresPA,
+            log.info("  ✅ Line: {} x {} @ {} = {} (category={}, requiresPA={}, coverage={}%, copay={}%)", 
+                    medicalService.getCode(), quantity, unitPrice, lineTotal, serviceCategory, requiresPA,
                     coveragePercentSnapshot, patientCopayPercentSnapshot);
         }
         
@@ -426,14 +422,11 @@ public class ClaimMapper {
     private ClaimLineDto toLineDto(ClaimLine line) {
         return ClaimLineDto.builder()
                 .id(line.getId())
-                // MedicalService FK (Contract-Driven)
                 .medicalServiceId(line.getMedicalService() != null ? line.getMedicalService().getId() : null)
-                // Denormalized fields for display
                 .serviceCode(line.getServiceCode())
                 .serviceName(line.getServiceName())
-                .serviceCategoryId(line.getServiceCategoryId())
+                .serviceCategory(line.getServiceCategory())
                 .requiresPA(line.getRequiresPA())
-                // Pricing (from contract)
                 .quantity(line.getQuantity())
                 .unitPrice(line.getUnitPrice())
                 .totalPrice(line.getTotalPrice())

@@ -24,38 +24,7 @@ const MedicalPackageEdit = Loadable(lazy(() => import('pages/medical-packages/Me
 const MedicalPackageView = Loadable(lazy(() => import('pages/medical-packages/MedicalPackageView')));
 
 const MedicalRoutes = [
-    // Medical Services - Wrapped with TableRefreshLayout
-    {
-        path: 'medical-services',
-        element: <TableRefreshLayout />,
-        children: [
-            createRoute({ path: '', element: MedicalServicesList, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: 'add', element: MedicalServiceCreate, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: 'edit/:id', element: MedicalServiceEdit, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: ':id', element: MedicalServiceView, roles: ROLES.REVIEWER_ACCESS })
-        ]
-    },
-    // Medical Categories
-    {
-        path: 'medical-categories',
-        element: <TableRefreshLayout />,
-        children: [
-            createRoute({ path: '', element: MedicalCategoriesList, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: 'add', element: MedicalCategoryCreate, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: 'edit/:id', element: MedicalCategoryEdit, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: ':id', element: MedicalCategoryView, roles: ROLES.REVIEWER_ACCESS })
-        ]
-    },
-    // Medical Packages
-    {
-        path: 'medical-packages',
-        children: [
-            createRoute({ path: '', element: MedicalPackagesList, roles: ROLES.REVIEWER_ACCESS }),
-            createRoute({ path: 'add', element: MedicalPackageCreate, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: 'edit/:id', element: MedicalPackageEdit, roles: ROLES.ADMIN_INSURANCE }),
-            createRoute({ path: ':id', element: MedicalPackageView, roles: ROLES.REVIEWER_ACCESS })
-        ]
-    },
+    // Unified Medical Dictionary (Phase 2 & Enterprise)
     // Medical Master Catalog (Phase 2)
     {
         path: 'medical-catalog',
@@ -68,6 +37,17 @@ const MedicalRoutes = [
             // View and Edit use the same components as MedicalService but with restricted catalog context
             createRoute({ path: ':id', element: MedicalServiceView, roles: ROLES.REVIEWER_ACCESS }),
             createRoute({ path: 'edit/:id', element: MedicalServiceEdit, roles: ROLES.ADMIN_INSURANCE })
+        ]
+    },
+    // Medical Categories management (Restored)
+    {
+        path: 'medical-categories',
+        element: <TableRefreshLayout />,
+        children: [
+            createRoute({ path: '', element: MedicalCategoriesList, roles: ROLES.ADMIN_INSURANCE }),
+            createRoute({ path: 'add', element: MedicalCategoryCreate, roles: ROLES.ADMIN_INSURANCE }),
+            createRoute({ path: 'edit/:id', element: MedicalCategoryEdit, roles: ROLES.ADMIN_INSURANCE }),
+            createRoute({ path: ':id', element: MedicalCategoryView, roles: ROLES.REVIEWER_ACCESS })
         ]
     }
 ];

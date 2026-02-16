@@ -32,7 +32,7 @@ public class ClaimLineDto {
      * OPTIONAL: Medical Service ID (Master Code)
      * If not provided, providerServiceCode MUST be present for resolution.
      */
-    private UUID medicalServiceId;
+    private Long medicalServiceId;
 
     /**
      * OPTIONAL: Provider-specific service code

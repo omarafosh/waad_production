@@ -137,7 +137,7 @@ public class ProviderContractPricingItemResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ServiceSummaryDto {
-        private UUID id;
+        private Long id;
         private String code;
         private String name;
     }

@@ -121,6 +121,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                 p.setDescription(appPerm.getDescription());
                 p.setNameAr(appPerm.getDisplayNameAr());
                 p.setModule(appPerm.getModule());
+                p.setModuleName(appPerm.getDisplayNameAr()); // Fix: Sync moduleName
                 permissionRepository.save(p);
                 
                 permissionMap.put(permName, p);
@@ -131,6 +132,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                         .nameAr(appPerm.getDisplayNameAr())
                         .description(appPerm.getDescription())
                         .module(appPerm.getModule())
+                        .moduleName(appPerm.getDisplayNameAr()) // Fix: Map to Arabic display name for consistency
                         .build();
                 
                 Permission saved = permissionRepository.save(newPerm);

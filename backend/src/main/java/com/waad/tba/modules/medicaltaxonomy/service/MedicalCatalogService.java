@@ -71,7 +71,7 @@ public class MedicalCatalogService {
     /**
      * Check if a service is a Master Service.
      */
-    public boolean isMaster(java.util.UUID serviceId) {
+    public boolean isMaster(Long serviceId) {
         return masterServiceRepository.findById(serviceId)
                 .map(EnterpriseMedicalService::isMaster)
                 .orElse(false);

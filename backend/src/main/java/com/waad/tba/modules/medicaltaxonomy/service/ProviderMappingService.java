@@ -78,7 +78,7 @@ public class ProviderMappingService {
 
         if (ids.isEmpty()) return;
 
-        EnterpriseMedicalService masterService = medicalServiceRepository.findById(java.util.UUID.fromString(request.getMasterServiceId().toString()))
+        EnterpriseMedicalService masterService = medicalServiceRepository.findById(request.getMasterServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("EnterpriseMedicalService", "id", request.getMasterServiceId()));
 
         for (Long rawId : ids) {
@@ -94,7 +94,7 @@ public class ProviderMappingService {
                 rawService.getProvider().getId(), rawService.getServiceCode());
 
         ProviderServiceMapping mapping;
-        java.util.UUID oldMasterId = null;
+        Long oldMasterId = null;
 
         if (existingMappingOpt.isPresent()) {
             mapping = existingMappingOpt.get();

@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Repository for Provider Contract Pricing Item entity.
@@ -48,13 +47,13 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     /**
      * Find pricing items by medical service ID (UUID)
      */
-    List<ProviderContractPricingItem> findByMedicalServiceIdAndActiveTrue(UUID medicalServiceId);
+    List<ProviderContractPricingItem> findByMedicalServiceIdAndActiveTrue(Long medicalServiceId);
 
     /**
      * Find specific pricing for a contract and service
      */
     Optional<ProviderContractPricingItem> findByContractIdAndMedicalServiceIdAndActiveTrue(
-            Long contractId, UUID medicalServiceId);
+            Long contractId, Long medicalServiceId);
 
     /**
      * Find by contract entity and service entity (for upsert operations)
@@ -67,7 +66,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     /**
      * Check if pricing exists for service in contract
      */
-    boolean existsByContractIdAndMedicalServiceIdAndActiveTrue(Long contractId, UUID medicalServiceId);
+    boolean existsByContractIdAndMedicalServiceIdAndActiveTrue(Long contractId, Long medicalServiceId);
 
     // ═══════════════════════════════════════════════════════════════════════════
     // FIND BY CATEGORY
@@ -109,13 +108,13 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND (p.effectiveTo IS NULL OR p.effectiveTo >= :date)")
     Optional<ProviderContractPricingItem> findEffectivePricing(
             @Param("providerId") Long providerId,
-            @Param("serviceId") UUID serviceId,
+            @Param("serviceId") Long serviceId,
             @Param("date") LocalDate date);
 
     /**
      * Find effective pricing for a service at a provider (today)
      */
-    default Optional<ProviderContractPricingItem> findEffectivePricingToday(Long providerId, UUID serviceId) {
+    default Optional<ProviderContractPricingItem> findEffectivePricingToday(Long providerId, Long serviceId) {
         return findEffectivePricing(providerId, serviceId, LocalDate.now());
     }
 

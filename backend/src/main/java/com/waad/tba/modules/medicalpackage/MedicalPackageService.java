@@ -73,7 +73,7 @@ public class MedicalPackageService {
 
         if (dto.getServiceIds() != null && !dto.getServiceIds().isEmpty()) {
             Set<EnterpriseMedicalService> services = new HashSet<>();
-            for (java.util.UUID serviceId : dto.getServiceIds()) {
+            for (Long serviceId : dto.getServiceIds()) {
                 EnterpriseMedicalService service = serviceRepository.findById(serviceId)
                     .orElseThrow(() -> new RuntimeException("Medical service not found with id: " + serviceId));
                 services.add(service);
@@ -101,7 +101,7 @@ public class MedicalPackageService {
 
         if (dto.getServiceIds() != null) {
             Set<EnterpriseMedicalService> services = new HashSet<>();
-            for (java.util.UUID serviceId : dto.getServiceIds()) {
+            for (Long serviceId : dto.getServiceIds()) {
                 EnterpriseMedicalService service = serviceRepository.findById(serviceId)
                     .orElseThrow(() -> new RuntimeException("Medical service not found with id: " + serviceId));
                 services.add(service);

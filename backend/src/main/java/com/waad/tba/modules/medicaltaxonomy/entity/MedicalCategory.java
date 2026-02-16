@@ -33,13 +33,13 @@ public class MedicalCategory {
      * Unique business identifier (immutable)
      * Examples: "CONSULTATION", "SURGERY", "CARDIOLOGY_CONSULT"
      */
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 255)
     private String code;
 
     /**
      * Category name (unified - Arabic-only system)
      */
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     /**

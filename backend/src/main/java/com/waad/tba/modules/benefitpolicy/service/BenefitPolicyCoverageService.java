@@ -28,7 +28,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Service for validating coverage using BenefitPolicy rules.
@@ -158,7 +157,7 @@ public class BenefitPolicyCoverageService {
     @Cacheable(value = "coverageResolution", key = "'coverageInfo:' + (#member != null ? #member.benefitPolicy.id : 'null') + ':' + #serviceId + ':' + #encounterType", unless = "#result == null")
     public Optional<CoverageInfo> getCoverageForService(
             Member member, 
-            UUID serviceId, 
+            Long serviceId, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         // Support for tests where member might be null but policy exists in context?
@@ -216,7 +215,7 @@ public class BenefitPolicyCoverageService {
      */
     public boolean requiresPreApproval(
             Member member, 
-            UUID serviceId, 
+            Long serviceId, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return getCoverageForService(member, serviceId, encounterType)
             .map(CoverageInfo::isRequiresPreApproval)
@@ -307,7 +306,7 @@ public class BenefitPolicyCoverageService {
             BenefitPolicy policy, 
             ServiceCoverageInput input,
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
-        UUID serviceId = input.getServiceId();
+        Long serviceId = input.getServiceId();
         String serviceName = input.getServiceName() != null ? input.getServiceName() : "Unknown Service";
 
         if (serviceId == null) {
@@ -380,7 +379,7 @@ public class BenefitPolicyCoverageService {
      */
     public int getCoveragePercentForService(
             Member member, 
-            UUID serviceId, 
+            Long serviceId, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         return getCoverageForService(member, serviceId, encounterType)
@@ -485,7 +484,7 @@ public class BenefitPolicyCoverageService {
     public void validateDistributedAmountLimit(
             Member member,
             BenefitPolicy policy,
-            UUID serviceId,
+            Long serviceId,
             String category,
             BigDecimal requestedAmount,
             LocalDate serviceDate) {
@@ -518,7 +517,7 @@ public class BenefitPolicyCoverageService {
         }
     }
 
-    private Optional<CoverageDistribution> findBestMatchingDistribution(Long policyId, UUID serviceId, String category) {
+    private Optional<CoverageDistribution> findBestMatchingDistribution(Long policyId, Long serviceId, String category) {
         List<CoverageDistribution> activeDists = distributionRepository.findByBenefitPolicyIdAndActiveTrue(policyId);
         
         // Try exact service match first
@@ -664,7 +663,7 @@ public class BenefitPolicyCoverageService {
      * @throws BusinessRuleException if service is not covered
      */
     public void validateServiceCoverage(
-            UUID serviceId, 
+            Long serviceId, 
             BenefitPolicy benefitPolicy,
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         if (serviceId == null || benefitPolicy == null) {
@@ -771,7 +770,7 @@ public class BenefitPolicyCoverageService {
      * Finds the best matching rule using dynamic priorities from CoveragePriorityService.
      */
     private Optional<BenefitPolicyRule> findBestMatchingRule(
-            Long policyId, UUID serviceId, String category, 
+            Long policyId, Long serviceId, String category, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         // 0. Find applicable packages for the service
@@ -802,7 +801,7 @@ public class BenefitPolicyCoverageService {
     /**
      * Calculates the weight of a rule based on how well it matches the request and its config weight.
      */
-    private Integer calculateRuleWeight(BenefitPolicyRule rule, UUID requestedServiceId, List<Long> packageIds, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
+    private Integer calculateRuleWeight(BenefitPolicyRule rule, Long requestedServiceId, List<Long> packageIds, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
         boolean isServiceMatch = rule.getMedicalService() != null && rule.getMedicalService().getId().equals(requestedServiceId);
         boolean isPackageMatch = rule.getMedicalPackage() != null && packageIds.contains(rule.getMedicalPackage().getId());
         boolean isCategoryMatch = rule.isCategoryRule();
@@ -901,7 +900,7 @@ public class BenefitPolicyCoverageService {
     @Cacheable(value = "coverageResolution", key = "'resolve:' + #policyId + ':' + #serviceId + ':' + #encounterType", unless = "#result == null")
     public ResolvedCoverage resolveCoverage(
             Long policyId, 
-            UUID serviceId, 
+            Long serviceId, 
             String category,
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         log.debug("🔍 Resolving coverage: policyId={}, serviceId={}, category={}, encounterType={}", 
@@ -948,7 +947,7 @@ public class BenefitPolicyCoverageService {
      */
     public boolean requiresPreApprovalFromPolicy(
             Member member, 
-            UUID serviceId, 
+            Long serviceId, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         BenefitPolicy policy = member.getBenefitPolicy();
         if (policy == null) {
@@ -974,7 +973,7 @@ public class BenefitPolicyCoverageService {
      */
     public int getEffectiveCoveragePercent(
             Member member, 
-            UUID serviceId, 
+            Long serviceId, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         BenefitPolicy policy = member.getBenefitPolicy();
         if (policy == null) {
@@ -1002,16 +1001,16 @@ public class BenefitPolicyCoverageService {
      * @param encounterType The visit/encounter type
      * @return Map of ServiceId -> CoveragePercent
      */
-    public java.util.Map<UUID, Integer> batchGetCoveragePercents(
+    public java.util.Map<Long, Integer> batchGetCoveragePercents(
             Member member, 
-            List<UUID> serviceIds, 
+            List<Long> serviceIds, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
-        java.util.Map<UUID, Integer> result = new java.util.HashMap<>();
+        java.util.Map<Long, Integer> result = new java.util.HashMap<>();
         if (serviceIds == null || serviceIds.isEmpty()) {
             return result;
         }
         
-        for (UUID serviceId : serviceIds) {
+        for (Long serviceId : serviceIds) {
             result.put(serviceId, getEffectiveCoveragePercent(member, serviceId, encounterType));
         }
         return result;
@@ -1066,7 +1065,7 @@ public class BenefitPolicyCoverageService {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ServiceCoverageResult {
-        private UUID serviceId;
+        private Long serviceId;
         private String serviceName;
         private String serviceCode;
         private String category;
@@ -1089,14 +1088,14 @@ public class BenefitPolicyCoverageService {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ServiceCoverageInput {
-        private UUID serviceId;
+        private Long serviceId;
         private String serviceName;
         private BigDecimal amount;
 
         /**
          * Create from ClaimLine fields
          */
-        public static ServiceCoverageInput fromClaimLine(UUID serviceId, String description, BigDecimal totalPrice) {
+        public static ServiceCoverageInput fromClaimLine(Long serviceId, String description, BigDecimal totalPrice) {
             return ServiceCoverageInput.builder()
                 .serviceId(serviceId)
                 .serviceName(description)

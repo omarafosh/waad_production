@@ -171,7 +171,7 @@ public class BenefitPolicyRuleService {
      * @return The applicable rule, or empty if not covered
      */
     @Transactional(readOnly = true)
-    public Optional<BenefitPolicyRuleResponseDto> findCoverageForService(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public Optional<BenefitPolicyRuleResponseDto> findCoverageForService(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         EnterpriseMedicalService service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", serviceId));
         
@@ -182,7 +182,7 @@ public class BenefitPolicyRuleService {
     }
 
     private Optional<BenefitPolicyRule> findBestMatchingRule(
-            Long policyId, UUID serviceId, String category, 
+            Long policyId, Long serviceId, String category, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         List<BenefitPolicyRule> applicableRules = ruleRepository.findApplicableRulesForService(
@@ -200,7 +200,7 @@ public class BenefitPolicyRuleService {
             });
     }
 
-    private Integer calculateRuleWeight(BenefitPolicyRule rule, UUID requestedServiceId, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
+    private Integer calculateRuleWeight(BenefitPolicyRule rule, Long requestedServiceId, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
         boolean isServiceMatch = rule.getMedicalService() != null && rule.getMedicalService().getId().equals(requestedServiceId);
         boolean isPackageMatch = rule.getMedicalPackage() != null;
         boolean isCategoryMatch = rule.getMedicalCategory() != null && rule.getMedicalService() == null && rule.getMedicalPackage() == null;
@@ -222,19 +222,19 @@ public class BenefitPolicyRuleService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isServiceCovered(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public boolean isServiceCovered(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType).isPresent();
     }
 
     @Transactional(readOnly = true)
-    public boolean requiresPreApproval(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public boolean requiresPreApproval(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType)
                 .map(BenefitPolicyRuleResponseDto::isRequiresPreApproval)
                 .orElse(false);
     }
 
     @Transactional(readOnly = true)
-    public int getCoveragePercent(Long policyId, UUID serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
+    public int getCoveragePercent(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType)
                 .map(BenefitPolicyRuleResponseDto::getEffectiveCoveragePercent)
                 .orElse(0);

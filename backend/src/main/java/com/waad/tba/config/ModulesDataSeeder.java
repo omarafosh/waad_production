@@ -138,9 +138,8 @@ public class ModulesDataSeeder implements CommandLineRunner {
                         .nameEn(nameEn)
                         .code(code)
                         .category(category)
-                        .serviceType(EnterpriseMedicalService.ServiceType.OPD)
                         .isMaster(true)
-                        .status(EnterpriseMedicalService.ServiceStatus.ACTIVE)
+                        .active(true)
                         .build()));
     }
 

@@ -772,7 +772,7 @@ public class ProviderPortalController {
                                                 String serviceName = item.getServiceName();
                                                 String serviceNameAr = item.getServiceName();
                                                 String categoryName = item.getCategoryName();
-                                                java.util.UUID medicalServiceId = null; // Initialize to null
+                                                Long medicalServiceId = null; // Initialize to null
 
                                                 // Try to get from medicalService if available
                                                 if (item.getMedicalService() != null) {
@@ -886,7 +886,7 @@ public class ProviderPortalController {
                         // 4. Filter only services that require pre-approval from benefit policy
                         java.util.List<MyContractServiceDto> servicesRequiringPA = allPricingItems.stream()
                                         .filter(item -> {
-                                                java.util.UUID serviceId = item.getMedicalService() != null ? item.getMedicalService().getId() : null;
+                                                Long serviceId = item.getMedicalService() != null ? item.getMedicalService().getId() : null;
                                                 if (serviceId == null) return false;
                                                 
                                                 // Check if this service requires pre-approval in the member's policy
@@ -898,7 +898,7 @@ public class ProviderPortalController {
                                                 String serviceCode = item.getServiceCode();
                                                 String serviceName = item.getServiceName();
                                                 String categoryName = item.getCategoryName();
-                                                java.util.UUID medicalServiceId = null;
+                                                Long medicalServiceId = null;
 
                                                 if (item.getMedicalService() != null) {
                                                         medicalServiceId = item.getMedicalService().getId();
@@ -973,7 +973,7 @@ public class ProviderPortalController {
         @lombok.AllArgsConstructor
         public static class MyContractServiceDto {
                 private Long id; // Pricing Item ID
-                private java.util.UUID medicalServiceId; // Medical Service ID - IMPORTANT for claim creation
+                private Long medicalServiceId; // Medical Service ID - IMPORTANT for claim creation
                 private String serviceCode;
                 private String serviceName;
                 private String categoryName;
@@ -1052,7 +1052,7 @@ public class ProviderPortalController {
         @lombok.NoArgsConstructor
         @lombok.AllArgsConstructor
         public static class ProviderServiceDto {
-                private java.util.UUID serviceId;
+                private Long serviceId;
                 private String serviceCode;
                 private String serviceName;
                 private String categoryCode;

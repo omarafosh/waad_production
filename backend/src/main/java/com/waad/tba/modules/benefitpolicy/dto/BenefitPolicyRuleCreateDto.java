@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 /**
  * DTO for creating a new Benefit Policy Rule (REFACTORED).
@@ -26,7 +25,7 @@ public class BenefitPolicyRuleCreateDto {
     /**
      * Target Enterprise Medical Service ID
      */
-    private UUID medicalServiceId;
+    private Long medicalServiceId;
 
     /**
      * Target Medical Package ID

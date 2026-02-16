@@ -630,48 +630,43 @@ const ProviderContractView = () => {
         }
       />
 
-      {/* Contract Summary Card */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <MainCard title="معلومات العقد" secondary={<Chip label={statusConfig.label} color={statusConfig.color} size="small" />}>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <List disablePadding>
-                  <InfoRow label="رمز العقد" value={contract.contractCode} icon={ContractIcon} />
-                  <InfoRow label="نموذج التسعير" value={pricingModelConfig.label} icon={PriceIcon} />
-                  <InfoRow label="نسبة الخصم" value={contract.discountPercent ? `${contract.discountPercent}%` : '-'} icon={PriceIcon} />
-                </List>
+      {/* Contract Summary Card - 25% of viewport */}
+      <Box sx={{ height: 'calc(25vh - 80px)', overflow: 'auto', mb: 1 }}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <MainCard title="معلومات العقد" secondary={<Chip label={statusConfig.label} color={statusConfig.color} size="small" />} sx={{ height: '100%' }}>
+              <Grid container spacing={1.5}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <List disablePadding dense>
+                    <InfoRow label="رمز العقد" value={contract.contractCode} icon={ContractIcon} />
+                    <InfoRow label="نموذج التسعير" value={pricingModelConfig.label} icon={PriceIcon} />
+                    <InfoRow label="نسبة الخصم" value={contract.discountPercent ? `${contract.discountPercent}%` : '-'} icon={PriceIcon} />
+                  </List>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <List disablePadding dense>
+                    <InfoRow label="تاريخ البدء" value={formatDate(contract.startDate)} icon={CalendarIcon} />
+                    <InfoRow label="تاريخ الانتهاء" value={formatDate(contract.endDate)} icon={CalendarIcon} />
+                    <InfoRow label="عدد بنود التسعير" value={contract.pricingItemsCount || pricingItems.length} icon={InfoIcon} />
+                  </List>
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <List disablePadding>
-                  <InfoRow label="تاريخ البدء" value={formatDate(contract.startDate)} icon={CalendarIcon} />
-                  <InfoRow label="تاريخ الانتهاء" value={formatDate(contract.endDate)} icon={CalendarIcon} />
-                  <InfoRow label="عدد بنود التسعير" value={contract.pricingItemsCount || pricingItems.length} icon={InfoIcon} />
-                </List>
-              </Grid>
-            </Grid>
-          </MainCard>
-        </Grid>
+            </MainCard>
+          </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <MainCard title="مقدم الخدمة" secondary={<ProviderIcon color="primary" />}>
-            <List disablePadding>
-              <InfoRow label="الاسم" value={contract.providerName || contract.provider?.name || '-'} />
-              <InfoRow label="المدينة" value={contract.provider?.city || '-'} />
-              <InfoRow label="رقم الهاتف" value={contract.provider?.phone || '-'} />
-            </List>
-          </MainCard>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <MainCard title="مقدم الخدمة" secondary={<ProviderIcon color="primary" />} sx={{ height: '100%' }}>
+              <List disablePadding dense>
+                <InfoRow label="الاسم" value={contract.providerName || contract.provider?.name || '-'} />
+                <InfoRow label="المدينة" value={contract.provider?.city || '-'} />
+                <InfoRow label="رقم الهاتف" value={contract.provider?.phone || '-'} />
+              </List>
+            </MainCard>
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
 
-      {/* Notes Section */}
-      {contract.notes && (
-        <MainCard title="ملاحظات" secondary={<NotesIcon color="action" />} sx={{ mb: 3 }}>
-          <Typography variant="body1" color="text.secondary">
-            {contract.notes}
-          </Typography>
-        </MainCard>
-      )}
+
 
       {/* Tabs Section */}
       <MainCard>
@@ -741,9 +736,9 @@ const ProviderContractView = () => {
             />
           </Stack>
 
-          {/* Pricing Table */}
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
+          {/* Pricing Table - 75% of viewport */}
+          <TableContainer component={Paper} variant="outlined" sx={{ height: 'calc(75vh - 200px)', overflow: 'auto' }}>
+            <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow sx={{ backgroundColor: 'grey.50' }}>
                   <TableCell>رمز الخدمة</TableCell>

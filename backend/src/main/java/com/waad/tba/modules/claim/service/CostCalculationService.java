@@ -210,7 +210,7 @@ public class CostCalculationService {
         }
         
         // PERFORMANCE OPTIMIZATION: Batch preload all coverage percentages in ONE query
-        List<java.util.UUID> serviceIds = lines.stream()
+        List<Long> serviceIds = lines.stream()
             .filter(line -> line.getMedicalService() != null)
             .map(line -> line.getMedicalService().getId())
             .distinct()
@@ -221,7 +221,7 @@ public class CostCalculationService {
              ? claim.getVisit().getVisitType() 
              : com.waad.tba.modules.visit.entity.VisitType.OUTPATIENT;
 
-        java.util.Map<java.util.UUID, Integer> coverageMap = benefitPolicyCoverageService.batchGetCoveragePercents(member, serviceIds, visitType);
+        java.util.Map<Long, Integer> coverageMap = benefitPolicyCoverageService.batchGetCoveragePercents(member, serviceIds, visitType);
         
         log.debug("📊 Preloaded coverage for {} services (N+1 elimination)", serviceIds.size());
         
@@ -294,7 +294,7 @@ public class CostCalculationService {
         
         // Try to get coverage from BenefitPolicyCoverageService
         if (line.getMedicalService() != null) {
-            java.util.UUID serviceId = line.getMedicalService().getId();
+            Long serviceId = line.getMedicalService().getId();
             com.waad.tba.modules.visit.entity.VisitType visitType = com.waad.tba.modules.visit.entity.VisitType.OUTPATIENT;
             if (line.getClaim() != null && line.getClaim().getVisit() != null && line.getClaim().getVisit().getVisitType() != null) {
                 visitType = line.getClaim().getVisit().getVisitType();

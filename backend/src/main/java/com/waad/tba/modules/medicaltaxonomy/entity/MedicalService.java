@@ -57,7 +57,7 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
      * Unique business identifier (immutable)
      * Examples: "SRV-CARDIO-001", "SRV-LAB-CBC", "SRV-IMAGING-XRAY"
      */
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 255)
     private String code;
 
     @Enumerated(EnumType.STRING)

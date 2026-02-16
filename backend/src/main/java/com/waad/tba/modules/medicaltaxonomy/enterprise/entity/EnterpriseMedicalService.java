@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Entity
 @Table(name = "ent_medical_services")
@@ -17,62 +16,38 @@ import java.util.UUID;
 public class EnterpriseMedicalService {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    private Long id;
 
-    @Column(name = "code", unique = true, nullable = false, length = 100)
+    @Column(name = "code", unique = true, nullable = false, length = 50)
     private String code;
 
-    @Column(name = "name_ar", nullable = false, length = 255)
+    @Column(name = "name_ar", nullable = false)
     private String nameAr;
 
-    @Column(name = "name_en", nullable = false, length = 255)
+    @Column(name = "name_en")
     private String nameEn;
 
-    @Column(name = "category", length = 100)
+    @Column(name = "category", length = 255)
     private String category;
 
-    @Column(name = "sub_category", length = 100)
+    @Column(name = "sub_category", length = 255)
     private String subCategory;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "service_type", nullable = false, length = 20)
-    private ServiceType serviceType;
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean active = true;
 
-    @Column(name = "is_master", nullable = false)
+    @Column(name = "is_master")
     @Builder.Default
     private Boolean isMaster = true;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    @Builder.Default
-    private ServiceStatus status = ServiceStatus.ACTIVE;
-
-    @Column(name = "version")
-    @Builder.Default
-    private Integer version = 1;
-
-    @Column(name = "effective_from")
-    private LocalDate effectiveFrom;
-
-    @Column(name = "effective_to")
-    private LocalDate effectiveTo;
-
     public boolean isActive() {
-        return ServiceStatus.ACTIVE.equals(status);
+        return Boolean.TRUE.equals(active);
     }
 
     public boolean isMaster() {
         return Boolean.TRUE.equals(isMaster);
-    }
-
-    public enum ServiceType {
-        LAB, RAD, OPD, IPD, SURG
-    }
-
-    public enum ServiceStatus {
-        ACTIVE, INACTIVE
     }
 }

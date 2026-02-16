@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProviderServiceDto {
-    private java.util.UUID serviceId;
+    private Long serviceId;
     private String serviceCode;
     private String serviceName;
     private String categoryCode;

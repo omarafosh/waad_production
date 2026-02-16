@@ -81,7 +81,7 @@ public class ArchitecturalGuardService {
      * Validate a service by ID has category assigned.
      * Used for pre-validation before entity access.
      */
-    public void guardServiceHasCategory(java.util.UUID serviceId) {
+    public void guardServiceHasCategory(Long serviceId) {
         if (serviceId == null) {
             return; // Skip null service IDs
         }
@@ -150,12 +150,12 @@ public class ArchitecturalGuardService {
      * Validate service IDs provided for claim creation (ID-based).
      * Called before entity is created.
      */
-    public void guardClaimHasServices(java.util.List<java.util.UUID> serviceIds) {
+    public void guardClaimHasServices(java.util.List<Long> serviceIds) {
         if (serviceIds == null || serviceIds.isEmpty()) {
             throw ArchitecturalViolationException.claimWithoutService(null);
         }
         // Also validate each service has a category
-        for (java.util.UUID serviceId : serviceIds) {
+        for (Long serviceId : serviceIds) {
             guardServiceHasCategory(serviceId);
         }
     }
@@ -211,7 +211,7 @@ public class ArchitecturalGuardService {
      * Validate medicalServiceId is provided for preauth creation (ID-based).
      * Called before entity is created.
      */
-    public void guardPreAuthHasService(java.util.UUID medicalServiceId) {
+    public void guardPreAuthHasService(Long medicalServiceId) {
         if (medicalServiceId == null) {
             throw new ArchitecturalViolationException(
                 "SERVICE_REQUIRED",
@@ -357,7 +357,7 @@ public class ArchitecturalGuardService {
      * @param visitId The visit ID from DTO
      * @param serviceIds List of medical service IDs from DTO lines
      */
-    public void guardClaimCreation(Long visitId, java.util.List<java.util.UUID> serviceIds) {
+    public void guardClaimCreation(Long visitId, java.util.List<Long> serviceIds) {
         log.debug("🔒 Running architectural guards for Claim creation (ID-based)");
         guardClaimHasVisit(visitId);
         guardClaimHasServices(serviceIds);
@@ -369,7 +369,7 @@ public class ArchitecturalGuardService {
      * @param visitId The visit ID from DTO
      * @param medicalServiceId The medical service ID from DTO
      */
-    public void guardPreAuthCreation(Long visitId, java.util.UUID medicalServiceId) {
+    public void guardPreAuthCreation(Long visitId, Long medicalServiceId) {
         log.debug("🔒 Running architectural guards for PreAuthorization creation (ID-based)");
         guardPreAuthHasVisit(visitId);
         guardPreAuthHasService(medicalServiceId);
@@ -381,7 +381,7 @@ public class ArchitecturalGuardService {
      * @param serviceId Optional service ID
      * @param categoryId Optional category ID (at least one must be provided)
      */
-    public void guardRuleCreation(java.util.UUID serviceId, Long categoryId) {
+    public void guardRuleCreation(Long serviceId, Long categoryId) {
         log.debug("🔒 Running architectural guards for Rule creation (ID-based)");
         if (serviceId == null && categoryId == null) {
             throw ArchitecturalViolationException.ruleWithoutTarget(null);

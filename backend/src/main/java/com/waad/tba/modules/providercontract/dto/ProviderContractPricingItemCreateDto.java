@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 /**
  * DTO for creating a new Provider Contract Pricing Item.
@@ -23,7 +22,7 @@ public class ProviderContractPricingItemCreateDto {
     /**
      * Medical service ID - UUID (optional if serviceName provided)
      */
-    private UUID medicalServiceId;
+    private Long medicalServiceId;
 
     /**
      * Service Name (Required if medicalServiceId is null)

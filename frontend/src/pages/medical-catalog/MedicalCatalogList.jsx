@@ -313,44 +313,14 @@ const MedicalCatalogList = () => {
                 minWidth: 200
             },
             {
+                accessorKey: 'subCategory',
+                header: 'التخصص',
+                minWidth: 180
+            },
+            {
                 accessorKey: 'categoryName',
                 header: 'التصنيف',
-                minWidth: 180,
-                cell: ({ row }) => {
-                    const currentCategoryId = row.original.categoryId;
-
-                    return (
-                        <FormControl variant="standard" size="small" fullWidth sx={{ minWidth: 120 }}>
-                            <Select
-                                value={currentCategoryId || ''}
-                                onChange={(e) => {
-                                    const newVal = e.target.value;
-                                    if (newVal !== currentCategoryId) {
-                                        setReclassifyModal({
-                                            open: true,
-                                            service: row.original,
-                                            newCategoryId: newVal
-                                        });
-                                    }
-                                }}
-                                displayEmpty
-                                disableUnderline
-                                onClick={(e) => e.stopPropagation()} // Prevent row click
-                                sx={{
-                                    fontSize: '0.875rem',
-                                    '& .MuiSelect-select': { py: 0.5, px: 0 },
-                                    fontWeight: 500
-                                }}
-                            >
-                                {categories?.map((cat) => (
-                                    <MenuItem key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    );
-                }
+                minWidth: 180
             },
             {
                 accessorKey: 'active',
@@ -482,6 +452,11 @@ const MedicalCatalogList = () => {
                             sx={{ minWidth: 200, flexGrow: 1 }}
                             InputProps={{
                                 sx: { fontSize: '1rem', height: 36 },
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon color="action" />
+                                    </InputAdornment>
+                                ),
                                 endAdornment: localSearchTerm && (
                                     <InputAdornment position="end">
                                         <IconButton size="small" onClick={() => setLocalSearchTerm('')}>
@@ -597,6 +572,15 @@ const MedicalCatalogList = () => {
                 onSuccess={() => {
                     refetch();
                 }}
+            />
+
+            {/* Hidden Input for Excel Import */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept=".xlsx, .xls"
+                onChange={handleFileChange}
             />
         </Box>
     );

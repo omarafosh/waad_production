@@ -19,7 +19,7 @@ public class CoverageDistributionDto {
     private Long id;
     private String categoryId;
     private String categoryName;
-    private UUID serviceId;
+    private Long serviceId;
     private String serviceName;
     private BigDecimal limitAmount;
     private boolean active;

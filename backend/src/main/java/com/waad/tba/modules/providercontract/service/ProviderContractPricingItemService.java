@@ -114,7 +114,7 @@ public class ProviderContractPricingItemService {
      * Get effective pricing for a provider/service combination
      */
     @Transactional(readOnly = true)
-    public ProviderContractPricingItemResponseDto findEffectivePricing(Long providerId, UUID serviceId) {
+    public ProviderContractPricingItemResponseDto findEffectivePricing(Long providerId, Long serviceId) {
         log.debug("Finding effective pricing for provider: {}, service: {}", providerId, serviceId);
 
         return pricingRepository.findEffectivePricing(providerId, serviceId, java.time.LocalDate.now())
@@ -579,7 +579,7 @@ public class ProviderContractPricingItemService {
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     public static class ContractServiceDto {
-        private java.util.UUID id;
+        private Long id;
         private String code;
         private String name;
         private String categoryName;

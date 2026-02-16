@@ -33,7 +33,7 @@ public class BenefitPolicyRuleResponseDto {
     private String medicalCategory;
     
     // Service info (UUID-based in Unified Dictionary)
-    private UUID medicalServiceId;
+    private Long medicalServiceId;
     private String medicalServiceCode;
     private String medicalServiceNameAr;
     private String medicalServiceNameEn;

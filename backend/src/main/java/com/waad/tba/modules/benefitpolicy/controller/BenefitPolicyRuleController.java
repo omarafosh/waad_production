@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * REST Controller for Benefit Policy Rules management.
@@ -138,7 +137,7 @@ public class BenefitPolicyRuleController {
                            "Service-specific rules take priority over category rules.")
     public ResponseEntity<ApiResponse<BenefitPolicyRuleResponseDto>> getCoverageForService(
             @PathVariable Long policyId,
-            @PathVariable UUID serviceId,
+            @PathVariable Long serviceId,
             @RequestParam(required = false) com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         Optional<BenefitPolicyRuleResponseDto> result = ruleService.findCoverageForService(policyId, serviceId, encounterType);
@@ -155,7 +154,7 @@ public class BenefitPolicyRuleController {
     @Operation(summary = "Quick check if a service is covered")
     public ResponseEntity<ApiResponse<Map<String, Object>>> checkServiceCoverage(
             @PathVariable Long policyId,
-            @PathVariable UUID serviceId,
+            @PathVariable Long serviceId,
             @RequestParam(required = false) com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         boolean isCovered = ruleService.isServiceCovered(policyId, serviceId, encounterType);

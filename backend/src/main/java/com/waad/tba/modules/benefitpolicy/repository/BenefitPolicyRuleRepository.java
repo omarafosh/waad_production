@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Repository for BenefitPolicyRule entity (REFACTORED for Unified Dictionary).
@@ -52,11 +51,11 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
     long countByBenefitPolicyIdAndActiveTrueAndDeletedFalse(Long policyId);
     long countByBenefitPolicyIdAndDeletedTrue(Long policyId);
 
-    Optional<BenefitPolicyRule> findByBenefitPolicyIdAndMedicalServiceId(Long policyId, UUID serviceId);
-    Optional<BenefitPolicyRule> findByBenefitPolicyIdAndMedicalServiceIdAndActiveTrue(Long policyId, UUID serviceId);
-    List<BenefitPolicyRule> findByMedicalServiceId(UUID serviceId);
-    long countByMedicalServiceId(UUID serviceId);
-    void deleteByMedicalServiceId(UUID serviceId);
+    Optional<BenefitPolicyRule> findByBenefitPolicyIdAndMedicalServiceId(Long policyId, Long serviceId);
+    Optional<BenefitPolicyRule> findByBenefitPolicyIdAndMedicalServiceIdAndActiveTrue(Long policyId, Long serviceId);
+    List<BenefitPolicyRule> findByMedicalServiceId(Long serviceId);
+    long countByMedicalServiceId(Long serviceId);
+    void deleteByMedicalServiceId(Long serviceId);
 
     Optional<BenefitPolicyRule> findByBenefitPolicyIdAndMedicalCategory(Long policyId, String category);
     Optional<BenefitPolicyRule> findByBenefitPolicyIdAndMedicalCategoryAndActiveTrue(Long policyId, String category);
@@ -68,7 +67,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
            "AND r.active = true")
     Optional<BenefitPolicyRule> findActiveByServiceAndEncounter(
             @Param("policyId") Long policyId,
-            @Param("serviceId") UUID serviceId,
+            @Param("serviceId") Long serviceId,
             @Param("encounterType") com.waad.tba.modules.visit.entity.VisitType encounterType);
 
     @Query("SELECT r FROM BenefitPolicyRule r WHERE r.benefitPolicy.id = :policyId " +
@@ -77,7 +76,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
            "AND r.active = true")
     Optional<BenefitPolicyRule> findActiveByServiceGeneral(
             @Param("policyId") Long policyId,
-            @Param("serviceId") UUID serviceId);
+            @Param("serviceId") Long serviceId);
 
     @Query("SELECT r FROM BenefitPolicyRule r WHERE r.benefitPolicy.id = :policyId " +
            "AND r.medicalCategory = :category " +
@@ -119,7 +118,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
         """)
     List<BenefitPolicyRule> findApplicableRulesForService(
             @Param("policyId") Long policyId,
-            @Param("serviceId") UUID serviceId,
+            @Param("serviceId") Long serviceId,
             @Param("packageIds") List<Long> packageIds,
             @Param("category") String category,
             @Param("encounterType") com.waad.tba.modules.visit.entity.VisitType encounterType);
@@ -167,7 +166,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
            "AND r.deleted = false")
     boolean existsServiceRule(
             @Param("policyId") Long policyId,
-            @Param("serviceId") UUID serviceId,
+            @Param("serviceId") Long serviceId,
             @Param("encounterType") com.waad.tba.modules.visit.entity.VisitType encounterType,
             @Param("excludeId") Long excludeId);
 }

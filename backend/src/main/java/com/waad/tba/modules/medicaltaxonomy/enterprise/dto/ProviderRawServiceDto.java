@@ -1,7 +1,6 @@
 package com.waad.tba.modules.medicaltaxonomy.enterprise.dto;
 
 import lombok.*;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -12,7 +11,7 @@ public class ProviderRawServiceDto {
     private Long providerId;
     private String rawName;
     private String rawCode;
-    private UUID mappedServiceId;
+    private Long mappedServiceId;
     private String mappedServiceName;
     private String mappingStatus;
     private Double confidenceScore;

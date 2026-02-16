@@ -45,7 +45,7 @@ public class PreAuthorizationResponseDto {
     private String providerLicense;
     
     // ==================== MEDICAL SERVICE (from Contract) ====================
-    private java.util.UUID medicalServiceId;
+    private Long medicalServiceId;
     private String serviceCode;
     private String serviceName;
     private String serviceCategory;

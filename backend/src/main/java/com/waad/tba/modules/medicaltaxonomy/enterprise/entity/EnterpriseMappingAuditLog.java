@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "ent_mapping_audit_logs")
@@ -24,10 +23,10 @@ public class EnterpriseMappingAuditLog {
     private Long mappingId;
 
     @Column(name = "old_master_id")
-    private UUID oldMasterId;
+    private Long oldMasterId;
 
     @Column(name = "new_master_id")
-    private UUID newMasterId;
+    private Long newMasterId;
 
     @Column(name = "reason_code")
     private String reasonCode;

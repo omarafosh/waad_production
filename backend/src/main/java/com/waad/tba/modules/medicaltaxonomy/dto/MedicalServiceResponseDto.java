@@ -24,6 +24,7 @@ public class MedicalServiceResponseDto {
     private boolean isMaster;
     private Long categoryId;
     private String categoryName; // For UX - display category name
+    private String subCategory; // Specialization (التخصص)
     private String categoryCode; // For reference
     private String description;
     private BigDecimal basePrice;

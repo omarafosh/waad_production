@@ -5,7 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderRawService;
 import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseProviderRawService;
 

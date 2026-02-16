@@ -155,12 +155,61 @@ CREATE TABLE IF NOT EXISTS coverage_rule_config (
 );
 
 -- Seed default priorities
-INSERT INTO coverage_rule_config (rule_key, priority_weight, description) VALUES
-('SERVICE_ENCOUNTER_MATCH', 1000, 'Specific service rule with matching encounter type'),
-('SERVICE_ANY_ENCOUNTER', 900, 'Specific service rule for any encounter type'),
-('PACKAGE_ENCOUNTER_MATCH', 800, 'Package rule with matching encounter type'),
-('PACKAGE_ANY_ENCOUNTER', 700, 'Package rule for any encounter type'),
-('CATEGORY_ENCOUNTER_MATCH', 600, 'Category rule with matching encounter type'),
-('CATEGORY_ANY_ENCOUNTER', 500, 'Category rule for any encounter type'),
-('POLICY_DEFAULT', 100, 'Fall back to policy default')
-ON CONFLICT (rule_key) DO NOTHING;
+-- 8. ENTERPRISE UNIFIED DICTIONARY
+-- Core tables for the Unified Medical Dictionary and Provider Mapping Center
+
+CREATE TABLE IF NOT EXISTS ent_medical_services (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(100) UNIQUE NOT NULL,
+    name_ar VARCHAR(255) NOT NULL,
+    name_en VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    sub_category VARCHAR(100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_master BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ent_medical_services_code ON ent_medical_services(code);
+CREATE INDEX IF NOT EXISTS idx_ent_medical_services_search ON ent_medical_services(name_ar, name_en);
+
+-- 9. Provider Raw Services (Incoming services from providers)
+CREATE TABLE IF NOT EXISTS ent_provider_raw_services (
+    id BIGSERIAL PRIMARY KEY,
+    provider_id BIGINT NOT NULL,
+    raw_name VARCHAR(255) NOT NULL,
+    raw_code VARCHAR(100) NOT NULL,
+    mapped_service_id BIGINT REFERENCES ent_medical_services(id),
+    mapping_status VARCHAR(20) NOT NULL DEFAULT 'UNMAPPED',
+    confidence_score DOUBLE PRECISION,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider_id, raw_code)
+);
+
+-- 10. Service Aliases (For better auto-mapping)
+CREATE TABLE IF NOT EXISTS ent_service_aliases (
+    id BIGSERIAL PRIMARY KEY,
+    alias_text VARCHAR(255) NOT NULL,
+    medical_service_id BIGINT NOT NULL REFERENCES ent_medical_services(id),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ent_service_aliases_text ON ent_service_aliases(alias_text);
+
+-- 11. Mapping Audit & Governance
+CREATE TABLE IF NOT EXISTS ent_service_mapping_audit (
+    id BIGSERIAL PRIMARY KEY,
+    provider_raw_service_id BIGINT NOT NULL REFERENCES ent_provider_raw_services(id),
+    old_medical_service_id BIGINT REFERENCES ent_medical_services(id),
+    new_medical_service_id BIGINT REFERENCES ent_medical_services(id),
+    changed_by VARCHAR(100) NOT NULL,
+    changed_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT
+);
+
+-- Seed basic data
+INSERT INTO ent_medical_services (code, name_ar, name_en, category) 
+VALUES ('SRV-LAB-CBC', 'تحليل دم شامل', 'Complete Blood Count (CBC)', 'LAB')
+ON CONFLICT (code) DO NOTHING;

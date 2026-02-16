@@ -15,7 +15,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * BenefitPolicyRule Entity (REFACTORED 2026-02-15 - UNIFIED DICTIONARY)

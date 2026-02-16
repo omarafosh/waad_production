@@ -145,7 +145,34 @@ public class Company {
     @Builder.Default
     @Column(name = "barcode_prefix", length = 20)
     private String barcodePrefix = "WAAD";
+
+    /**
+     * Date calendar type (e.g., 'gregory', 'islamic').
+     */
+    @Builder.Default
+    @Column(name = "date_calendar", length = 20)
+    private String dateCalendar = "gregory";
+
+    /**
+     * Month format (e.g., 'numeric', '2-digit', 'long').
+     */
+    @Builder.Default
+    @Column(name = "month_format", length = 20)
+    private String monthFormat = "numeric";
+
+    /**
+     * Number system (e.g., 'latn', 'arab').
+     */
+    @Builder.Default
+    @Column(name = "number_system", length = 20)
+    private String numberSystem = "latn";
     
+    /**
+     * Card title color (HEX format, e.g., #2196f3).
+     */
+    @Column(name = "card_title_color", length = 20)
+    private String cardTitleColor;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;

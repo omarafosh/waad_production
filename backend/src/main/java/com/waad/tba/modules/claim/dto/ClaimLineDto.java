@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-import java.util.UUID;
-
 /**
  * ClaimLine DTO (CANONICAL REBUILD 2026-01-16)
  * 

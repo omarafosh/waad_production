@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * DTO for creating a new Provider Contract Pricing Item.
@@ -19,10 +20,11 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ProviderContractPricingItemCreateDto {
 
-    /**
-     * Medical service ID - UUID (optional if serviceName provided)
-     */
+    @Schema(description = "System Medical Service ID (if from dictionary)")
     private Long medicalServiceId;
+
+    @Schema(description = "System Medical Category ID (for lookup)")
+    private Long medicalCategoryId;
 
     /**
      * Service Name (Required if medicalServiceId is null)

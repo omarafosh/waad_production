@@ -57,6 +57,12 @@ CREATE TABLE IF NOT EXISTS companies (
     font_family VARCHAR(50) DEFAULT 'Tajawal',
     font_size INTEGER DEFAULT 12,
     barcode_prefix VARCHAR(20) DEFAULT 'WAAD',
+    card_title_color VARCHAR(20) DEFAULT '#1890ff',
+    
+    -- System Formatting Settings
+    date_calendar VARCHAR(20) DEFAULT 'gregory',
+    month_format VARCHAR(20) DEFAULT 'numeric',
+    number_system VARCHAR(20) DEFAULT 'latn',
     
     -- SLA Configuration
     claim_sla_days INTEGER NOT NULL DEFAULT 10,
@@ -169,6 +175,14 @@ CREATE TABLE IF NOT EXISTS module_access (
 );
 
 -- 8. INITIAL DATA (Single Company Setup)
-INSERT INTO companies (name, code, active, is_default, currency, barcode_prefix, claim_sla_days, pre_approval_sla_days) 
-VALUES ('Top Doctors TPA', 'TOP_DOCS', TRUE, TRUE, 'LYD', 'TD', 10, 3) 
+INSERT INTO companies (
+    name, code, active, is_default, currency, barcode_prefix, 
+    claim_sla_days, pre_approval_sla_days, 
+    card_title_color, date_calendar, month_format, number_system
+) 
+VALUES (
+    'Top Doctors TPA', 'TOP_DOCS', TRUE, TRUE, 'LYD', 'TD', 
+    10, 3, 
+    '#1890ff', 'gregory', 'numeric', 'latn'
+) 
 ON CONFLICT (code) DO NOTHING;

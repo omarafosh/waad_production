@@ -45,7 +45,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Find pricing items by medical service ID (UUID)
+     * Find pricing items by medical service ID (Long)
      */
     List<ProviderContractPricingItem> findByMedicalServiceIdAndActiveTrue(Long medicalServiceId);
 

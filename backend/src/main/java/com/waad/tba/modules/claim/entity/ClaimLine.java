@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 /**
  * ClaimLine Entity (CANONICAL REBUILD 2026-02-15 - UNIFIED DICTIONARY)

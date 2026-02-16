@@ -165,6 +165,7 @@ CREATE TABLE IF NOT EXISTS ent_medical_services (
     name_en VARCHAR(255) NOT NULL,
     category VARCHAR(100),
     sub_category VARCHAR(100),
+    specialty VARCHAR(100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_master BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,

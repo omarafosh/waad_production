@@ -44,6 +44,11 @@ public class ProviderContractPricingItemCreateDto {
     private String categoryName;
 
     /**
+     * Specialty (Optional)
+     */
+    private String specialty;
+
+    /**
      * Standard/list price (required)
      */
     @NotNull(message = "Base price is required")

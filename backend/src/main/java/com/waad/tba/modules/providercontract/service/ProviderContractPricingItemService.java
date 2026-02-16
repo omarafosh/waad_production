@@ -188,6 +188,11 @@ public class ProviderContractPricingItemService {
 
             serviceName = service.getNameAr();
             serviceCode = service.getCode();
+            
+            // Auto-populate specialty if not provided and service has it
+            if (dto.getSpecialty() == null || dto.getSpecialty().isBlank()) {
+                dto.setSpecialty(service.getSpecialty());
+            }
         } else {
             // Case B: Custom Service (Free Text)
             if (dto.getServiceName() == null || dto.getServiceName().isBlank()) {
@@ -233,6 +238,7 @@ public class ProviderContractPricingItemService {
                 .serviceCode(serviceCode)
                 .serviceName(serviceName)
                 .categoryName(category)
+                .specialty(dto.getSpecialty())
                 .basePrice(basePrice)
                 .contractPrice(contractPrice)
                 .effectiveFrom(dto.getEffectiveFrom() != null ? dto.getEffectiveFrom() : java.time.LocalDate.now())
@@ -310,6 +316,9 @@ public class ProviderContractPricingItemService {
         }
         if (dto.getCategoryName() != null) {
             item.setCategoryName(dto.getCategoryName());
+        }
+        if (dto.getSpecialty() != null) {
+            item.setSpecialty(dto.getSpecialty());
         }
         if (dto.getNotes() != null) {
             item.setNotes(dto.getNotes());

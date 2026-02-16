@@ -35,6 +35,9 @@ public class EnterpriseMedicalService {
     @Column(name = "sub_category", length = 255)
     private String subCategory;
 
+    @Column(name = "specialty", length = 255)
+    private String specialty;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean active = true;

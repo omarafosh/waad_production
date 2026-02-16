@@ -27,6 +27,11 @@ public class ProviderContractPricingItemUpdateDto {
     private String categoryName;
 
     /**
+     * Specialty (Optional)
+     */
+    private String specialty;
+
+    /**
      * Standard/list price
      */
     @DecimalMin(value = "0.00", message = "Base price must be >= 0")

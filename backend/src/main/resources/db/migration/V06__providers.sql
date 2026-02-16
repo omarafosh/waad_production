@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS provider_contract_pricing_items (
     service_name VARCHAR(255),
     service_code VARCHAR(50),
     category_name VARCHAR(255),
+    specialty VARCHAR(100),
     
     -- Validity
     effective_from DATE,

@@ -35,6 +35,9 @@ public class ProviderContractPricingItemResponseDto {
     // Category name (for imported items - display/grouping)
     private String categoryName;
 
+    // Specialty (for grouping)
+    private String specialty;
+
     // Quantity (for imported items)
     private Integer quantity;
 
@@ -108,6 +111,7 @@ public class ProviderContractPricingItemResponseDto {
                 .serviceName(displayServiceName)
                 .serviceCode(entity.getServiceCode())
                 .categoryName(effectiveCategoryName)
+                .specialty(entity.getSpecialty() != null ? entity.getSpecialty() : (entity.getMedicalService() != null ? entity.getMedicalService().getSpecialty() : null))
                 .quantity(entity.getQuantity())
                 .effectiveCategory(effectiveCategoryDto)
                 .basePrice(entity.getBasePrice() != null ? entity.getBasePrice() : java.math.BigDecimal.ZERO)

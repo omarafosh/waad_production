@@ -70,6 +70,10 @@ public class ProviderContractPricingItem {
     @Column(name = "category_name", length = 255)
     private String categoryName;
     
+    @Size(max = 255)
+    @Column(name = "specialty", length = 255)
+    private String specialty;
+    
     /**
      * Quantity (for internal tracking)
      */

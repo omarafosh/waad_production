@@ -37,7 +37,7 @@ import MainCard from 'components/MainCard';
 import { GenericDataTable, ModernPageHeader, RBACGuard } from 'components/tba';
 import TableErrorBoundary from 'components/TableErrorBoundary';
 import useTableState from 'hooks/useTableState';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import { useTableRefresh } from 'contexts/TableRefreshContext';
 import { getProviderContracts, CONTRACT_STATUS, CONTRACT_STATUS_CONFIG, PRICING_MODEL_CONFIG } from 'services/api/provider-contracts.service';
 import { debounce } from 'lodash-es';
@@ -49,7 +49,7 @@ const QUERY_KEY = 'provider-contracts';
 const ProviderContractsList = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
   const { formatDate } = useFormatter();
   const { refreshKey } = useTableRefresh();
 

@@ -4,7 +4,7 @@ import usePreApprovalsReport, { DEFAULT_FILTERS, PREAUTH_STATUS_LABELS } from 'h
 import { formatNumber } from 'utils/formatters';
 import { providersService } from 'services/api/providers.service';
 import { exportToExcel } from 'utils/exportUtils';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import useAuth from 'hooks/useAuth';
 
 // MUI Components
@@ -44,7 +44,7 @@ import { PreApprovalsFilters, PreApprovalsTable } from 'components/reports/pre-a
  */
 const PreApprovalsReport = () => {
   // Company branding from SSOT
-  const { companyName } = useCompanySettings();
+  const { systemName } = useSystemSettings(); // Changed
   const { user } = useAuth();
 
   // Role Detection
@@ -153,7 +153,7 @@ const PreApprovalsReport = () => {
       const filename = `تقرير_الموافقات_المسبقة_${timestamp}`;
 
       // Export using unified utility with company branding
-      exportToExcel(exportData, filename, { companyName });
+      exportToExcel(exportData, filename, { companyName: systemName }); // Mapped
     } catch (error) {
       console.error('Failed to export Excel:', error);
     }

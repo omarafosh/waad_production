@@ -173,6 +173,10 @@ public class ProviderContractPricingExcelController {
         String username = (currentUser != null) ? currentUser.getUsername() : "system";
         Long userId = (currentUser != null) ? currentUser.getId() : null;
         
+        // Fix: Create log synchronously BEFORE async process starts
+        // This ensures the record exists when frontend starts polling immediately
+        templateService.createImportLog(batchId, contractId, file.getOriginalFilename(), file.getSize(), username, userId);
+        
         templateService.executeImport(tempFile, batchId, contractId, username, userId);
         
         Map<String, String> response = new HashMap<>();

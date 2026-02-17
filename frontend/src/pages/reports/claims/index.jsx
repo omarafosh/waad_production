@@ -4,7 +4,7 @@ import useClaimsReport, { DEFAULT_FILTERS, CLAIM_STATUS_LABELS } from 'hooks/use
 import { formatNumber } from 'utils/formatters';
 import { providersService } from 'services/api/providers.service';
 import { exportToExcel } from 'utils/exportUtils';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import useAuth from 'hooks/useAuth';
 
 // MUI Components
@@ -45,7 +45,7 @@ import { ClaimsFilters, ClaimsTable } from 'components/reports/claims';
  */
 const ClaimsReport = () => {
   // Company branding from SSOT
-  const { companyName } = useCompanySettings();
+  const { systemName } = useSystemSettings(); // Changed
   const { user } = useAuth();
 
   // Role Detection
@@ -153,7 +153,7 @@ const ClaimsReport = () => {
       const filename = `تقرير_المطالبات_${timestamp}`;
 
       // Export using unified utility with company branding
-      exportToExcel(exportData, filename, { companyName });
+      exportToExcel(exportData, filename, { companyName: systemName }); // Mapped
     } catch (error) {
       console.error('Failed to export Excel:', error);
     }

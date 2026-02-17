@@ -11,7 +11,7 @@ const AdminCompaniesList = Loadable(lazy(() => import('pages/admin/companies')))
 const AdminRolesList = Loadable(lazy(() => import('pages/admin/roles')));
 const MedicalServiceSandbox = Loadable(lazy(() => import('pages/admin/tools/MedicalServiceSandbox')));
 const Settings = Loadable(lazy(() => import('pages/settings')));
-const CompanySettings = Loadable(lazy(() => import('pages/settings/company')));
+const SystemSettings = Loadable(lazy(() => import('pages/settings/system'))); // Renamed import
 const ProfileOverview = Loadable(lazy(() => import('pages/profile/ProfileOverview')));
 const AccountSettings = Loadable(lazy(() => import('pages/profile/AccountSettings')));
 const AuditLog = Loadable(lazy(() => import('pages/audit')));
@@ -47,10 +47,10 @@ export const AdminRoutes = [
 ];
 
 export const SettingsRoutes = {
-    path: 'settings',
+    path: 'settings', // /settings
     children: [
         createRoute({ path: '', element: Settings, roles: ROLES.ADMIN_EMPLOYER }),
-        createRoute({ path: 'company', element: CompanySettings, roles: ROLES.ALL_ADMINS })
+        createRoute({ path: 'system', element: SystemSettings, roles: ROLES.ALL_ADMINS }) // /settings/system
     ]
 };
 

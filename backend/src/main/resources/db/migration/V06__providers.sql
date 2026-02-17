@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS provider_contract_pricing_items (
     
     -- Target (Category OR Service)
     medical_category_id BIGINT,
-    medical_service_id BIGINT, -- Points to ent_medical_services(id)
+    medical_service_id BIGINT, -- Points to medical_services(id)
     
     -- Pricing
     pricing_type VARCHAR(20) NOT NULL DEFAULT 'DISCOUNT',
@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS provider_contract_pricing_items (
     
     CONSTRAINT fk_pcpi_contract FOREIGN KEY (contract_id) REFERENCES provider_contracts(id) ON DELETE CASCADE,
     CONSTRAINT fk_pcpi_category FOREIGN KEY (medical_category_id) REFERENCES medical_categories(id),
-    CONSTRAINT fk_pcpi_enterprise_service FOREIGN KEY (medical_service_id) REFERENCES ent_medical_services(id) ON DELETE SET NULL,
+    CONSTRAINT fk_pcpi_enterprise_service FOREIGN KEY (medical_service_id) REFERENCES medical_services(id) ON DELETE SET NULL,
     CONSTRAINT chk_pcpi_pricing_type CHECK (pricing_type IN ('DISCOUNT', 'FIXED_PRICE'))
 );
 

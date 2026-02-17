@@ -37,9 +37,9 @@ CREATE INDEX IF NOT EXISTS idx_categories_active ON medical_categories(active);
 
 -- 2. الخدمات الطبية الموحدة (Unified Medical Services)
 -- القاموس المرجعي للنظام. تم دمج medical_services مع ent_medical_services.
-CREATE TABLE IF NOT EXISTS ent_medical_services (
+CREATE TABLE IF NOT EXISTS medical_services (
     id BIGSERIAL PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,      -- كود الخدمة الموحد
+    code VARCHAR(255) NOT NULL UNIQUE,      -- كود الخدمة الموحد
     name_ar VARCHAR(200) NOT NULL,          -- اسم الخدمة بالعربي
     name_en VARCHAR(200),                   -- اسم الخدمة بالإنجليزي
     
@@ -70,11 +70,11 @@ CREATE TABLE IF NOT EXISTS ent_medical_services (
     CONSTRAINT fk_service_category FOREIGN KEY (category_id) REFERENCES medical_categories(id)
 );
 
-COMMENT ON TABLE ent_medical_services IS 'القاموس الطبي الموحد - الخدمات المرجعية للنظام';
-COMMENT ON COLUMN ent_medical_services.category_id IS 'الربط بالتصنيف الطبي لتحديد نسب التحمل والتغطية';
+COMMENT ON TABLE medical_services IS 'القاموس الطبي الموحد - الخدمات المرجعية للنظام';
+COMMENT ON COLUMN medical_services.category_id IS 'الربط بالتصنيف الطبي لتحديد نسب التحمل والتغطية';
 
-CREATE INDEX IF NOT EXISTS idx_services_category ON ent_medical_services(category_id);
-CREATE INDEX IF NOT EXISTS idx_services_active ON ent_medical_services(active);
+CREATE INDEX IF NOT EXISTS idx_services_category ON medical_services(category_id);
+CREATE INDEX IF NOT EXISTS idx_services_active ON medical_services(active);
 
 -- 3. المجموعات الطبية (Medical Packages)
 -- تجميع لمجموعة خدمات تحت كود واحد (الباقات)
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS medical_package_items (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT fk_mpi_package FOREIGN KEY (package_id) REFERENCES medical_packages(id) ON DELETE CASCADE,
-    CONSTRAINT fk_mpi_service FOREIGN KEY (service_id) REFERENCES ent_medical_services(id)
+    CONSTRAINT fk_mpi_service FOREIGN KEY (service_id) REFERENCES medical_services(id)
 );
 
 -- 5. الأكواد العالمية (CPT & ICD) 
@@ -124,18 +124,21 @@ CREATE TABLE IF NOT EXISTS icd_codes (
     code VARCHAR(20) UNIQUE NOT NULL,
     description_ar VARCHAR(500) NOT NULL,
     description_en VARCHAR(500) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- 10. Service Aliases (For better auto-mapping)
 CREATE TABLE IF NOT EXISTS ent_service_aliases (
     id BIGSERIAL PRIMARY KEY,
     alias_text VARCHAR(255) NOT NULL,
-    medical_service_id BIGINT NOT NULL REFERENCES ent_medical_services(id),
+    medical_service_id BIGINT NOT NULL REFERENCES medical_services(id),
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_ent_service_aliases_text ON ent_service_aliases(alias_text);
 
 -- Seed basic data
-INSERT INTO ent_medical_services (code, name_ar, name_en, category) 
+INSERT INTO medical_services (code, name_ar, name_en, category) 
 VALUES ('SRV-LAB-CBC', 'تحليل دم شامل', 'Complete Blood Count (CBC)', 'LAB')
 ON CONFLICT (code) DO NOTHING;

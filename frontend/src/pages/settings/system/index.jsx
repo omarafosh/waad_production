@@ -42,8 +42,8 @@ import {
 } from '@mui/icons-material';
 import ModernPageHeader from 'components/tba/ModernPageHeader';
 import RBACGuard from 'components/tba/RBACGuard';
-import { useSystemCompany, useUpdateSystemCompany } from 'hooks/useCompany';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSettings } from 'hooks/useSettings'; // Changed from useCompany
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed from CompanySettingsContext
 import useConfig from 'hooks/useConfig';
 import waadLogoFallback from 'assets/images/waad-logo.png';
 import UsersList from 'pages/rbac/users/UsersList';
@@ -78,26 +78,26 @@ const FieldGroup = ({ title, children, icon: Icon, color = 'primary.main' }) => 
 
 const ProfessionalSettingsPage = () => {
   const [tabValue, setTabValue] = useState(0);
-  const { refreshSettings } = useCompanySettings();
+  const { isUpdating } = useSystemSettings(); // Use context state if needed
   const { setField } = useConfig();
 
   const [formData, setFormData] = useState({
     id: null,
-    name: '',
-    code: '',
+    systemName: '', // Changed from name
+    systemCode: '', // Changed from code
     businessType: '',
     phone: '',
     email: '',
     address: '',
     website: '',
     taxNumber: '',
-    currency: 'SAR',
+    currency: 'LYD', // Changed default to LYD to match DB
     cardNumberFormat: '[PRO]-[YEAR]-[EMP_NO][REL_SUFFIX]',
     claimSlaDays: 10,
     preApprovalSlaDays: 3,
     fontSize: 12,
-    fontFamily: 'Tajawal',
-    barcodePrefix: 'WAAD',
+    fontFamily: 'Cairo', // Changed default to Cairo
+    barcodePrefix: 'TD', // Changed default
     dateCalendar: 'gregory',
     monthFormat: 'numeric',
     numberSystem: 'latn',
@@ -106,37 +106,36 @@ const ProfessionalSettingsPage = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const { data: company, isLoading, error } = useSystemCompany();
-  const updateCompanyMutation = useUpdateSystemCompany();
+  // Use new hook
+  const { settings, isLoading, error, updateSettings, refetch } = useSettings();
 
   useEffect(() => {
-    if (company?.data) {
-      const companyData = company.data;
+    if (settings) {
       setFormData({
-        id: companyData.id,
-        name: companyData.name || '',
-        code: companyData.code || '',
-        businessType: companyData.businessType || '',
-        phone: companyData.phone || '',
-        email: companyData.email || '',
-        address: companyData.address || '',
-        website: companyData.website || '',
-        taxNumber: companyData.taxNumber || '',
-        currency: companyData.currency || 'SAR',
-        cardNumberFormat: companyData.cardNumberFormat || '[PRO]-[YEAR]-[EMP_NO][REL_SUFFIX]',
-        claimSlaDays: companyData.claimSlaDays || 10,
-        preApprovalSlaDays: companyData.preApprovalSlaDays || 3,
-        logoUrl: companyData.logoUrl || '',
-        fontFamily: companyData.fontFamily || 'Tajawal',
-        fontSize: companyData.fontSize || 12,
-        barcodePrefix: companyData.barcodePrefix || 'WAAD',
-        dateCalendar: companyData.dateCalendar || 'gregory',
-        monthFormat: companyData.monthFormat || 'numeric',
-        numberSystem: companyData.numberSystem || 'latn',
-        cardTitleColor: companyData.cardTitleColor || '#1890ff'
+        id: settings.id,
+        systemName: settings.systemName || '', // Mapped
+        systemCode: settings.systemCode || '', // Mapped
+        businessType: settings.businessType || 'Health Insurance', // Not in SettingDto yet? Keep fallback
+        phone: settings.phone || '',
+        email: settings.email || '',
+        address: settings.address || '',
+        website: settings.website || '',
+        taxNumber: settings.taxNumber || '',
+        currency: settings.currency || 'LYD',
+        cardNumberFormat: settings.cardNumberFormat || '[PRO]-[YEAR]-[EMP_NO][REL_SUFFIX]', // Not in DTO?
+        claimSlaDays: settings.claimSlaDays || 10,
+        preApprovalSlaDays: settings.preApprovalSlaDays || 3,
+        logoUrl: settings.logoUrl || '',
+        fontFamily: settings.fontFamily || 'Cairo',
+        fontSize: settings.fontSize || 12, // Not in DTO?
+        barcodePrefix: settings.barcodePrefix || 'TD',
+        dateCalendar: settings.dateCalendar || 'gregory',
+        monthFormat: settings.monthFormat || 'numeric', // Not in DTO?
+        numberSystem: settings.numberSystem || 'latn', // Not in DTO?
+        cardTitleColor: settings.primaryColor || '#1890ff' // Use primaryColor for now
       });
     }
-  }, [company]);
+  }, [settings]);
 
   const handleChange = (field) => (event) => {
     let value = event.target.value;
@@ -153,7 +152,7 @@ const ProfessionalSettingsPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name?.trim()) newErrors.name = 'اسم الشركة مطلوب';
+    if (!formData.systemName?.trim()) newErrors.systemName = 'اسم المؤسسة مطلوب';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -162,13 +161,15 @@ const ProfessionalSettingsPage = () => {
     e.preventDefault();
     if (!validateForm()) return;
     const { id, ...updateData } = formData;
-    updateCompanyMutation.mutate(updateData, {
-      onSuccess: () => {
-        refreshSettings();
-        if (formData.fontFamily) setField('fontFamily', formData.fontFamily);
-        if (formData.fontSize) setField('fontSize', formData.fontSize);
-      }
-    });
+
+    try {
+      await updateSettings(updateData);
+      refetch(); // Refresh local data from API
+      if (formData.fontFamily) setField('fontFamily', formData.fontFamily);
+      if (formData.fontSize) setField('fontSize', formData.fontSize);
+    } catch (err) {
+      // handled by hook
+    }
   };
 
   if (isLoading) {
@@ -227,7 +228,7 @@ const ProfessionalSettingsPage = () => {
                         <FieldGroup title="المعلومات الأساسية" icon={BusinessIcon}>
                           <Grid container spacing={2}>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                              <TextField fullWidth size="small" label="اسم المؤسسة" value={formData.name} onChange={handleChange('name')} error={!!errors.name} helperText={errors.name} required />
+                              <TextField fullWidth size="small" label="اسم المؤسسة" value={formData.systemName} onChange={handleChange('systemName')} error={!!errors.systemName} helperText={errors.systemName} required />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
                               <TextField fullWidth size="small" label="نوع النشاط" value={formData.businessType} onChange={handleChange('businessType')} />

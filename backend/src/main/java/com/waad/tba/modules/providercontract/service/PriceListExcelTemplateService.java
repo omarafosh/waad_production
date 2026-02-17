@@ -326,6 +326,9 @@ public class PriceListExcelTemplateService {
         
         String batchId = UUID.randomUUID().toString();
         try {
+            // Fix: Create log BEFORE async execution to prevent race condition
+            createImportLog(batchId, contractId, file.getOriginalFilename(), file.getSize(), "system", null);
+            
             File tempFile = saveToTempFile(file);
             executeImport(tempFile, batchId, contractId, "system", null);
             return ExcelImportResult.builder().success(true).messageEn("Import started in background with batch: " + batchId).build();
@@ -416,7 +419,8 @@ public class PriceListExcelTemplateService {
             ProviderContract contract = contractRepository.findById(contractId)
                     .orElseThrow(() -> new BusinessRuleException("العقد غير موجود"));
 
-            PricingImportLog importLog = self.createImportLog(batchId, contractId, file.getName(), file.length(), username, userId);
+            // Note: Import log is created by the caller (Controller) BEFORE this async method starts
+            // to prevent race conditions during frontend polling
             
             try (Workbook workbook = WorkbookFactory.create(file)) {
                 Sheet sheet = workbook.getSheet(SHEET_NAME);

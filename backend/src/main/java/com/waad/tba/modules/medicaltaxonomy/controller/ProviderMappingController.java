@@ -79,6 +79,15 @@ public class ProviderMappingController {
         return ResponseEntity.ok(ApiResponse.success("Services unmapped successfully", null));
     }
 
+    @PostMapping("/raw/{id}/category")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<ApiResponse> assignCategory(
+            @PathVariable Long id,
+            @RequestParam String categoryName) {
+        mappingService.assignCategory(id, categoryName);
+        return ResponseEntity.ok(ApiResponse.success("تم تحديد التصنيف بنجاح", null));
+    }
+
     @PostMapping("/upload-raw")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
     public ResponseEntity<ApiResponse> uploadRawServices(

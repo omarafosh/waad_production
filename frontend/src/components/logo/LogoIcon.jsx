@@ -1,9 +1,12 @@
+```javascript
 // material-ui
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 
+// material-ui
+import { useTheme } from '@mui/material/styles';
 // Company settings context - SINGLE SOURCE OF TRUTH
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext';
 
 // Fallback static asset
 import waadLogoFallback from 'assets/images/waad-logo.png';
@@ -11,28 +14,26 @@ import waadLogoFallback from 'assets/images/waad-logo.png';
 // ==============================|| LOGO ICON - COMPANY BRANDING ||============================== //
 
 /**
- * LogoIcon - Compact company logo from centralized settings
- * 
- * Uses CompanySettingsContext for dynamic branding.
- * Fallback: Static asset or initials avatar.
+ * LogoIcon - Simplified logo for collapsed sidebar or mobile
  */
-export default function LogoIcon() {
-  const { getLogoSrc, hasLogo, getInitials, primaryColor, companyName } = useCompanySettings();
+const LogoIcon = () => {
+  const theme = useTheme();
+  // Get Company Settings (Logo)
+  const { logoUrl, systemName, primaryColor } = useSystemSettings();
 
-  // Determine logo source
-  const logoSrc = hasLogo() ? getLogoSrc() : waadLogoFallback;
-
-  if (hasLogo() || waadLogoFallback) {
+  // Return Logo if available
+  if (logoUrl) {
     return (
       <Box 
-        component="img" 
-        src={logoSrc} 
-        alt={companyName || 'Waad TPA'} 
+        component="img"
+        src={logoUrl}
+        alt={systemName || 'System Logo'}
         sx={{ 
-          width: 40, 
-          height: 40,
+          width: 40,
+          height: 'auto',
+          maxHeight: 40,
           objectFit: 'contain'
-        }} 
+        }}
       />
     );
   }
@@ -48,7 +49,10 @@ export default function LogoIcon() {
         fontSize: '1.2rem'
       }}
     >
-      {getInitials()}
+      {systemName ? systemName.charAt(0).toUpperCase() : 'S'}
     </Avatar>
   );
-}
+};
+
+export default LogoIcon;
+```

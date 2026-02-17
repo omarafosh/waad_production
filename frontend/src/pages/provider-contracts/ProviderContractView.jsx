@@ -71,7 +71,7 @@ import RBACGuard from 'components/tba/RBACGuard';
 import GenericDataTable from 'components/GenericDataTable';
 import DataImportWizard from 'components/ExcelImport/DataImportWizard';
 import useFormatter from 'hooks/useFormatter';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 
 // API Service
 import {
@@ -152,7 +152,8 @@ const ProviderContractView = () => {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
   const { formatDate, formatCurrency } = useFormatter();
-  const { cardTitleColor } = useCompanySettings();
+  const { primaryColor } = useSystemSettings(); // Changed: cardTitleColor was likely an alias for primaryColor or mainColor
+  const cardTitleColor = primaryColor; // Mapping for backwards compatibility within this file
 
   // File input ref for price list import
   const fileInputRef = useRef(null);

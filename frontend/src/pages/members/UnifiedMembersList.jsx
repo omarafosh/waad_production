@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import {
   Avatar,
   Box,
@@ -104,7 +104,7 @@ const UnifiedMembersList = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuth();
-  const { settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
   const { refreshKey } = useTableRefresh();
 
   // Table State Management

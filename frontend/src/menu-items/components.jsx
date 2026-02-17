@@ -588,11 +588,11 @@ const menuItem = [
         permission: ['SYSTEM_SETTINGS'],
         children: [
           {
-            id: 'company-settings',
+            id: 'system-settings',
             title: 'معلومات المؤسسة',
             titleEn: 'Organization Info',
             type: 'item',
-            url: '/settings/company',
+            url: '/settings/system',
             icon: BusinessIcon,
           },
           {

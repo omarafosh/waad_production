@@ -31,7 +31,7 @@ import CloseCircleOutlined from '@ant-design/icons/CloseCircleOutlined';
 // Project imports
 import MainCard from 'components/MainCard';
 import { providersService } from 'services/api';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import api from 'utils/axios';
 
 // ==============================|| PROVIDER REPORTS ||============================== //
@@ -47,7 +47,7 @@ import api from 'utils/axios';
  * @since 2026-02-04
  */
 export default function ProviderReports() {
-    const { companyName } = useCompanySettings();
+    const { systemName, logoUrl } = useSystemSettings(); // Changed
 
     // Form State
     const [providerId, setProviderId] = useState('');

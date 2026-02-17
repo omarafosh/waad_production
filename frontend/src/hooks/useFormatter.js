@@ -1,17 +1,17 @@
 import { useCallback } from 'react';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 
 /**
  * useFormatter - Centralized hook for data formatting
  * 
  * This hook provides consistent formatting for dates and currencies 
- * based on system-wide settings from CompanySettingsContext.
+ * based on system-wide settings from SystemSettingsContext.
  * 
  * @version 1.0.0
  * @returns {Object} Formatting functions { formatDate, formatCurrency }
  */
 export const useFormatter = () => {
-    const { settings } = useCompanySettings();
+    const { settings } = useSystemSettings(); // Changed
 
     const {
         currency = 'LYD',

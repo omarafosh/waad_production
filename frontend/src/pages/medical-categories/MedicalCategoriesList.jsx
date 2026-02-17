@@ -24,6 +24,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SubdirectoryArrowLeftIcon from '@mui/icons-material/SubdirectoryArrowLeft';
+import LockIcon from '@mui/icons-material/Lock';
 
 import MainCard from 'components/MainCard';
 import UnifiedPageHeader from 'components/UnifiedPageHeader';
@@ -276,31 +277,52 @@ const MedicalCategoriesList = () => {
         enableColumnFilter: false,
         minWidth: 130,
         align: 'center',
-        cell: ({ row }) => (
-          <Stack direction="row" spacing={0.5} justifyContent="center">
-            <Tooltip title="عرض">
-              <IconButton size="small" color="primary" onClick={() => handleNavigateView(row.original?.id)}>
-                <VisibilityIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="تعديل">
-              <IconButton size="small" color="info" onClick={() => handleNavigateEdit(row.original?.id)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="حذف">
-              <PermissionGuard requires="medical-categories.delete">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => handleDelete(row.original?.id, row.original?.name || row.original?.code)}
-                >
-                  <DeleteIcon fontSize="small" />
+        cell: ({ row }) => {
+          const isRoot = !row.original.parentId;
+
+          if (isRoot) {
+            return (
+              <Stack direction="row" spacing={0.5} justifyContent="center">
+                <Tooltip title="تصنيف نظام ثابت (لا يمكن تعديله)">
+                  <IconButton size="small" disabled>
+                    <LockIcon fontSize="small" color="disabled" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="عرض">
+                  <IconButton size="small" color="primary" onClick={() => handleNavigateView(row.original?.id)}>
+                    <VisibilityIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            );
+          }
+
+          return (
+            <Stack direction="row" spacing={0.5} justifyContent="center">
+              <Tooltip title="عرض">
+                <IconButton size="small" color="primary" onClick={() => handleNavigateView(row.original?.id)}>
+                  <VisibilityIcon fontSize="small" />
                 </IconButton>
-              </PermissionGuard>
-            </Tooltip>
-          </Stack>
-        )
+              </Tooltip>
+              <Tooltip title="تعديل">
+                <IconButton size="small" color="info" onClick={() => handleNavigateEdit(row.original?.id)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="حذف">
+                <PermissionGuard requires="medical-categories.delete">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleDelete(row.original?.id, row.original?.name || row.original?.code)}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </PermissionGuard>
+              </Tooltip>
+            </Stack>
+          );
+        }
       }
     ],
     [handleNavigateView, handleNavigateEdit, handleDelete]

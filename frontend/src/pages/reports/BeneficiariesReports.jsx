@@ -62,7 +62,7 @@ import CircularLoader from 'components/CircularLoader';
 import MemberAvatar from 'components/tba/MemberAvatar';
 
 // Company Settings - SINGLE SOURCE OF TRUTH for branding
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+// (Refactored to use SystemSettingsContext where needed, but this component receives data via props or API)
 
 // API
 import { getAllMembers, searchMembers } from 'services/api/unified-members.service';

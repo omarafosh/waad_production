@@ -208,6 +208,17 @@ public class ProviderMappingService {
     }
 
     @Transactional
+    public void assignCategory(Long rawId, String categoryName) {
+        ProviderRawService rawService = rawServiceRepository.findById(rawId)
+                .orElseThrow(() -> new ResourceNotFoundException("ProviderRawService", "id", rawId));
+        
+        rawService.setCategory(categoryName);
+        rawServiceRepository.save(rawService);
+        
+        log.info("Assigned Category [{}] to Provider Raw Service ID [{}]", categoryName, rawId);
+    }
+
+    @Transactional
     public void uploadRawService(Long providerId, String code, String name, String description) {
         // Idempotent insert
         Optional<ProviderRawService> existing = rawServiceRepository.findByProviderIdAndServiceCode(providerId, code);

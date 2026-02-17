@@ -86,7 +86,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
      * Find all inactive services - paginated
      * Must use NATIVE query to bypass @SQLRestriction("active = true")
      */
-    @Query(value = "SELECT * FROM ent_medical_services WHERE active = false", nativeQuery = true)
+    @Query(value = "SELECT * FROM medical_services WHERE active = false", nativeQuery = true)
     Page<MedicalService> findByActiveFalse(Pageable pageable);
 
     // ═══════════════════════════════════════════════════════════════════════════

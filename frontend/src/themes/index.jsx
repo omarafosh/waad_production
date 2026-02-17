@@ -10,7 +10,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 // project imports
 import { CSS_VAR_PREFIX, DEFAULT_THEME_MODE, ThemeMode } from 'config';
 import useConfig from 'hooks/useConfig';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import CustomShadows from './custom-shadows';
 import componentsOverride from './overrides';
 import { buildPalette } from './palette';
@@ -22,7 +22,7 @@ export default function ThemeCustomization({ children }) {
   const { state: configState } = useConfig();
   const state = configState || {};
   // Get Company Settings to access primaryColor
-  const { settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
 
   // Prioritize local user preference (state), then company settings, then default
   const fontFamily = state.fontFamily || settings?.fontFamily;

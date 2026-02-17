@@ -63,7 +63,7 @@ import MappingWizard from './MappingWizard';
 // Custom Hooks
 import useTableState from 'hooks/useTableState';
 import { useAllMedicalCategories } from 'hooks/useMedicalCategories';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import SmartClassificationModal from './SmartClassificationModal';
 
 // Contexts
@@ -93,7 +93,7 @@ const MedicalCatalogList = () => {
     const fileInputRef = useRef(null);
     const { enqueueSnackbar } = useSnackbar();
     const { refreshKey } = useTableRefresh();
-    const { settings } = useCompanySettings();
+    const { settings } = useSystemSettings(); // Changed
 
     // ========================================
     // LOCAL STATE
@@ -314,12 +314,12 @@ const MedicalCatalogList = () => {
             },
             {
                 accessorKey: 'subCategory',
-                header: 'التخصص',
+                header: 'التصنيف الرئيسي',
                 minWidth: 180
             },
             {
                 accessorKey: 'categoryName',
-                header: 'التصنيف',
+                header: 'التصنيف الفرعي',
                 minWidth: 180
             },
             {

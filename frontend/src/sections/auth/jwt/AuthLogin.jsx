@@ -26,7 +26,7 @@ import IconButton from 'components/@extended/IconButton';
 import AnimateButton from 'components/@extended/AnimateButton';
 
 import useAuth from 'hooks/useAuth';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 
 // assets
 import EyeOutlined from '@ant-design/icons/EyeOutlined';
@@ -42,7 +42,7 @@ export default function AuthLogin({ isDemo = false }) {
   const theme = useTheme();
 
   const { login } = useAuth();
-  const { settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);

@@ -23,7 +23,7 @@ import { SystemErrorBoundary } from 'components/ErrorBoundary';
 // auth-provider
 import { AuthProvider } from 'contexts/AuthContext';
 import { EmployerFilterProvider } from 'contexts/EmployerFilterContext';
-import { CompanySettingsProvider } from 'contexts/CompanySettingsContext';
+import { SystemSettingsProvider } from 'contexts/SystemSettingsContext'; // Changed from CompanySettingsProvider
 import { GlobalImportProgressProvider } from 'contexts/GlobalImportProgressContext';
 import { TableRefreshProvider } from 'contexts/TableRefreshContext';
 
@@ -35,7 +35,7 @@ const AppProviders = ({ children }) => {
     return (
         <SystemErrorBoundary>
             <TableRefreshProvider>
-                <CompanySettingsProvider>
+                <SystemSettingsProvider> {/* Changed from CompanySettingsProvider */}
                     <ThemeCustomization>
                         <RTLLayout>
                             <Locales>
@@ -55,7 +55,7 @@ const AppProviders = ({ children }) => {
                             </Locales>
                         </RTLLayout>
                     </ThemeCustomization>
-                </CompanySettingsProvider>
+                </SystemSettingsProvider>
             </TableRefreshProvider>
         </SystemErrorBoundary>
     );

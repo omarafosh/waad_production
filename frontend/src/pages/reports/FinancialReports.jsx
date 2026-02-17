@@ -52,7 +52,7 @@ import { ModernPageHeader } from 'components/tba';
 import RBACGuard from 'components/tba/RBACGuard';
 import EmployerFilterSelector from 'components/tba/EmployerFilterSelector';
 import { useEmployerFilter } from 'contexts/EmployerFilterContext';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import { PERMISSIONS, ROLES } from 'constants/permissions.constants';
 import { claimsService, providersService } from 'services/api';
 import { exportToExcel, exportToPDF } from 'utils/exportUtils';
@@ -73,7 +73,7 @@ import { useAuth } from 'contexts/AuthContext';
  */
 const FinancialReports = () => {
   const { selectedEmployer } = useEmployerFilter();
-  const { companyName, primaryColor } = useCompanySettings();
+  const { systemName, primaryColor } = useSystemSettings(); // Changed
   const { user } = useAuth();
   const printRef = useRef(null);
 
@@ -364,13 +364,13 @@ const FinancialReports = () => {
   const handleExportExcel = () => {
     const tabNames = ['Financial_Summary', 'Invoices', 'Payments', 'Settlements'];
     const fileName = `${tabNames[activeTab]}_Report_${new Date().toISOString().split('T')[0]}`;
-    exportToExcel(claims, fileName, { companyName });
+    exportToExcel(claims, fileName, { companyName: systemName }); // Mapped
   };
 
   const handleExportPDF = () => {
     const tabNames = ['الملخص المالي', 'تقرير الفواتير', 'تقرير المدفوعات', 'تقرير التسويات'];
     const title = `${tabNames[activeTab]} - ${new Date().toLocaleDateString('ar-SA')}`;
-    exportToPDF(claims, title, { companyName, primaryColor });
+    exportToPDF(claims, title, { companyName: systemName, primaryColor }); // Mapped
   };
 
   // Tab change handler

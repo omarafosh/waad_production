@@ -67,6 +67,7 @@ public class SettingService {
                     .claimSlaDays(10)
                     .preApprovalSlaDays(3)
                     .primaryColor("#1890ff")
+                    .fontFamily("Cairo")
                     .build();
             
             Setting saved = settingRepository.save(defaultSetting);

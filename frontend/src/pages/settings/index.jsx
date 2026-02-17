@@ -73,12 +73,12 @@ const SettingsPage = () => {
 
   const settingsSections = [
     {
-      id: 'company',
+      id: 'system',
       icon: BankOutlined,
       title: 'تكوين النظام',
       description: 'إدارة الإعدادات العامة والهوية البصرية للنظام',
       color: '#1890ff',
-      route: '/settings/company',
+      route: '/settings/system',
       roles: ['SUPER_ADMIN', 'ADMIN']
     },
     {

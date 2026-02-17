@@ -70,6 +70,15 @@ public class ProviderMappingController {
         return ResponseEntity.ok(ApiResponse.success("Service mapped successfully", null));
     }
 
+    @PostMapping("/unmap")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<ApiResponse> unmapService(
+            @RequestBody java.util.List<Long> rawServiceIds,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        mappingService.unmapService(rawServiceIds, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Services unmapped successfully", null));
+    }
+
     @PostMapping("/upload-raw")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
     public ResponseEntity<ApiResponse> uploadRawServices(

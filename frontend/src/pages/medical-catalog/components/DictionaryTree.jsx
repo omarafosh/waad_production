@@ -70,20 +70,26 @@ const DictionaryTree = ({ searchTerm, categories, onSelect, selectedId, onDrop }
                 const isOver = dragOverNode === category.id;
 
                 return (
-                    <React.Fragment key={category.id}>
+                    <Box
+                        key={category.id}
+                        onDragOver={handleDragOver}
+                        onDragEnter={() => handleDragEnter(category.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleInternalDrop(e, category)}
+                        sx={{
+                            mb: 1,
+                            borderRadius: 1,
+                            border: isOver ? `2px dashed ${primaryTeal}` : '1px solid transparent',
+                            bgcolor: isOver ? 'rgba(0, 128, 128, 0.08)' : 'transparent',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
                         <ListItemButton
                             onClick={() => handleToggle(category.id)}
-                            onDragOver={handleDragOver}
-                            onDragEnter={() => handleDragEnter(category.id)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleInternalDrop(e, category)}
                             sx={{
-                                borderRadius: 2,
-                                mb: 0.5,
-                                border: isOver ? `2px dashed ${primaryTeal}` : '2px solid transparent',
-                                bgcolor: isOver ? '#E0F2F1' : selectedId === category.id ? '#F0FDF4' : 'transparent',
-                                transition: 'all 0.2s',
-                                '&:hover': { bgcolor: '#F1F5F9' }
+                                borderRadius: 1,
+                                bgcolor: selectedId === category.id ? 'rgba(0, 128, 128, 0.04)' : 'transparent',
+                                '&:hover': { bgcolor: 'rgba(0, 128, 128, 0.08)' }
                             }}
                         >
                             <ListItemIcon sx={{ minWidth: 32 }}>
@@ -100,18 +106,20 @@ const DictionaryTree = ({ searchTerm, categories, onSelect, selectedId, onDrop }
                             {openNodes[category.id] ? <ExpandMoreIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
                         </ListItemButton>
 
-                        <Collapse in={openNodes[category.id]} timeout="auto" unmountOnExit>
+                        <Collapse in={openNodes[category.id] || isOver} timeout="auto" unmountOnExit>
                             <Box sx={{ pl: 4, py: 1, borderLeft: '1px dashed', borderColor: 'divider', ml: 2 }}>
-                                <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
-                                    قم بإسقاط الخدمة هنا للربط بهذا التصنيف...
-                                </Typography>
+                                {isOver && (
+                                    <Typography variant="caption" color={primaryTeal} sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+                                        أفلت هنا للربط بهذا التصنيف 🎯
+                                    </Typography>
+                                )}
 
                                 <ListItemButton
                                     onClick={() => onSelect?.(category)}
                                     sx={{
                                         borderRadius: 1,
                                         mt: 0.5,
-                                        bgcolor: selectedId === category.id ? '#E0F2F1' : 'transparent'
+                                        bgcolor: selectedId === category.id ? 'rgba(0, 128, 128, 0.1)' : 'transparent'
                                     }}
                                 >
                                     <ListItemIcon sx={{ minWidth: 32 }}>
@@ -122,7 +130,7 @@ const DictionaryTree = ({ searchTerm, categories, onSelect, selectedId, onDrop }
                                 </ListItemButton>
                             </Box>
                         </Collapse>
-                    </React.Fragment>
+                    </Box>
                 );
             })}
 

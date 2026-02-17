@@ -108,17 +108,53 @@ public class MedicalServiceLookupController {
         )));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get service by ID", description = "Returns details for a specific medical service by its numeric ID")
+    public ResponseEntity<ApiResponse<MedicalServiceResponseDto>> getServiceById(@PathVariable Long id) {
+        return serviceRepository.findById(id)
+                .map(s -> ResponseEntity.ok(ApiResponse.success(mapToDto(s))))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update medical service", description = "Updates an existing medical service")
+    public ResponseEntity<ApiResponse<MedicalServiceResponseDto>> updateService(
+            @PathVariable Long id, 
+            @RequestBody MedicalServiceResponseDto dto) {
+        
+        return serviceRepository.findById(id).map(service -> {
+            service.setNameAr(dto.getName());
+            service.setNameEn(dto.getNameEn());
+            // Map category name back to system category if needed, or update based on categoryId
+            // For now, updating basic fields to satisfy the edit form
+            service.setActive(dto.isActive());
+            
+            EnterpriseMedicalService saved = serviceRepository.save(service);
+            return ResponseEntity.ok(ApiResponse.success(mapToDto(saved)));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete medical service", description = "Deletes a medical service from the enterprise dictionary")
+    public ResponseEntity<ApiResponse<Void>> deleteService(@PathVariable Long id) {
+        if (!serviceRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        serviceRepository.deleteById(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     private MedicalServiceResponseDto mapToDto(EnterpriseMedicalService entity) {
         Long catId = categoryMap.get(entity.getCategory());
         
         return MedicalServiceResponseDto.builder()
-                .id(0L) // Placeholder for legacy compatibility
+                .id(entity.getId()) 
                 .code(entity.getCode())
                 .name(entity.getNameAr()) 
                 .nameEn(entity.getNameEn())
                 .categoryId(catId) 
-                .categoryName(entity.getSubCategory()) // entity.sub_category ("Broad") -> "التصنيف"
-                .subCategory(entity.getCategory()) // entity.category ("Specialization") -> "التخصص"
+                .categoryName(entity.getSubCategory()) 
+                .subCategory(entity.getCategory()) 
                 .active(entity.isActive())
                 .isMaster(entity.isMaster())
                 .build();

@@ -96,7 +96,7 @@ public class ProviderMappingService {
 
     @Transactional
     public void mapService(MappingRequestDto request, UserPrincipal currentUser) {
-        List<Long> ids = new ArrayList<>();
+        java.util.Set<Long> ids = new java.util.HashSet<>();
         if (request.getRawServiceId() != null) ids.add(request.getRawServiceId());
         if (request.getRawServiceIds() != null) ids.addAll(request.getRawServiceIds());
 
@@ -110,19 +110,68 @@ public class ProviderMappingService {
         }
     }
 
+    @Transactional
+    public void unmapService(List<Long> rawServiceIds, UserPrincipal currentUser) {
+        if (rawServiceIds == null || rawServiceIds.isEmpty()) return;
+
+        for (Long rawId : rawServiceIds) {
+            ProviderRawService rawService = rawServiceRepository.findById(rawId)
+                    .orElseThrow(() -> new ResourceNotFoundException("ProviderRawService", "id", rawId));
+
+            if (!rawService.isMapped()) continue;
+
+            // 1. Update Raw Service Status
+            rawService.setMapped(false);
+            rawService.setMedicalServiceCode(null);
+            rawService.setMappedAt(null);
+            rawServiceRepository.save(rawService);
+
+            // 2. Deactivate Mapping entry
+            Optional<ProviderServiceMapping> mappingOpt = mappingRepository.findByProviderIdAndProviderServiceCode(
+                    rawService.getProvider().getId(), rawService.getServiceCode());
+
+            EnterpriseMedicalService oldService = null;
+            if (mappingOpt.isPresent()) {
+                ProviderServiceMapping mapping = mappingOpt.get();
+                oldService = mapping.getMasterService();
+                mapping.setActive(false);
+                mappingRepository.save(mapping);
+            }
+
+            // 3. Audit Log
+            EnterpriseServiceMappingAudit audit = EnterpriseServiceMappingAudit.builder()
+                    .legacyRawService(rawService)
+                    .oldMedicalService(oldService)
+                    .newMedicalService(null) // Unmapped
+                    .reason("MANUAL_UNMAP")
+                    .changedBy(currentUser.getUsername())
+                    .build();
+            
+            auditLogRepository.save(audit);
+            log.info("Unmapped Provider Service [{}] by {}", rawService.getServiceCode(), currentUser.getUsername());
+        }
+    }
+
     private void mapSingleService(Long rawId, EnterpriseMedicalService masterService, MappingRequestDto request, UserPrincipal currentUser) {
         ProviderRawService rawService = rawServiceRepository.findById(rawId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProviderRawService", "id", rawId));
         
+        // 1. Update Raw Service Status (MANDATORY for Inventory Dashboard sync)
+        rawService.setMapped(true);
+        rawService.setMedicalServiceCode(masterService.getCode());
+        rawService.setMappedAt(java.time.LocalDateTime.now());
+        rawServiceRepository.save(rawService);
+
+        // 2. Resolve/Create Mapping
         Optional<ProviderServiceMapping> existingMappingOpt = mappingRepository.findByProviderIdAndProviderServiceCode(
                 rawService.getProvider().getId(), rawService.getServiceCode());
 
         ProviderServiceMapping mapping;
-        Long oldMasterId = null;
+        EnterpriseMedicalService oldService = null;
 
         if (existingMappingOpt.isPresent()) {
             mapping = existingMappingOpt.get();
-            oldMasterId = mapping.getMasterService().getId(); // This might still be problematic if oldMasterId is Long and getid() is UUID
+            oldService = mapping.getMasterService();
             
             // Updates
             mapping.setMasterService(masterService);
@@ -142,14 +191,10 @@ public class ProviderMappingService {
                     .build();
         }
 
-        mapping = mappingRepository.save(mapping);
+        // 3. Save and Flush to prevent 409 Conflict if multiple raw services share the same code in this transaction
+        mapping = mappingRepository.saveAndFlush(mapping);
 
-        // Audit Log
-        EnterpriseMedicalService oldService = null;
-        if (oldMasterId != null) {
-            oldService = medicalServiceRepository.findById(oldMasterId).orElse(null);
-        }
-
+        // 4. Audit Log
         EnterpriseServiceMappingAudit audit = EnterpriseServiceMappingAudit.builder()
                 .legacyRawService(rawService)
                 .oldMedicalService(oldService)

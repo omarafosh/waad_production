@@ -42,7 +42,8 @@ import {
     FilterList as FilterIcon,
     Add as AddIcon,
     Info as InfoIcon,
-    Description as DescriptionIcon
+    Description as DescriptionIcon,
+    LinkOff as UnlinkIcon
 } from '@mui/icons-material';
 
 // Services
@@ -145,6 +146,20 @@ const GisirMappingWorkspace = () => {
         }
     };
 
+    const handleUnlink = async (ids) => {
+        if (!ids || ids.length === 0) return;
+
+        try {
+            await medicalCatalogService.unmapServices(ids);
+            enqueueSnackbar('تم فك الربط بنجاح', { variant: 'success' });
+            setSelectedRawServiceIds([]);
+            queryClient.invalidateQueries(['raw-services']);
+        } catch (error) {
+            console.error('Unlink failed', error);
+            enqueueSnackbar('فشل فك الربط', { variant: 'error' });
+        }
+    };
+
     const handleToggleSelectRow = (id) => {
         setSelectedRawServiceIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
@@ -161,8 +176,8 @@ const GisirMappingWorkspace = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, px: 3, pb: 3, bgcolor: '#F0F2F5' }}>
-            <Grid container spacing={3} sx={{ height: '100%', overflow: 'hidden' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1, px: 2, pb: 2, bgcolor: '#F0F2F5' }}>
+            <Grid container spacing={1} sx={{ height: '100%', overflow: 'hidden' }}>
 
                 {/* 1. قائمة خدمات مقدمي الخدمة (الجهة اليمنى) - Draggable Rows */}
                 <Grid size={{ xs: 12, md: 7 }} sx={{ height: '100%' }}>
@@ -172,10 +187,11 @@ const GisirMappingWorkspace = () => {
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
-                            borderRadius: 3,
+                            borderRadius: 0, // Sharp corners
                             border: '1px solid',
                             borderColor: 'divider',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                         }}
                     >
                         {/* Selector Header */}
@@ -329,10 +345,13 @@ const GisirMappingWorkspace = () => {
                                                 key={row.id}
                                                 hover
                                                 selected={selectedRawServiceIds.includes(row.id)}
+                                                draggable={!row.mapped}
+                                                onDragStart={(e) => !row.mapped && handleDragStart(e, row)}
                                                 sx={{
-                                                    cursor: 'grab',
-                                                    '&.Mui-selected': { bgcolor: '#E0F2F1 !important' },
-                                                    '&:hover': { bgcolor: '#F5F5F5' }
+                                                    cursor: row.mapped ? 'default' : 'grab',
+                                                    '&.Mui-selected': { bgcolor: 'rgba(0, 128, 128, 0.08) !important' },
+                                                    '&:active': { cursor: row.mapped ? 'default' : 'grabbing' },
+                                                    transition: 'background-color 0.2s'
                                                 }}
                                             >
                                                 <TableCell align="center" padding="checkbox">
@@ -344,25 +363,28 @@ const GisirMappingWorkspace = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right"
-                                                    draggable={!row.mapped}
-                                                    onDragStart={(e) => !row.mapped && handleDragStart(e, row)}
                                                     onClick={() => !row.mapped && handleToggleSelectRow(row.id)}
                                                 >
-                                                    <Typography variant="body2" fontWeight={600}>{row.serviceName}</Typography>
+                                                    <Typography variant="body2" fontWeight={700}>{row.serviceName}</Typography>
                                                     {row.mapped && row.medicalServiceCode && (
-                                                        <Typography variant="caption" color="success.main" display="block">
+                                                        <Typography variant="caption" color="success.main" display="block" sx={{ fontWeight: 600 }}>
                                                             مربوط بـ: {row.medicalServiceCode}
                                                         </Typography>
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    <Chip label={row.serviceCode} size="small" variant="outlined" sx={{ borderRadius: 1 }} />
+                                                    <Chip
+                                                        label={row.serviceCode}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{ borderRadius: 0, fontWeight: 600, bgcolor: 'rgba(0,0,0,0.02)' }}
+                                                    />
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    <Typography variant="caption">{row.category || '-'}</Typography>
+                                                    <Typography variant="caption" fontWeight={500}>{row.category || '-'}</Typography>
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    <Typography variant="caption">{row.specialty || '-'}</Typography>
+                                                    <Typography variant="caption" fontWeight={500}>{row.specialty || '-'}</Typography>
                                                 </TableCell>
                                                 <TableCell align="center">
                                                     <Chip
@@ -370,15 +392,24 @@ const GisirMappingWorkspace = () => {
                                                         size="small"
                                                         color={row.mapped ? 'success' : 'error'}
                                                         variant={row.mapped ? 'filled' : 'outlined'}
+                                                        sx={{ borderRadius: 0, minWidth: 70 }}
                                                     />
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    {!row.mapped && (
+                                                    {row.mapped ? (
+                                                        <Tooltip title="فك الربط">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleUnlink([row.id])}
+                                                                sx={{ color: '#d32f2f', '&:hover': { bgcolor: '#ffebee' } }}
+                                                            >
+                                                                <UnlinkIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    ) : (
                                                         <IconButton
                                                             size="small"
-                                                            sx={{ color: primaryTeal }}
-                                                            draggable
-                                                            onDragStart={(e) => handleDragStart(e, row)}
+                                                            sx={{ color: primaryTeal, cursor: 'grab' }}
                                                         >
                                                             <FilterIcon fontSize="small" />
                                                         </IconButton>
@@ -447,10 +478,11 @@ const GisirMappingWorkspace = () => {
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
-                            borderRadius: 3,
+                            borderRadius: 0, // Sharp corners
                             border: '1px solid',
                             borderColor: 'divider',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                         }}
                     >
                         <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>

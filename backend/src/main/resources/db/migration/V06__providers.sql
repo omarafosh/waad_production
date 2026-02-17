@@ -197,3 +197,27 @@ CREATE TABLE IF NOT EXISTS reviewer_companies (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+-- 8. PROVIDER RAW SERVICES (For Mapping Core)
+CREATE TABLE IF NOT EXISTS provider_raw_services (
+    id BIGSERIAL PRIMARY KEY,
+    provider_id BIGINT NOT NULL,
+    service_code VARCHAR(100) NOT NULL,
+    service_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(255),
+    specialty VARCHAR(255),
+    is_mapped BOOLEAN NOT NULL DEFAULT FALSE,
+    medical_service_code VARCHAR(100),
+    mapped_at TIMESTAMP,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    
+    -- Audit
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_raw_services_provider FOREIGN KEY (provider_id) REFERENCES providers(id) ON DELETE CASCADE,
+    CONSTRAINT uk_raw_services_provider_code UNIQUE (provider_id, service_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_raw_services_mapped ON provider_raw_services(is_mapped);
+CREATE INDEX IF NOT EXISTS idx_raw_services_provider_mapped ON provider_raw_services(provider_id, is_mapped);

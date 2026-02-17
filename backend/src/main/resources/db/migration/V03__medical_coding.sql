@@ -175,20 +175,6 @@ CREATE TABLE IF NOT EXISTS ent_medical_services (
 CREATE INDEX IF NOT EXISTS idx_ent_medical_services_code ON ent_medical_services(code);
 CREATE INDEX IF NOT EXISTS idx_ent_medical_services_search ON ent_medical_services(name_ar, name_en);
 
--- 9. Provider Raw Services (Incoming services from providers)
-CREATE TABLE IF NOT EXISTS ent_provider_raw_services (
-    id BIGSERIAL PRIMARY KEY,
-    provider_id BIGINT NOT NULL,
-    raw_name VARCHAR(255) NOT NULL,
-    raw_code VARCHAR(100) NOT NULL,
-    mapped_service_id BIGINT REFERENCES ent_medical_services(id),
-    mapping_status VARCHAR(20) NOT NULL DEFAULT 'UNMAPPED',
-    confidence_score DOUBLE PRECISION,
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(provider_id, raw_code)
-);
-
 -- 10. Service Aliases (For better auto-mapping)
 CREATE TABLE IF NOT EXISTS ent_service_aliases (
     id BIGSERIAL PRIMARY KEY,
@@ -198,17 +184,6 @@ CREATE TABLE IF NOT EXISTS ent_service_aliases (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ent_service_aliases_text ON ent_service_aliases(alias_text);
-
--- 11. Mapping Audit & Governance
-CREATE TABLE IF NOT EXISTS ent_service_mapping_audit (
-    id BIGSERIAL PRIMARY KEY,
-    provider_raw_service_id BIGINT NOT NULL REFERENCES ent_provider_raw_services(id),
-    old_medical_service_id BIGINT REFERENCES ent_medical_services(id),
-    new_medical_service_id BIGINT REFERENCES ent_medical_services(id),
-    changed_by VARCHAR(100) NOT NULL,
-    changed_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    reason TEXT
-);
 
 -- Seed basic data
 INSERT INTO ent_medical_services (code, name_ar, name_en, category) 

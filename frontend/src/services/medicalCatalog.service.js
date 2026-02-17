@@ -53,6 +53,23 @@ export const medicalCatalogService = {
     },
 
     /**
+     * Unmap services
+     * @param {Array<Long>} rawServiceIds 
+     */
+    unmapServices: async (rawServiceIds) => {
+        const response = await axios.post('/catalog/unmap', rawServiceIds);
+        return response.data;
+    },
+
+    /**
+     * Get services by category ID
+     */
+    getServicesByCategory: async (categoryId) => {
+        const response = await axios.get(`/medical-categories/${categoryId}/medical-services`);
+        return response.data?.data || response.data;
+    },
+
+    /**
      * Get overall catalog statistics for KPIs
      */
     getCatalogStats: async () => {

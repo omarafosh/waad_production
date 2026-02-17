@@ -222,6 +222,7 @@ const VisitView = () => {
               value={visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString('ar-SA', { dateStyle: 'long' }) : '—'}
               icon={CalendarMonthIcon}
             />
+            {visit?.specialty && <InfoRow label="التخصص" value={visit.specialty} icon={MedicalServicesIcon} />}
             {visit?.visitType && <InfoRow label="نوع الزيارة" value={VISIT_TYPE_LABELS_AR[visit.visitType] ?? visit.visitType} />}
             <InfoRow label="معرف الزيارة" value={visit?.id ?? '—'} />
           </MainCard>
@@ -299,6 +300,7 @@ const VisitView = () => {
                     <TableRow sx={{ bgcolor: 'grey.50' }}>
                       <TableCell sx={{ fontWeight: 600 }}>الرمز</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>اسم الخدمة</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>التخصص</TableCell>
                       <TableCell align="center" sx={{ fontWeight: 600 }}>
                         السعر
                       </TableCell>
@@ -312,6 +314,7 @@ const VisitView = () => {
                       <TableRow key={service?.id ?? idx}>
                         <TableCell>{service?.code ?? '—'}</TableCell>
                         <TableCell>{service?.name ?? '—'}</TableCell>
+                        <TableCell>{service?.specialty || service?.medicalService?.specialty || '—'}</TableCell>
                         <TableCell align="center">{typeof service?.price === 'number' ? `${service.price.toFixed(2)} د.ل` : '—'}</TableCell>
                         <TableCell align="center">
                           {service?.requiresApproval ? (

@@ -236,6 +236,16 @@ const VisitsList = () => {
       }
     },
     {
+      accessorKey: 'specialty',
+      header: 'التخصص',
+      size: 150,
+      cell: ({ row }) => (
+        <Typography variant="body2" color="text.secondary">
+          {row.original.specialty || '—'}
+        </Typography>
+      )
+    },
+    {
       id: 'member',
       header: 'المؤمَّن عليه',
       size: 200,

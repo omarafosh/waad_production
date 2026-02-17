@@ -30,6 +30,16 @@ public class ProviderMappingController {
 
     private final ProviderMappingService mappingService;
 
+    @GetMapping("/services")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<Page<ProviderRawServiceDto>> getFilteredServices(
+            @RequestParam Long providerId,
+            @RequestParam(required = false) Boolean mapped,
+            @RequestParam(required = false) String searchTerm,
+            Pageable pageable) {
+        return ResponseEntity.ok(mappingService.getFilteredServices(providerId, mapped, searchTerm, pageable));
+    }
+
     @GetMapping("/unmapped")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
     public ResponseEntity<Page<ProviderRawServiceDto>> getUnmappedServices(

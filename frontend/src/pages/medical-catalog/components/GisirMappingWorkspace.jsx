@@ -62,7 +62,7 @@ const GisirMappingWorkspace = () => {
     const [selectedRawServiceIds, setSelectedRawServiceIds] = useState([]);
     const [selectedMasterService, setSelectedMasterService] = useState(null);
     const [selectedProviderId, setSelectedProviderId] = useState('');
-    const [selectedEmployerId, setSelectedEmployerId] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'mapped', 'unmapped'
 
     // Add Raw Service Dialog State
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -82,22 +82,15 @@ const GisirMappingWorkspace = () => {
     });
     const providers = providersData?.content || [];
 
-    // 1b. Fetch Employers for the Selector
-    const { data: employersData } = useQuery({
-        queryKey: ['employers-selectors'],
-        queryFn: () => employersService.getEmployerSelectors()
-    });
-    const employers = employersData?.data || [];
-
-    // 2. Fetch Unmapped Services (Filtered by Provider if selected)
+    // 2. Fetch Raw Services (Filtered by Provider and Status)
     const { data: rawServicesResponse, isLoading: loadingRaw } = useQuery({
-        queryKey: ['unmapped-services', selectedProviderId, selectedEmployerId, searchTermRaw],
-        queryFn: () => medicalCatalogService.getUnmappedServices({
+        queryKey: ['raw-services', selectedProviderId, statusFilter, searchTermRaw],
+        queryFn: () => medicalCatalogService.getFilteredServices({
             providerId: selectedProviderId,
-            employerId: selectedEmployerId,
+            mapped: statusFilter === 'all' ? null : (statusFilter === 'mapped'),
             searchTerm: searchTermRaw,
             page: 0,
-            size: 100
+            size: 200
         }),
         enabled: !!selectedProviderId
     });
@@ -123,50 +116,6 @@ const GisirMappingWorkspace = () => {
         e.dataTransfer.effectAllowed = 'copy';
     };
 
-    const handleImportExcel = async (event) => {
-        const file = event.target.files[0];
-        if (!file || !selectedProviderId) return;
-
-        try {
-            await medicalCatalogService.uploadRawServices(file, selectedProviderId);
-            queryClient.invalidateQueries(['unmapped-services']);
-        } catch (error) {
-            console.error('Import failed', error);
-        }
-    };
-
-    const handleAddRawService = async () => {
-        if (!newServiceCode.trim() || !newServiceName.trim()) return;
-
-        // Create a simple CSV content
-        const csvContent = `${newServiceCode},${newServiceName},${newServiceDesc || ''}`;
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const file = new File([blob], 'manual-entry.csv', { type: 'text/csv' });
-
-        try {
-            await medicalCatalogService.uploadRawServices(file, selectedProviderId);
-            queryClient.invalidateQueries(['unmapped-services']);
-            setAddDialogOpen(false);
-            setNewServiceCode('');
-            setNewServiceName('');
-            setNewServiceDesc('');
-        } catch (error) {
-            console.error('Failed to add raw service', error);
-        }
-    };
-
-    const handleImportFromContract = async () => {
-        if (!selectedProviderId) return;
-
-        try {
-            const result = await medicalCatalogService.importFromContract(selectedProviderId);
-            enqueueSnackbar(`تم استيراد ${result.data || 0} خدمة من عقد التأمين`, { variant: 'success' });
-            queryClient.invalidateQueries(['unmapped-services']);
-        } catch (error) {
-            console.error('Failed to import from contract', error);
-            enqueueSnackbar('فشل استيراد الخدمات من العقد', { variant: 'error' });
-        }
-    };
 
     const handleMap = async (masterService = selectedMasterService) => {
         const ids = selectedRawServiceIds.length > 0
@@ -189,7 +138,7 @@ const GisirMappingWorkspace = () => {
             setSelectedRawService(null);
             setSelectedRawServiceIds([]);
             setSelectedMasterService(null);
-            queryClient.invalidateQueries(['unmapped-services']);
+            queryClient.invalidateQueries(['raw-services']);
         } catch (error) {
             console.error('Mapping failed', error);
             enqueueSnackbar('فشل عملية الربط', { variant: 'error' });
@@ -203,10 +152,11 @@ const GisirMappingWorkspace = () => {
     };
 
     const handleSelectAll = () => {
-        if (selectedRawServiceIds.length === rawServices.length) {
+        const unmappedServices = rawServices.filter(s => !s.mapped);
+        if (selectedRawServiceIds.length === unmappedServices.length) {
             setSelectedRawServiceIds([]);
         } else {
-            setSelectedRawServiceIds(rawServices.map(s => s.id));
+            setSelectedRawServiceIds(unmappedServices.map(s => s.id));
         }
     };
 
@@ -237,6 +187,15 @@ const GisirMappingWorkspace = () => {
                                         size="small"
                                         options={providers}
                                         getOptionLabel={(option) => option.name || ''}
+                                        isOptionEqualToValue={(option, value) => option.id === value?.id}
+                                        renderOption={(props, option) => {
+                                            const { key, ...optionProps } = props;
+                                            return (
+                                                <li key={option.id} {...optionProps}>
+                                                    {option.name}
+                                                </li>
+                                            );
+                                        }}
                                         value={providers.find(p => p.id === selectedProviderId) || null}
                                         onChange={(_, newValue) => {
                                             setSelectedProviderId(newValue ? newValue.id : '');
@@ -255,26 +214,48 @@ const GisirMappingWorkspace = () => {
                                         )}
                                     />
 
-                                    <Autocomplete
-                                        size="small"
-                                        options={employers}
-                                        getOptionLabel={(option) => option.label || option.name || ''}
-                                        value={employers.find(e => e.id === selectedEmployerId) || null}
-                                        onChange={(_, newValue) => {
-                                            setSelectedEmployerId(newValue ? newValue.id : '');
-                                        }}
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                label="جهة العمل (اختياري)"
-                                                sx={{
-                                                    width: 250,
-                                                    '& .MuiOutlinedInput-root': { color: 'white', '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' } },
-                                                    '& .MuiInputLabel-root': { color: 'white' }
-                                                }}
-                                            />
-                                        )}
-                                    />
+                                    {/* Status Filters moved to Header */}
+                                    <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
+                                        <Button
+                                            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+                                            onClick={() => setStatusFilter('all')}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: statusFilter === 'all' ? 'white' : 'rgba(255,255,255,0.1)',
+                                                color: statusFilter === 'all' ? primaryTeal : 'white',
+                                                borderColor: 'rgba(255,255,255,0.5)',
+                                                '&:hover': { bgcolor: statusFilter === 'all' ? '#f5f5f5' : 'rgba(255,255,255,0.2)' }
+                                            }}
+                                        >
+                                            الكل
+                                        </Button>
+                                        <Button
+                                            variant={statusFilter === 'unmapped' ? 'contained' : 'outlined'}
+                                            onClick={() => setStatusFilter('unmapped')}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: statusFilter === 'unmapped' ? '#ffcdd2' : 'rgba(255,255,255,0.1)',
+                                                color: statusFilter === 'unmapped' ? '#d32f2f' : 'white',
+                                                borderColor: 'rgba(255,255,255,0.5)',
+                                                '&:hover': { bgcolor: statusFilter === 'unmapped' ? '#ef9a9a' : 'rgba(255,255,255,0.2)' }
+                                            }}
+                                        >
+                                            غير مربوط
+                                        </Button>
+                                        <Button
+                                            variant={statusFilter === 'mapped' ? 'contained' : 'outlined'}
+                                            onClick={() => setStatusFilter('mapped')}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: statusFilter === 'mapped' ? '#c8e6c9' : 'rgba(255,255,255,0.1)',
+                                                color: statusFilter === 'mapped' ? '#388e3c' : 'white',
+                                                borderColor: 'rgba(255,255,255,0.5)',
+                                                '&:hover': { bgcolor: statusFilter === 'mapped' ? '#a5d6a7' : 'rgba(255,255,255,0.2)' }
+                                            }}
+                                        >
+                                            مربوط
+                                        </Button>
+                                    </Stack>
                                 </Stack>
                             </Stack>
                         </Box>
@@ -295,41 +276,11 @@ const GisirMappingWorkspace = () => {
 
                             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                                 <Box>
-                                    <Typography variant="h6" fontWeight={700}>خدمات مقدم الخدمة المحددة</Typography>
+                                    <Typography variant="h6" fontWeight={700}>خدمات مقدم الخدمة </Typography>
                                     <Typography variant="caption" color="textSecondary">اسحب الخدمة من هنا وأسقطها في القاموس الموحد</Typography>
                                 </Box>
-                                <Stack direction="row" spacing={1}>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<AddIcon />}
-                                        onClick={() => setAddDialogOpen(true)}
-                                        disabled={!selectedProviderId}
-                                        size="small"
-                                    >
-                                        إضافة يدوية
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<DescriptionIcon />}
-                                        onClick={handleImportFromContract}
-                                        disabled={!selectedProviderId}
-                                        size="small"
-                                        color="primary"
-                                    >
-                                        من عقد التأمين
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        startIcon={<UploadIcon />}
-                                        component="label"
-                                        disabled={!selectedProviderId}
-                                        size="small"
-                                    >
-                                        استيراد ملف (Excel)
-                                        <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleImportExcel} />
-                                    </Button>
-                                </Stack>
                             </Stack>
+
                             <TextField
                                 fullWidth
                                 size="small"
@@ -361,7 +312,9 @@ const GisirMappingWorkspace = () => {
                                         </TableCell>
                                         <TableCell align="right">اسم الخدمة</TableCell>
                                         <TableCell align="right">الكود</TableCell>
-                                        <TableCell align="right">تاريخ الورود</TableCell>
+                                        <TableCell align="right">التصنيف</TableCell>
+                                        <TableCell align="right">التخصص</TableCell>
+                                        <TableCell align="center">الحالة</TableCell>
                                         <TableCell align="center" sx={{ width: 60 }}>سحب</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -386,29 +339,50 @@ const GisirMappingWorkspace = () => {
                                                     <Checkbox
                                                         checked={selectedRawServiceIds.includes(row.id)}
                                                         onChange={() => handleToggleSelectRow(row.id)}
+                                                        disabled={row.mapped}
                                                         sx={{ color: primaryTeal }}
                                                     />
                                                 </TableCell>
                                                 <TableCell align="right"
-                                                    draggable
-                                                    onDragStart={(e) => handleDragStart(e, row)}
-                                                    onClick={() => handleToggleSelectRow(row.id)}
+                                                    draggable={!row.mapped}
+                                                    onDragStart={(e) => !row.mapped && handleDragStart(e, row)}
+                                                    onClick={() => !row.mapped && handleToggleSelectRow(row.id)}
                                                 >
                                                     <Typography variant="body2" fontWeight={600}>{row.serviceName}</Typography>
+                                                    {row.mapped && row.medicalServiceCode && (
+                                                        <Typography variant="caption" color="success.main" display="block">
+                                                            مربوط بـ: {row.medicalServiceCode}
+                                                        </Typography>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell align="right">
                                                     <Chip label={row.serviceCode} size="small" variant="outlined" sx={{ borderRadius: 1 }} />
                                                 </TableCell>
-                                                <TableCell align="right">{new Date(row.createdAt).toLocaleDateString('ar-EG')}</TableCell>
+                                                <TableCell align="right">
+                                                    <Typography variant="caption">{row.category || '-'}</Typography>
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    <Typography variant="caption">{row.specialty || '-'}</Typography>
+                                                </TableCell>
                                                 <TableCell align="center">
-                                                    <IconButton
+                                                    <Chip
+                                                        label={row.mapped ? 'مربوط' : 'غير مربوط'}
                                                         size="small"
-                                                        sx={{ color: primaryTeal }}
-                                                        draggable
-                                                        onDragStart={(e) => handleDragStart(e, row)}
-                                                    >
-                                                        <FilterIcon fontSize="small" />
-                                                    </IconButton>
+                                                        color={row.mapped ? 'success' : 'error'}
+                                                        variant={row.mapped ? 'filled' : 'outlined'}
+                                                    />
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    {!row.mapped && (
+                                                        <IconButton
+                                                            size="small"
+                                                            sx={{ color: primaryTeal }}
+                                                            draggable
+                                                            onDragStart={(e) => handleDragStart(e, row)}
+                                                        >
+                                                            <FilterIcon fontSize="small" />
+                                                        </IconButton>
+                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -421,27 +395,8 @@ const GisirMappingWorkspace = () => {
                                                         لا توجد خدمات واردة لهذا المقدم
                                                     </Typography>
                                                     <Typography variant="body2" sx={{ mb: 2 }}>
-                                                        الخدمات الواردة هي أكواد خاصة بالمقدم تحتاج للربط بالقاموس الموحد
+                                                        سيتم جلب الخدمات آلياً من العقود النشطة لهذا المقدم
                                                     </Typography>
-                                                    <Stack direction="row" spacing={1} justifyContent="center">
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<AddIcon />}
-                                                            onClick={() => setAddDialogOpen(true)}
-                                                        >
-                                                            إضافة خدمة يدوياً
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<UploadIcon />}
-                                                            component="label"
-                                                        >
-                                                            استيراد من Excel
-                                                            <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleImportExcel} />
-                                                        </Button>
-                                                    </Stack>
                                                 </Box>
                                             </TableCell>
                                         </TableRow>
@@ -547,55 +502,6 @@ const GisirMappingWorkspace = () => {
                 `}
             </style>
 
-            {/* Add Raw Service Dialog */}
-            <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ textAlign: 'right' }}>
-                    إضافة خدمة واردة يدوياً
-                </DialogTitle>
-                <DialogContent sx={{ textAlign: 'right' }}>
-                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                        أدخل كود الخدمة واسمها كما يظهر في نظام المقدم
-                    </Typography>
-                    <Stack spacing={2}>
-                        <TextField
-                            label="كود الخدمة *"
-                            value={newServiceCode}
-                            onChange={(e) => setNewServiceCode(e.target.value)}
-                            fullWidth
-                            required
-                            placeholder="مثال: LAB-ABC-123"
-                        />
-                        <TextField
-                            label="اسم الخدمة *"
-                            value={newServiceName}
-                            onChange={(e) => setNewServiceName(e.target.value)}
-                            fullWidth
-                            required
-                            placeholder="مثال: تحليل دم شامل"
-                        />
-                        <TextField
-                            label="الوصف (اختياري)"
-                            value={newServiceDesc}
-                            onChange={(e) => setNewServiceDesc(e.target.value)}
-                            fullWidth
-                            multiline
-                            rows={2}
-                            placeholder="وصف إضافي للخدمة..."
-                        />
-                    </Stack>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setAddDialogOpen(false)}>إلغاء</Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleAddRawService}
-                        disabled={!newServiceCode.trim() || !newServiceName.trim()}
-                        sx={{ bgcolor: primaryTeal, '&:hover': { bgcolor: '#006666' } }}
-                    >
-                        إضافة الخدمة
-                    </Button>
-                </DialogActions>
-            </Dialog>
         </Box>
     );
 };

@@ -16,7 +16,12 @@ public class ProviderRawServiceDto {
     private String providerName;
     private String serviceCode;
     private String serviceName;
-    private String description;
+    private String serviceDescription;
+    private String category;
+    private String specialty;
+    private boolean mapped;
+    private String medicalServiceCode;
+    private LocalDateTime mappedAt;
     private Boolean active;
     private LocalDateTime createdAt;
 }

@@ -8,21 +8,33 @@ import com.waad.tba.common.exception.BusinessRuleException;
 import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
 import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
 import com.waad.tba.modules.providercontract.dto.*;
+import com.waad.tba.modules.providercontract.entity.PricingImportLog;
 import com.waad.tba.modules.providercontract.entity.ProviderContract;
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
+import com.waad.tba.modules.providercontract.repository.PricingImportLogRepository;
 import com.waad.tba.modules.providercontract.repository.ProviderContractPricingItemRepository;
 import com.waad.tba.modules.providercontract.repository.ProviderContractRepository;
+import com.waad.tba.modules.provider.entity.Provider;
+import com.waad.tba.modules.provider.repository.ProviderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.scheduling.annotation.Async;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -52,6 +64,15 @@ public class PriceListExcelTemplateService {
     private final ProviderContractRepository contractRepository;
     private final ProviderContractPricingItemRepository pricingRepository;
     private final EnterpriseMedicalServiceRepository medicalServiceRepository;
+    private final PricingImportLogRepository importLogRepository;
+    private final ProviderRepository providerRepository;
+    
+    private PriceListExcelTemplateService self;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setSelf(@org.springframework.context.annotation.Lazy PriceListExcelTemplateService self) {
+        this.self = self;
+    }
     
     private static final String SHEET_NAME = "Pricing_Template";
     
@@ -77,116 +98,65 @@ public class PriceListExcelTemplateService {
      */
     @Transactional(readOnly = true)
     public byte[] generateTemplate(Long contractId) throws IOException {
-        log.info("[PriceListTemplate] Generating simple template for contract ID: {}", contractId);
+        log.info("[PriceListTemplate] Generating multi-sheet template for contract ID: {}", contractId);
         
-        // 1. Validate contract exists (returns 400 if not found)
         if (contractId == null) {
             throw new BusinessRuleException("معرف العقد غير صالح");
         }
         
         ProviderContract contract = contractRepository.findById(contractId)
-                .orElseThrow(() -> new BusinessRuleException("العقد غير موجود - Invalid contractId: " + contractId));
+                .filter(c -> Boolean.TRUE.equals(c.getActive()))
+                .orElseThrow(() -> new BusinessRuleException("العقد غير موجود أو غير نشط / Contract not found or inactive"));
+
+        // ARCHITECTURAL FIX: Extract data to DTO within transactional service
+        // This prevents LazyInitializationException when accessing provider/employer details
+        ContractTemplateContext context = ContractTemplateContext.builder()
+                .contractId(contract.getId())
+                .contractCode(contract.getContractCode())
+                .providerName(contract.getProvider() != null ? contract.getProvider().getName() : "Unknown")
+                .providerNameEn(contract.getProvider() != null ? contract.getProvider().getName() : "Unknown")
+                .contractStatus(contract.getStatus().name())
+                .build();
         
-        // Check if inactive (soft deleted)
-        if (Boolean.FALSE.equals(contract.getActive())) {
-            throw new BusinessRuleException("لا يمكن استيراد الأسعار لعقد غير نشط");
-        }
+        log.info("[PriceListTemplate] Built context for template: {}", context.getContractCode());
         
-        // 2. Generate template (NO database dependencies)
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            // Create main sheet
-            XSSFSheet sheet = workbook.createSheet(SHEET_NAME);
-            sheet.setRightToLeft(true); // RTL for Arabic
+            log.info("[PriceListTemplate] Workbook created, adding sheets...");
             
-            // Create styles
-            CellStyle headerStyle = createHeaderStyle(workbook);
-            CellStyle requiredStyle = createRequiredHeaderStyle(workbook);
-            CellStyle exampleStyle = createExampleStyle(workbook);
+            // 1. Sheet: Instructions
+            log.info("[PriceListTemplate] Creating instructions sheet...");
+            createInstructionsSheet(workbook, context);
+            log.info("[PriceListTemplate] Instructions sheet created.");
+
+            // 2. Sheet: Data Entry (Pricing_Template)
+            log.info("[PriceListTemplate] Creating data sheet...");
+            createDataSheet(workbook);
+            log.info("[PriceListTemplate] Data sheet created.");
             
-            // Row 0: Header row with column names
-            Row headerRow = sheet.createRow(0);
+            // 3. Sheet: Providers Lookup
+            log.info("[PriceListTemplate] Creating providers lookup sheet...");
+            createProvidersSheet(workbook);
+            log.info("[PriceListTemplate] Providers lookup sheet created.");
             
-            // service_name (REQUIRED)
-            Cell cell0 = headerRow.createCell(COL_SERVICE_NAME);
-            cell0.setCellValue("service_name / اسم الخدمة ★");
-            cell0.setCellStyle(requiredStyle);
-            
-            // service_code (optional)
-            Cell cell1 = headerRow.createCell(COL_SERVICE_CODE);
-            cell1.setCellValue("service_code / رمز الخدمة");
-            cell1.setCellStyle(headerStyle);
-            
-            // category (optional)
-            Cell cell2 = headerRow.createCell(COL_CATEGORY);
-            cell2.setCellValue("category / التصنيف");
-            cell2.setCellStyle(headerStyle);
-            
-            // unit_price (optional)
-            Cell cell3 = headerRow.createCell(COL_UNIT_PRICE);
-            cell3.setCellValue("unit_price / السعر");
-            cell3.setCellStyle(headerStyle);
-            
-            // quantity (optional, default 0)
-            Cell cell4 = headerRow.createCell(COL_QUANTITY);
-            cell4.setCellValue("quantity / الكمية");
-            cell4.setCellStyle(headerStyle);
-            
-            // notes (optional)
-            Cell cell5 = headerRow.createCell(COL_NOTES);
-            cell5.setCellValue("notes / ملاحظات");
-            cell5.setCellStyle(headerStyle);
-            
-            // Row 1: Example data row
-            Row exampleRow = sheet.createRow(1);
-            
-            Cell ex0 = exampleRow.createCell(COL_SERVICE_NAME);
-            ex0.setCellValue("فحص شامل");
-            ex0.setCellStyle(exampleStyle);
-            
-            Cell ex1 = exampleRow.createCell(COL_SERVICE_CODE);
-            ex1.setCellValue("SRV-001");
-            ex1.setCellStyle(exampleStyle);
-            
-            Cell ex2 = exampleRow.createCell(COL_CATEGORY);
-            ex2.setCellValue("الفحوصات");
-            ex2.setCellStyle(exampleStyle);
-            
-            Cell ex3 = exampleRow.createCell(COL_UNIT_PRICE);
-            ex3.setCellValue(100.00);
-            ex3.setCellStyle(exampleStyle);
-            
-            Cell ex4 = exampleRow.createCell(COL_QUANTITY);
-            ex4.setCellValue(1);
-            ex4.setCellStyle(exampleStyle);
-            
-            Cell ex5 = exampleRow.createCell(COL_NOTES);
-            ex5.setCellValue("مثال - احذف هذا الصف");
-            ex5.setCellStyle(exampleStyle);
-            
-            // Set column widths
-            sheet.setColumnWidth(COL_SERVICE_NAME, 40 * 256);
-            sheet.setColumnWidth(COL_SERVICE_CODE, 20 * 256);
-            sheet.setColumnWidth(COL_CATEGORY, 25 * 256);
-            sheet.setColumnWidth(COL_UNIT_PRICE, 15 * 256);
-            sheet.setColumnWidth(COL_QUANTITY, 15 * 256);
-            sheet.setColumnWidth(COL_NOTES, 50 * 256);
-            
-            // Add instructions sheet
-            createInstructionsSheet(workbook, contract);
+            // Set active sheet to Instructions
+            workbook.setActiveSheet(0);
             
             // Write to byte array
+            log.info("[PriceListTemplate] Writing workbook to output stream...");
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
             
             byte[] result = outputStream.toByteArray();
-            log.info("[PriceListTemplate] Template generated: {} bytes", result.length);
-            
+            log.info("[PriceListTemplate] Template generated successfully for contract {}: {} bytes", contractId, result.length);
             return result;
+        } catch (Exception e) {
+            log.error("[PriceListTemplate] Error generating Excel template for contract " + contractId, e);
+            throw e;
         }
     }
     
-    private void createInstructionsSheet(XSSFWorkbook workbook, ProviderContract contract) {
-        XSSFSheet sheet = workbook.createSheet("التعليمات");
+    private void createInstructionsSheet(XSSFWorkbook workbook, ContractTemplateContext context) {
+        XSSFSheet sheet = workbook.createSheet("Instructions - التعليمات");
         sheet.setRightToLeft(true);
         
         CellStyle titleStyle = workbook.createCellStyle();
@@ -197,33 +167,106 @@ public class PriceListExcelTemplateService {
         
         int rowNum = 0;
         
-        // Contract info
+        // 1. Contract info
         Row row0 = sheet.createRow(rowNum++);
-        row0.createCell(0).setCellValue("معلومات العقد:");
+        row0.createCell(0).setCellValue("معلومات العقد / Contract Info:");
         row0.getCell(0).setCellStyle(titleStyle);
         
         Row row1 = sheet.createRow(rowNum++);
-        row1.createCell(0).setCellValue("رقم العقد: " + (contract.getContractCode() != null ? contract.getContractCode() : contract.getId()));
+        row1.createCell(0).setCellValue("رقم العقد: " + context.getContractCode());
         
         Row row2 = sheet.createRow(rowNum++);
-        String providerName = contract.getProvider() != null ? contract.getProvider().getName() : "غير محدد";
-        row2.createCell(0).setCellValue("مقدم الخدمة: " + providerName);
+        row2.createCell(0).setCellValue("مقدم الخدمة: " + context.getProviderName());
         
         rowNum++;
         
-        // Instructions
+        // 2. Instructions
         Row row3 = sheet.createRow(rowNum++);
         row3.createCell(0).setCellValue("تعليمات الاستخدام:");
         row3.getCell(0).setCellStyle(titleStyle);
         
-        sheet.createRow(rowNum++).createCell(0).setCellValue("1. العمود الوحيد الإلزامي هو: service_name (اسم الخدمة)");
-        sheet.createRow(rowNum++).createCell(0).setCellValue("2. باقي الأعمدة اختيارية");
-        sheet.createRow(rowNum++).createCell(0).setCellValue("3. إذا تركت السعر فارغاً، سيتم حفظه كصفر");
-        sheet.createRow(rowNum++).createCell(0).setCellValue("4. إذا تركت الكمية فارغة، سيتم حفظها كصفر");
-        sheet.createRow(rowNum++).createCell(0).setCellValue("5. العملة ثابتة (LYD) - لا تكتبها في الإكسيل");
-        sheet.createRow(rowNum++).createCell(0).setCellValue("6. احذف صف المثال قبل الرفع");
+        String[] instructions = {
+            "1. الحقول المميزة بالنجمة (★) هي حقول إلزامية في ورقة 'Pricing_Template'.",
+            "2. 'اسم الخدمة' هو أهم حقل ويجب إدخاله بدقة.",
+            "3. إذا تركت السعر فارغاً، سيتم حفظه كصفر.",
+            "4. العملة ثابتة (LYD) - لا تكتب اختصار العملة في الخانات.",
+            "5. يرجى عدم تغيير أسماء الأعمدة في السطر الأول لضمان نجاح المعالجة.",
+            "6. يمكنك الرجوع لورقة 'Providers' لمعرفة تفاصيل مقدمي الخدمة."
+        };
+
+        for (String line : instructions) {
+            sheet.createRow(rowNum++).createCell(0).setCellValue(line);
+        }
         
-        sheet.setColumnWidth(0, 80 * 256);
+        sheet.autoSizeColumn(0);
+    }
+
+    private void createDataSheet(XSSFWorkbook workbook) {
+        XSSFSheet sheet = workbook.createSheet(SHEET_NAME);
+        sheet.setRightToLeft(true);
+
+        CellStyle headerStyle = createHeaderStyle(workbook);
+        CellStyle requiredStyle = createRequiredHeaderStyle(workbook);
+        CellStyle exampleStyle = createExampleStyle(workbook);
+
+        Row headerRow = sheet.createRow(0);
+
+        // Headers
+        String[] headers = {
+            "service_name / اسم الخدمة ★",
+            "service_code / رمز الخدمة",
+            "category / التصنيف",
+            "unit_price / السعر",
+            "quantity / الكمية",
+            "notes / ملاحظات"
+        };
+
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(i == COL_SERVICE_NAME ? requiredStyle : headerStyle);
+            sheet.setColumnWidth(i, i == COL_NOTES ? 50 * 256 : 25 * 256);
+        }
+
+        // Add an example row
+        Row exampleRow = sheet.createRow(1);
+        exampleRow.createCell(COL_SERVICE_NAME).setCellValue("مثال: فحص شامل");
+        exampleRow.createCell(COL_SERVICE_CODE).setCellValue("SRV-001");
+        exampleRow.createCell(COL_CATEGORY).setCellValue("الفحوصات");
+        exampleRow.createCell(COL_UNIT_PRICE).setCellValue(100.0);
+        exampleRow.createCell(COL_QUANTITY).setCellValue(1);
+        exampleRow.createCell(COL_NOTES).setCellValue("مثال لملاحظات - احذف هذا الصف");
+        
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = exampleRow.getCell(i);
+            if (cell != null) cell.setCellStyle(exampleStyle);
+        }
+        
+        sheet.createFreezePane(0, 1);
+    }
+
+    private void createProvidersSheet(XSSFWorkbook workbook) {
+        XSSFSheet sheet = workbook.createSheet("Providers - مقدمي الخدمة");
+        sheet.setRightToLeft(true);
+
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("كود مقدم الخدمة");
+        headerRow.createCell(1).setCellValue("اسم مقدم الخدمة");
+        
+        CellStyle headerStyle = createHeaderStyle(workbook);
+        headerRow.getCell(0).setCellStyle(headerStyle);
+        headerRow.getCell(1).setCellStyle(headerStyle);
+
+        List<Provider> providers = providerRepository.findAllActive();
+        int rowNum = 1;
+        for (Provider p : providers) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(p.getLicenseNumber() != null ? p.getLicenseNumber() : "");
+            row.createCell(1).setCellValue(p.getName() != null ? p.getName() : "");
+        }
+        
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
     }
     
     private CellStyle createHeaderStyle(XSSFWorkbook workbook) {
@@ -278,120 +321,211 @@ public class PriceListExcelTemplateService {
      */
     @Transactional
     public ExcelImportResult importFromExcel(Long contractId, MultipartFile file) {
-        log.info("[PriceListImport] Starting import for contract ID: {} from file: {}", 
-                contractId, file.getOriginalFilename());
+        // LEGACY - Keeping for backward compatibility if needed, but Wizard uses preview/execute
+        log.info("[PriceListImport] Starting legacy synchronous import for contract ID: {}", contractId);
         
-        ImportSummary summary = ImportSummary.builder()
-                .totalRows(0)
-                .created(0)
-                .updated(0)
-                .skipped(0)
-                .rejected(0)
-                .failed(0)
-                .build();
-        List<ImportError> errors = new ArrayList<>();
-        
-        // Validate file
-        if (file == null || file.isEmpty()) {
-            return buildErrorResult(summary, errors, "الملف فارغ");
+        String batchId = UUID.randomUUID().toString();
+        try {
+            File tempFile = saveToTempFile(file);
+            executeImport(tempFile, batchId, contractId, "system", null);
+            return ExcelImportResult.builder().success(true).messageEn("Import started in background with batch: " + batchId).build();
+        } catch (Exception e) {
+            return buildErrorResult(ImportSummary.builder().build(), new ArrayList<>(), e.getMessage());
         }
+    }
+
+    /**
+     * Parse Excel and return preview data for the wizard
+     */
+    @Transactional(readOnly = true)
+    public PricingImportPreviewDto parseAndPreview(Long contractId, MultipartFile file) throws IOException {
+        log.info("[PriceListImport] Preview requested for contract: {}", contractId);
         
-        // Validate contract
-        ProviderContract contract = contractRepository.findById(Objects.requireNonNull(contractId))
+        ProviderContract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new BusinessRuleException("العقد غير موجود"));
-        
-        if (Boolean.FALSE.equals(contract.getActive())) {
-            throw new BusinessRuleException("لا يمكن استيراد الأسعار لعقد غير نشط");
-        }
+
+        String batchId = UUID.randomUUID().toString();
+        List<PricingImportPreviewDto.PricingImportRowDto> previewRows = new ArrayList<>();
+        List<String> detectedColumns = new ArrayList<>();
         
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
-            // Find the data sheet
             Sheet sheet = workbook.getSheet(SHEET_NAME);
-            if (sheet == null) {
-                // Try first sheet as fallback
-                sheet = workbook.getSheetAt(0);
-            }
-            
-            if (sheet == null) {
-                return buildErrorResult(summary, errors, "لم يتم العثور على ورقة البيانات");
-            }
-            
-            // Find header row and validate service_name column exists
+            if (sheet == null) sheet = workbook.getSheetAt(0);
+            if (sheet == null) throw new BusinessRuleException("لم يتم العثور على ورقة البيانات");
+
             Row headerRow = sheet.getRow(0);
-            if (headerRow == null) {
-                return buildErrorResult(summary, errors, "لم يتم العثور على صف العناوين");
-            }
-            
-            // Find column indices (flexible - supports both English and Arabic)
+            if (headerRow == null) throw new BusinessRuleException("لم يتم العثور على صف العناوين");
+
             Map<String, Integer> columnIndices = findColumnIndices(headerRow);
-            
-            if (columnIndices.get("service_name") == null) {
-                errors.add(ImportError.builder()
-                        .rowNumber(0)
-                        .errorType(ErrorType.MISSING_REQUIRED)
-                        .columnName("service_name")
-                        .messageAr("عمود اسم الخدمة مفقود")
-                        .messageEn("service_name column is missing")
-                        .build());
-                return buildErrorResult(summary, errors, "عمود اسم الخدمة مفقود");
+            for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                Cell cell = headerRow.getCell(i);
+                String val = getCellStringValue(cell);
+                if (val != null) detectedColumns.add(val.trim());
             }
-            
-            // Process data rows (skip header row)
+
             int lastRow = sheet.getLastRowNum();
-            summary.setTotalRows(lastRow); // Excluding header
-            
-            log.info("[PriceListImport] Processing {} rows", lastRow);
-            
+            int previewLimit = Math.min(lastRow, 50);
+            int newCount = 0, errorCount = 0;
+
             for (int rowNum = 1; rowNum <= lastRow; rowNum++) {
                 Row row = sheet.getRow(rowNum);
+                if (isEmptyRow(row)) continue;
+
+                List<ImportError> errors = new ArrayList<>();
+                ProviderContractPricingItem pricing = parseRow(row, rowNum, columnIndices, contract, errors);
                 
-                if (isEmptyRow(row)) {
-                    summary.setSkipped(summary.getSkipped() + 1);
-                    continue;
-                }
-                
-                try {
-                    ProviderContractPricingItem pricing = parseRow(row, rowNum, columnIndices, contract, errors);
-                    
-                    if (pricing != null) {
-                        pricingRepository.save(pricing);
-                        summary.setCreated(summary.getCreated() + 1);
-                        log.debug("[PriceListImport] Created pricing: {}", pricing.getServiceName());
-                    } else {
-                        summary.setRejected(summary.getRejected() + 1);
-                    }
-                    
-                } catch (Exception e) {
-                    log.error("[PriceListImport] Error processing row {}: {}", rowNum, e.getMessage());
-                    errors.add(ImportError.builder()
+                if (rowNum <= previewLimit) {
+                    previewRows.add(PricingImportPreviewDto.PricingImportRowDto.builder()
                             .rowNumber(rowNum)
-                            .errorType(ErrorType.PROCESSING_ERROR)
-                            .messageAr("خطأ في معالجة الصف: " + e.getMessage())
-                            .messageEn("Error processing row: " + e.getMessage())
+                            .serviceName(pricing != null ? pricing.getServiceName() : null)
+                            .serviceCode(pricing != null ? pricing.getServiceCode() : null)
+                            .categoryName(pricing != null ? pricing.getCategoryName() : null)
+                            .unitPrice(pricing != null && pricing.getContractPrice() != null ? pricing.getContractPrice().doubleValue() : 0.0)
+                            .quantity(pricing != null ? pricing.getQuantity() : 0)
+                            .status(errors.isEmpty() ? "NEW" : "ERROR")
+                            .errors(errors.stream().map(ImportError::getMessageAr).toList())
                             .build());
-                    summary.setFailed(summary.getFailed() + 1);
                 }
+
+                if (errors.isEmpty()) newCount++;
+                else errorCount++;
             }
-            
-            String messageAr = String.format("تم إنشاء %d بند، تخطي %d، رفض %d", 
-                    summary.getCreated(), summary.getSkipped(), summary.getRejected());
-            String messageEn = String.format("Created %d items, skipped %d, rejected %d",
-                    summary.getCreated(), summary.getSkipped(), summary.getRejected());
-            
-            log.info("[PriceListImport] Import completed: {}", messageEn);
-            
-            return ExcelImportResult.builder()
-                    .summary(summary)
-                    .errors(errors)
-                    .success(summary.getCreated() > 0)
-                    .messageAr(messageAr)
-                    .messageEn(messageEn)
+
+            return PricingImportPreviewDto.builder()
+                    .batchId(batchId)
+                    .fileName(file.getOriginalFilename())
+                    .totalRows(lastRow)
+                    .newCount(newCount)
+                    .errorCount(errorCount)
+                    .detectedColumns(detectedColumns)
+                    .previewRows(previewRows)
+                    .canProceed(newCount > 0)
                     .build();
-                    
-        } catch (IOException e) {
-            log.error("[PriceListImport] Failed to read Excel file", e);
-            throw new BusinessRuleException("فشل قراءة ملف Excel: " + e.getMessage());
         }
+    }
+
+    /**
+     * Execute import in background
+     */
+    @Async
+    @Transactional
+    public void executeImport(File file, String batchId, Long contractId, String username, Long userId) {
+        log.info("[PriceListImport] Starting async import for batch: {}", batchId);
+        
+        try {
+            ProviderContract contract = contractRepository.findById(contractId)
+                    .orElseThrow(() -> new BusinessRuleException("العقد غير موجود"));
+
+            PricingImportLog importLog = self.createImportLog(batchId, contractId, file.getName(), file.length(), username, userId);
+            
+            try (Workbook workbook = WorkbookFactory.create(file)) {
+                Sheet sheet = workbook.getSheet(SHEET_NAME);
+                if (sheet == null) sheet = workbook.getSheetAt(0);
+                
+                int totalRows = sheet.getLastRowNum();
+                Row headerRow = sheet.getRow(0);
+                Map<String, Integer> columnIndices = findColumnIndices(headerRow);
+
+                int created = 0, updated = 0, skipped = 0, failed = 0;
+                
+                for (int rowNum = 1; rowNum <= totalRows; rowNum++) {
+                    Row row = sheet.getRow(rowNum);
+                    if (isEmptyRow(row)) { skipped++; continue; }
+
+                    try {
+                        List<ImportError> errors = new ArrayList<>();
+                        ProviderContractPricingItem pricing = parseRow(row, rowNum, columnIndices, contract, errors);
+                        
+                        if (pricing != null && errors.isEmpty()) {
+                            // Check if already exists (Simple check by Service Name in this contract)
+                             Optional<ProviderContractPricingItem> existing = pricingRepository
+                                    .findByContractIdAndServiceNameIgnoreCase(contractId, pricing.getServiceName());
+                            
+                            if (existing.isPresent()) {
+                                ProviderContractPricingItem item = existing.get();
+                                item.setContractPrice(pricing.getContractPrice());
+                                item.setQuantity(pricing.getQuantity());
+                                item.setServiceCode(pricing.getServiceCode());
+                                item.setCategoryName(pricing.getCategoryName());
+                                item.setNotes(pricing.getNotes());
+                                pricingRepository.save(item);
+                                updated++;
+                            } else {
+                                pricingRepository.save(pricing);
+                                created++;
+                            }
+                        } else {
+                            failed++;
+                        }
+                    } catch (Exception e) {
+                        failed++;
+                        log.error("[PriceListImport] Error row {}: {}", rowNum, e.getMessage());
+                    }
+
+                    // Update progress every 20 rows
+                    if (rowNum % 20 == 0 || rowNum == totalRows) {
+                        self.updateImportProgress(batchId, PricingImportLog.ImportStatus.PROCESSING, totalRows, created, updated, skipped, failed);
+                    }
+                }
+
+                self.updateImportProgress(batchId, failed > 0 ? PricingImportLog.ImportStatus.PARTIAL : PricingImportLog.ImportStatus.COMPLETED, 
+                        totalRows, created, updated, skipped, failed);
+            }
+        } catch (Exception e) {
+            log.error("[PriceListImport] Fatal error in batch {}", batchId, e);
+            self.markImportAsFailed(batchId, e.getMessage());
+        } finally {
+            if (file != null && file.exists()) file.delete();
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public PricingImportLog createImportLog(String batchId, Long contractId, String fileName, long fileSize, String username, Long userId) {
+        PricingImportLog logEntry = PricingImportLog.builder()
+                .importBatchId(batchId)
+                .contractId(contractId)
+                .fileName(fileName)
+                .fileSizeBytes(fileSize)
+                .status(PricingImportLog.ImportStatus.PROCESSING)
+                .startedAt(LocalDateTime.now())
+                .importedByUserId(userId)
+                .importedByUsername(username)
+                .build();
+        return importLogRepository.save(logEntry);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateImportProgress(String batchId, PricingImportLog.ImportStatus status, int total, int created, int updated, int skipped, int failed) {
+        importLogRepository.findByImportBatchId(batchId).ifPresent(logEntry -> {
+            logEntry.setStatus(status);
+            logEntry.setTotalRows(total);
+            logEntry.setCreatedCount(created);
+            logEntry.setUpdatedCount(updated);
+            logEntry.setSkippedCount(skipped);
+            logEntry.setErrorCount(failed);
+            if (status == PricingImportLog.ImportStatus.COMPLETED || status == PricingImportLog.ImportStatus.PARTIAL || status == PricingImportLog.ImportStatus.FAILED) {
+                logEntry.setCompletedAt(LocalDateTime.now());
+            }
+            importLogRepository.saveAndFlush(logEntry);
+        });
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markImportAsFailed(String batchId, String error) {
+        importLogRepository.findByImportBatchId(batchId).ifPresent(logEntry -> {
+            logEntry.setStatus(PricingImportLog.ImportStatus.FAILED);
+            logEntry.setErrorMessage(error);
+            logEntry.setCompletedAt(LocalDateTime.now());
+            importLogRepository.saveAndFlush(logEntry);
+        });
+    }
+
+    public File saveToTempFile(MultipartFile file) throws IOException {
+        Path tempPath = Files.createTempFile("pricing_import_" + UUID.randomUUID(), ".xlsx");
+        try (InputStream is = file.getInputStream()) {
+            Files.copy(is, tempPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return tempPath.toFile();
     }
     
     private Map<String, Integer> findColumnIndices(Row headerRow) {
@@ -611,5 +745,10 @@ public class PriceListExcelTemplateService {
                 .messageAr("فشل الاستيراد: " + message)
                 .messageEn("Import failed: " + message)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PricingImportLog getImportLog(String batchId) {
+        return importLogRepository.findByImportBatchId(batchId).orElse(null);
     }
 }

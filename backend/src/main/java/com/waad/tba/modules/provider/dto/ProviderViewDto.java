@@ -49,4 +49,6 @@ public class ProviderViewDto {
     private Integer contractCount;
     private java.util.List<String> contractedEmployerNames;
     private Boolean hasDocuments;
+    private Boolean hasLicense;
+    private Boolean hasCommercialRegister;
 }

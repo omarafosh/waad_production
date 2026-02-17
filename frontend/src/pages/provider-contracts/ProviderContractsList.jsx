@@ -41,26 +41,16 @@ import { useCompanySettings } from 'contexts/CompanySettingsContext';
 import { useTableRefresh } from 'contexts/TableRefreshContext';
 import { getProviderContracts, CONTRACT_STATUS, CONTRACT_STATUS_CONFIG, PRICING_MODEL_CONFIG } from 'services/api/provider-contracts.service';
 import { debounce } from 'lodash-es';
+import useFormatter from 'hooks/useFormatter';
 
 const QUERY_KEY = 'provider-contracts';
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-';
-  try {
-    return new Date(dateStr).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return dateStr;
-  }
-};
 
 const ProviderContractsList = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { settings } = useCompanySettings();
+  const { formatDate } = useFormatter();
   const { refreshKey } = useTableRefresh();
 
   // Local Filter State
@@ -93,7 +83,7 @@ const ProviderContractsList = () => {
 
   const handleNavigateEdit = useCallback((id) => {
     if (!id) return;
-    navigate(`/provider-contracts/${id}`); // Edit is inside View
+    navigate(`/provider-contracts/edit/${id}`);
   }, [navigate]);
 
   const { data, isLoading, refetch } = useQuery({
@@ -156,83 +146,144 @@ const ProviderContractsList = () => {
       {
         accessorKey: 'contractCode',
         header: 'رمز العقد',
-        minWidth: 150,
-        align: 'right',
-        cell: ({ getValue }) => <Typography variant="body2" fontWeight={600} color="primary">{getValue() || '-'}</Typography>
-      },
-      {
-        accessorKey: 'provider',
-        header: 'مقدم الخدمة',
-        minWidth: 200,
-        align: 'right',
-        cell: ({ row }) => (
-          <Stack spacing={0}>
-            <Typography variant="body2" fontWeight={500}>{row.original?.providerName || row.original?.provider?.name || '-'}</Typography>
-            {row.original?.provider?.city && <Typography variant="caption" color="text.secondary">{row.original.provider.city}</Typography>}
-          </Stack>
+        minWidth: 140,
+        align: 'center',
+        headerAlign: 'center',
+        cell: ({ getValue }) => (
+          <Typography variant="body2" fontWeight={600} color="primary.main">
+            {getValue() || '-'}
+          </Typography>
         )
       },
       {
         accessorKey: 'status',
         header: 'الحالة',
-        minWidth: 120,
+        minWidth: 110,
         align: 'center',
+        headerAlign: 'center',
         cell: ({ getValue }) => {
           const status = getValue();
           const config = CONTRACT_STATUS_CONFIG[status] || { label: status, color: 'default' };
-          return <Chip label={config.label} color={config.color} size="small" />;
+          const statusLabels = {
+            ACTIVE: 'نشط',
+            SUSPENDED: 'معلق',
+            TERMINATED: 'منتهي',
+            DRAFT: 'مسودة',
+            EXPIRED: 'منتهي'
+          };
+          return (
+            <Chip
+              label={statusLabels[status] || config.label}
+              color={config.color}
+              size="small"
+              variant={status === 'ACTIVE' ? 'filled' : 'outlined'}
+            />
+          );
         }
       },
       {
         accessorKey: 'pricingModel',
-        header: 'نموذج التسعير',
-        minWidth: 150,
-        align: 'right',
+        header: 'الموديل',
+        minWidth: 120,
+        align: 'center',
+        headerAlign: 'center',
         cell: ({ getValue }) => {
           const model = getValue();
           const config = PRICING_MODEL_CONFIG[model] || { label: model };
-          return <Typography variant="body2" color="text.secondary">{config.label || '-'}</Typography>;
+          return (
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+              {config.label || '-'}
+            </Typography>
+          );
         }
       },
       {
         accessorKey: 'discountPercent',
-        header: 'نسبة الخصم',
-        minWidth: 120,
+        header: 'الخصم',
+        minWidth: 100,
         align: 'center',
+        headerAlign: 'center',
         cell: ({ getValue }) => {
           const value = getValue();
-          return value !== null && value !== undefined ? <Chip label={`${value}%`} size="small" variant="outlined" color="info" /> : '-';
+          return value !== null && value !== undefined ? (
+            <Chip
+              label={`${value}%`}
+              size="small"
+              variant="outlined"
+              color="info"
+              sx={{ fontWeight: 600 }}
+            />
+          ) : '-';
         }
       },
       {
-        accessorKey: 'startDate',
-        header: 'تاريخ البدء',
-        minWidth: 130,
-        align: 'right',
-        cell: ({ getValue }) => <Typography variant="body2">{formatDate(getValue())}</Typography>
+        id: 'dates',
+        header: 'تاريخ الصلاحية',
+        minWidth: 180,
+        align: 'center',
+        headerAlign: 'center',
+        cell: ({ row }) => (
+          <Stack spacing={0} alignItems="center">
+            <Typography variant="caption" sx={{ fontWeight: 500 }}>
+              {formatDate(row.original.startDate)}
+            </Typography>
+            <Typography variant="caption" color="text.disabled">
+              إلى: {row.original.endDate ? formatDate(row.original.endDate) : 'مفتوح'}
+            </Typography>
+          </Stack>
+        )
       },
       {
-        accessorKey: 'endDate',
-        header: 'تاريخ الانتهاء',
-        minWidth: 130,
-        align: 'right',
-        cell: ({ getValue }) => <Typography variant="body2">{formatDate(getValue())}</Typography>
+        accessorKey: 'pricingItemsCount',
+        header: 'الخدمات',
+        minWidth: 80,
+        align: 'center',
+        headerAlign: 'center',
+        cell: ({ getValue }) => {
+          const count = getValue() || 0;
+          return (
+            <Chip
+              label={count}
+              size="small"
+              variant="outlined"
+              sx={{
+                minWidth: 28,
+                height: 20,
+                borderRadius: '6px',
+                fontWeight: count > 0 ? 700 : 400,
+                bgcolor: count > 0 ? 'secondary.lighter' : 'transparent',
+                borderColor: count > 0 ? 'secondary.light' : 'divider',
+                color: count > 0 ? 'secondary.main' : 'text.disabled',
+              }}
+            />
+          );
+        }
       },
       {
         id: 'actions',
-        header: 'الإجراءات',
-        minWidth: 130,
+        header: 'إجراءات',
+        minWidth: 110,
         align: 'center',
+        headerAlign: 'center',
         cell: ({ row }) => (
           <Stack direction="row" spacing={0.5} justifyContent="center">
             <Tooltip title="عرض التفاصيل">
-              <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleNavigateView(row.original?.id); }}>
+              <IconButton
+                size="small"
+                sx={{ color: '#008e92' }}
+                onClick={(e) => { e.stopPropagation(); handleNavigateView(row.original?.id); }}
+              >
                 <VisibilityIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <RBACGuard requiredPermissions={['provider_contracts.update']}>
               <Tooltip title="تعديل">
-                <IconButton size="small" color="info" onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original?.id); }} disabled={row.original?.status === 'TERMINATED'}>
+                <IconButton
+                  size="small"
+                  sx={{ color: '#008e92' }}
+                  onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original?.id); }}
+                  disabled={row.original?.status === 'TERMINATED'}
+                >
                   <EditIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -241,7 +292,7 @@ const ProviderContractsList = () => {
         )
       }
     ],
-    [handleNavigateView, handleNavigateEdit]
+    [handleNavigateView, handleNavigateEdit, formatDate]
   );
 
   return (
@@ -256,7 +307,7 @@ const ProviderContractsList = () => {
             { label: 'عقود مقدمي الخدمة' }
           ]}
           actions={
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} sx={{ '& .MuiButton-root': { transition: 'all 0.2s' } }}>
               <RBACGuard requiredPermissions={['provider_contracts.create']}>
                 <Button
                   variant="contained"
@@ -278,12 +329,13 @@ const ProviderContractsList = () => {
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
               <TextField
                 size="small"
-                label="بحث سريع"
+                label="بحث السريع"
                 placeholder="رمز العقد، اسم مقدم الخدمة..."
                 value={localSearchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
                 sx={{ minWidth: 250, flexGrow: 1 }}
-                InputProps={{ sx: { height: 36 } }}
+                InputProps={{ sx: { fontSize: '1rem', height: 36 } }}
+                InputLabelProps={{ sx: { fontSize: '1rem' } }}
               />
 
               <FormControl size="small" sx={{ minWidth: 180 }}>

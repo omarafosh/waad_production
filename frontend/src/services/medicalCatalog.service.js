@@ -9,6 +9,15 @@ export const medicalCatalogService = {
     // === Raw Services & Mapping ===
 
     /**
+     * Get filtered raw services for a provider (All, Mapped, or Unmapped)
+     * @param {Object} params - { providerId, mapped, page, size, searchTerm }
+     */
+    getFilteredServices: async (params) => {
+        const response = await axios.get('/catalog/services', { params });
+        return unwrap(response);
+    },
+
+    /**
      * Get unmapped raw services for a provider
      * @param {Object} params - { providerId, page, size, searchTerm }
      */

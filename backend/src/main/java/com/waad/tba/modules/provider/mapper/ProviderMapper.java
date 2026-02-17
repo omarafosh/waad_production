@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.waad.tba.modules.provider.entity.ProviderDocument.DocumentType;
 
 @Component
 public class ProviderMapper {
@@ -99,6 +100,13 @@ public class ProviderMapper {
      * Maps Provider entity to ProviderViewDto with document status.
      */
     public ProviderViewDto toViewDto(Provider provider, Boolean hasDocuments) {
+        return toViewDto(provider, hasDocuments, null, null);
+    }
+
+    /**
+     * Maps Provider entity to ProviderViewDto with detailed document status.
+     */
+    public ProviderViewDto toViewDto(Provider provider, Boolean hasDocuments, Boolean hasLicense, Boolean hasCommercialRegister) {
         if (provider == null) return null;
 
         String typeLabel = provider.getProviderType() != null ? 
@@ -182,6 +190,8 @@ public class ProviderMapper {
                 .contractCount(activeContractCount)
                 .contractedEmployerNames(employerNames)
                 .hasDocuments(hasDocuments)
+                .hasLicense(hasLicense)
+                .hasCommercialRegister(hasCommercialRegister)
                 .build();
     }
 

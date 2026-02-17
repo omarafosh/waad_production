@@ -39,6 +39,22 @@ public class ProviderRawService {
     @Column(name = "service_name")
     private String serviceName;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "specialty")
+    private String specialty;
+
+    @Column(name = "is_mapped")
+    @Builder.Default
+    private boolean mapped = false;
+
+    @Column(name = "medical_service_code")
+    private String medicalServiceCode;
+
+    @Column(name = "mapped_at")
+    private LocalDateTime mappedAt;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

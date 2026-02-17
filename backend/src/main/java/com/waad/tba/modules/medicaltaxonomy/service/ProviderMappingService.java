@@ -43,15 +43,32 @@ public class ProviderMappingService {
     private final ProviderContractPricingItemRepository pricingItemRepository;
     private final ProviderContractRepository contractRepository;
 
+    /**
+     * Get filtered services for a provider (All, Mapped, or Unmapped)
+     */
+    @Transactional
+    public Page<ProviderRawServiceDto> getFilteredServices(Long providerId, Boolean mapped, String searchTerm, Pageable pageable) {
+        if (providerId == null) {
+            return Page.empty(pageable);
+        }
+
+        // Silent Sync if needed (maybe throttled in production, but here we always sync for latest)
+        // Note: For "All" view, we sync from contracts to ensure we have every service
+        syncFromActiveContracts(providerId, null);
+
+        return rawServiceRepository.findFilteredServices(providerId, mapped, searchTerm, pageable)
+                .map(this::mapToRawDto);
+    }
+
+    /**
+     * Get unmapped services for a provider (Legacy compatibility)
+     */
     public Page<ProviderRawServiceDto> getUnmappedServices(Long providerId, Long employerId, Pageable pageable) {
         if (providerId == null) {
             return Page.empty(pageable);
         }
 
-        // Silent Auto-Sync if employer context is provided
-        if (employerId != null) {
-            syncFromActiveContracts(providerId, employerId);
-        }
+        syncFromActiveContracts(providerId, employerId);
 
         return rawServiceRepository.findUnmappedServices(providerId, pageable)
                 .map(this::mapToRawDto);
@@ -59,11 +76,18 @@ public class ProviderMappingService {
 
     private void syncFromActiveContracts(Long providerId, Long employerId) {
         try {
-            List<com.waad.tba.modules.providercontract.entity.ProviderContract> activeContracts = 
-                contractRepository.findValidContracts(providerId, employerId, java.time.LocalDate.now());
+            List<com.waad.tba.modules.providercontract.entity.ProviderContract> activeContracts;
+            
+            if (employerId != null) {
+                activeContracts = contractRepository.findValidContracts(providerId, employerId, java.time.LocalDate.now());
+            } else {
+                // Fetch ALL active contracts regardless of employer to sync all provider services
+                activeContracts = contractRepository.findByProviderIdAndStatusAndActiveTrue(
+                    providerId, com.waad.tba.modules.providercontract.entity.ProviderContract.ContractStatus.ACTIVE);
+            }
             
             for (com.waad.tba.modules.providercontract.entity.ProviderContract contract : activeContracts) {
-                importFromContractPricing(providerId, contract.getId());
+                rawServiceRepository.syncFromContractPricing(providerId);
             }
         } catch (Exception e) {
             log.error("Silent sync failed for provider {} and employer {}", providerId, employerId, e);
@@ -186,7 +210,12 @@ public class ProviderMappingService {
                 .providerName(entity.getProvider().getName())
                 .serviceCode(entity.getServiceCode())
                 .serviceName(entity.getServiceName())
-                .description(entity.getDescription())
+                .serviceDescription(entity.getDescription())
+                .category(entity.getCategory())
+                .specialty(entity.getSpecialty())
+                .mapped(entity.isMapped())
+                .medicalServiceCode(entity.getMedicalServiceCode())
+                .mappedAt(entity.getMappedAt())
                 .active(entity.getActive())
                 .createdAt(entity.getCreatedAt())
                 .build();

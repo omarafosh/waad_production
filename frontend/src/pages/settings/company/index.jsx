@@ -30,6 +30,7 @@ import {
   Slider,
   Chip,
   Paper,
+  MenuItem,
   alpha
 } from '@mui/material';
 import {
@@ -97,7 +98,11 @@ const ProfessionalSettingsPage = () => {
     fontSize: 12,
     fontFamily: 'Tajawal',
     barcodePrefix: 'WAAD',
-    logoUrl: ''
+    dateCalendar: 'gregory',
+    monthFormat: 'numeric',
+    numberSystem: 'latn',
+    logoUrl: '',
+    cardTitleColor: '#1890ff'
   });
 
   const [errors, setErrors] = useState({});
@@ -124,7 +129,11 @@ const ProfessionalSettingsPage = () => {
         logoUrl: companyData.logoUrl || '',
         fontFamily: companyData.fontFamily || 'Tajawal',
         fontSize: companyData.fontSize || 12,
-        barcodePrefix: companyData.barcodePrefix || 'WAAD'
+        barcodePrefix: companyData.barcodePrefix || 'WAAD',
+        dateCalendar: companyData.dateCalendar || 'gregory',
+        monthFormat: companyData.monthFormat || 'numeric',
+        numberSystem: companyData.numberSystem || 'latn',
+        cardTitleColor: companyData.cardTitleColor || '#1890ff'
       });
     }
   }, [company]);
@@ -308,6 +317,43 @@ const ProfessionalSettingsPage = () => {
                             </FieldGroup>
                           </Paper>
                         </Grid>
+                        <Grid size={{ xs: 12, sm: 6, md: 12 }}>
+                          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                            <FieldGroup title="ألوان الواجهة" icon={CloudUploadIcon} color="secondary.main">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 1,
+                                    bgcolor: formData.cardTitleColor,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    flexShrink: 0
+                                  }}
+                                />
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="لون عناوين الكروت"
+                                  value={formData.cardTitleColor}
+                                  onChange={handleChange('cardTitleColor')}
+                                  placeholder="#1890ff"
+                                  InputProps={{
+                                    endAdornment: (
+                                      <input
+                                        type="color"
+                                        value={formData.cardTitleColor}
+                                        onChange={(e) => setFormData(p => ({ ...p, cardTitleColor: e.target.value }))}
+                                        style={{ width: 30, height: 30, padding: 0, border: 'none', cursor: 'pointer', background: 'none' }}
+                                      />
+                                    )
+                                  }}
+                                />
+                              </Box>
+                            </FieldGroup>
+                          </Paper>
+                        </Grid>
                       </Grid>
                     </Grid>
                   </Grid>
@@ -405,31 +451,80 @@ const ProfessionalSettingsPage = () => {
                         </Grid>
 
                         <Grid size={{ xs: 12, lg: 5 }}>
-                          <RBACGuard requiredRoles={['SUPER_ADMIN']}>
-                            <Paper sx={{ p: 2.5, bgcolor: alpha('#ff4d4f', 0.05), border: '2px solid', borderColor: 'error.main', borderRadius: 2, height: '100%' }}>
-                              <Box display="flex" alignItems="center" gap={1} mb={2}>
-                                <Chip label="Admin Only" size="small" color="error" />
-                                <Typography variant="subtitle2" fontWeight={700} color="error.main">منطقة النظام</Typography>
-                              </Box>
-                              <TextField
-                                fullWidth
-                                size="small"
-                                label="بادئة الباركود"
-                                value={formData.barcodePrefix}
-                                onChange={handleChange('barcodePrefix')}
-                                helperText="مثل: WAAD-XXXX"
-                                sx={{ mb: 2 }}
-                              />
-                              <Divider sx={{ my: 2 }} />
-                              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>معلومات النظام</Typography>
-                              <Stack spacing={1}>
-                                <Box display="flex" justifyContent="space-between">
-                                  <Typography variant="caption">البادئة:</Typography>
-                                  <Chip label={formData.barcodePrefix} size="small" color="primary" />
-                                </Box>
-                              </Stack>
+                          <Stack spacing={2.5}>
+                            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                              <FieldGroup title="تفضيلات العرض" icon={SpeedIcon}>
+                                <Grid container spacing={2}>
+                                  <Grid size={{ xs: 12, sm: 12 }}>
+                                    <TextField
+                                      select
+                                      fullWidth
+                                      size="small"
+                                      label="التقويم"
+                                      value={formData.dateCalendar}
+                                      onChange={handleChange('dateCalendar')}
+                                    >
+                                      <MenuItem value="gregory">ميلادي (Gregorian)</MenuItem>
+                                      <MenuItem value="islamic">هجري (Islamic)</MenuItem>
+                                    </TextField>
+                                  </Grid>
+                                  <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                      select
+                                      fullWidth
+                                      size="small"
+                                      label="تنسيق الشهر"
+                                      value={formData.monthFormat}
+                                      onChange={handleChange('monthFormat')}
+                                    >
+                                      <MenuItem value="numeric">رقمي (12)</MenuItem>
+                                      <MenuItem value="2-digit">رقمان (12)</MenuItem>
+                                      <MenuItem value="long">نصي (ديسمبر)</MenuItem>
+                                      <MenuItem value="short">نصي مختصر (ديس)</MenuItem>
+                                    </TextField>
+                                  </Grid>
+                                  <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                      select
+                                      fullWidth
+                                      size="small"
+                                      label="نظام الأرقام"
+                                      value={formData.numberSystem}
+                                      onChange={handleChange('numberSystem')}
+                                    >
+                                      <MenuItem value="latn">لاتيني (123)</MenuItem>
+                                      <MenuItem value="arab">عربي (١٢٣)</MenuItem>
+                                    </TextField>
+                                  </Grid>
+                                </Grid>
+                              </FieldGroup>
                             </Paper>
-                          </RBACGuard>
+                            <RBACGuard requiredRoles={['SUPER_ADMIN']}>
+                              <Paper sx={{ p: 2.5, bgcolor: alpha('#ff4d4f', 0.05), border: '2px solid', borderColor: 'error.main', borderRadius: 2, height: '100%' }}>
+                                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                                  <Chip label="Admin Only" size="small" color="error" />
+                                  <Typography variant="subtitle2" fontWeight={700} color="error.main">منطقة النظام</Typography>
+                                </Box>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="بادئة الباركود"
+                                  value={formData.barcodePrefix}
+                                  onChange={handleChange('barcodePrefix')}
+                                  helperText="مثل: WAAD-XXXX"
+                                  sx={{ mb: 2 }}
+                                />
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>معلومات النظام</Typography>
+                                <Stack spacing={1}>
+                                  <Box display="flex" justifyContent="space-between">
+                                    <Typography variant="caption">البادئة:</Typography>
+                                    <Chip label={formData.barcodePrefix} size="small" color="primary" />
+                                  </Box>
+                                </Stack>
+                              </Paper>
+                            </RBACGuard>
+                          </Stack>
                         </Grid>
                       </Grid>
                     </Box>

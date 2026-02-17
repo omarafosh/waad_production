@@ -204,6 +204,13 @@ public class ProviderContract {
     private Boolean active = true;
 
     /**
+     * Efficient count of pricing items using subquery.
+     * Calculated via Hibernate Formula to avoid N+1 issues in list views.
+     */
+    @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM provider_contract_pricing_items p WHERE p.contract_id = id AND p.active = true)")
+    private Integer pricingItemsCount;
+
+    /**
      * Pricing items for this contract
      */
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)

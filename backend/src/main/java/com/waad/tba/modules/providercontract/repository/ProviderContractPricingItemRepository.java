@@ -210,6 +210,12 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND p.active = true")
     Object[] getPriceRange(@Param("contractId") Long contractId);
 
+    /**
+     * Find by contract and exact service name (case-insensitive)
+     */
+    Optional<ProviderContractPricingItem> findByContractIdAndServiceNameIgnoreCase(
+            Long contractId, String serviceName);
+
     // ═══════════════════════════════════════════════════════════════════════════
     // BULK OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════════

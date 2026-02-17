@@ -118,7 +118,7 @@ public class ProviderContractResponseDto {
                 .contactPhone(entity.getContactPhone())
                 .contactEmail(entity.getContactEmail())
                 .notes(entity.getNotes())
-                .pricingItemsCount(entity.getActivePricingItemsCount())
+                .pricingItemsCount(entity.getPricingItemsCount())
                 .isCurrentlyEffective(entity.isCurrentlyEffective())
                 .hasExpired(entity.hasExpired())
                 .canActivate(entity.canActivate())

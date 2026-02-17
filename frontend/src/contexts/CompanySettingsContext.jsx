@@ -38,6 +38,10 @@ const DEFAULT_SETTINGS = {
   primaryColor: '#1976d2',
   secondaryColor: '#42a5f5',
   headerStyle: 'gradient', // 'light' | 'dark' | 'gradient' | 'custom'
+  currency: 'LYD',
+  dateCalendar: 'gregory',
+  monthFormat: 'numeric',
+  numberSystem: 'latn',
   phone: '',
   email: '',
   address: '',
@@ -45,7 +49,8 @@ const DEFAULT_SETTINGS = {
   footerText: 'جميع الحقوق محفوظة © 2026',
   footerTextEn: 'All Rights Reserved © 2026',
   fontFamily: 'Tajawal',
-  fontSize: 12
+  fontSize: 12,
+  cardTitleColor: '#1890ff'
 };
 
 // Create context
@@ -88,7 +93,12 @@ export function CompanySettingsProvider({ children }) {
           footerText: companyData.footerText || DEFAULT_SETTINGS.footerText,
           footerTextEn: companyData.footerTextEn || DEFAULT_SETTINGS.footerTextEn,
           fontFamily: companyData.fontFamily || DEFAULT_SETTINGS.fontFamily,
-          fontSize: companyData.fontSize || DEFAULT_SETTINGS.fontSize
+          fontSize: companyData.fontSize || DEFAULT_SETTINGS.fontSize,
+          currency: companyData.currency || DEFAULT_SETTINGS.currency,
+          dateCalendar: companyData.dateCalendar || DEFAULT_SETTINGS.dateCalendar,
+          monthFormat: companyData.monthFormat || DEFAULT_SETTINGS.monthFormat,
+          numberSystem: companyData.numberSystem || DEFAULT_SETTINGS.numberSystem,
+          cardTitleColor: companyData.cardTitleColor || DEFAULT_SETTINGS.cardTitleColor
         });
       }
     } catch (err) {
@@ -171,6 +181,7 @@ export function CompanySettingsProvider({ children }) {
     companyNameEn: settings.companyNameEn,
     logoUrl: settings.logoUrl,
     primaryColor: settings.primaryColor,
+    cardTitleColor: settings.cardTitleColor,
   }), [settings, loading, error, updateSettings, refreshSettings, getLogoSrc, hasLogo, getInitials]);
 
   return (
@@ -212,6 +223,7 @@ export function useCompanySettings() {
       companyNameEn: DEFAULT_SETTINGS.companyNameEn,
       logoUrl: null,
       primaryColor: DEFAULT_SETTINGS.primaryColor,
+      cardTitleColor: DEFAULT_SETTINGS.cardTitleColor,
     };
   }
 

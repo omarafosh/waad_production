@@ -4,8 +4,8 @@ import com.waad.tba.common.exception.ArchitecturalViolationException;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicyRule;
 import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimLine;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.preauthorization.entity.PreAuthorization;
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ArchitecturalGuardService {
 
-    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
+    private final MedicalServiceRepository medicalServiceRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // MEDICAL SERVICE GUARDS
@@ -58,9 +58,9 @@ public class ArchitecturalGuardService {
      * Validate MedicalService has a category.
      * RULE: Every MedicalService MUST belong to a MedicalCategory
      */
-    public void guardServiceHasCategory(EnterpriseMedicalService service) {
+    public void guardServiceHasCategory(MedicalService service) {
         if (service == null) {
-            throw new ArchitecturalViolationException("EnterpriseMedicalService", "Service cannot be null");
+            throw new ArchitecturalViolationException("MedicalService", "Service cannot be null");
         }
         if (service.getCategory() == null) {
             throw ArchitecturalViolationException.serviceWithoutCategory(service.getCode());

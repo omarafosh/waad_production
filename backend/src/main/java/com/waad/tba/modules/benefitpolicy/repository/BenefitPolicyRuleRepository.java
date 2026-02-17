@@ -32,7 +32,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
           AND r.deleted = :deleted
           AND (:encounterType IS NULL OR r.encounterType = :encounterType)
           AND (:label IS NULL OR
-               LOWER(r.medicalService.nameAr) LIKE LOWER(CONCAT('%', :label, '%')) OR
+               LOWER(r.medicalService.name) LIKE LOWER(CONCAT('%', :label, '%')) OR
                LOWER(r.medicalService.nameEn) LIKE LOWER(CONCAT('%', :label, '%')) OR
                LOWER(r.medicalCategory) LIKE LOWER(CONCAT('%', :label, '%')) OR
                LOWER(r.medicalPackage.name) LIKE LOWER(CONCAT('%', :label, '%')))

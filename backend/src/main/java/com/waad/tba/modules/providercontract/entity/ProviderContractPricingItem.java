@@ -1,6 +1,6 @@
 package com.waad.tba.modules.providercontract.entity;
 
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * Provider Contract Pricing Item Entity - represents per-service pricing within a contract.
- * (REFACTORED 2026-02-15 - UNIFIED DICTIONARY)
+ * (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "provider_contract_pricing_items", indexes = {
@@ -43,11 +43,11 @@ public class ProviderContractPricingItem {
     private ProviderContract contract;
 
     /**
-     * Enterprise medical service being priced
+     * Unified medical service being priced
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id")
-    private EnterpriseMedicalService medicalService;
+    private MedicalService medicalService;
     
     /**
      * Service name - denormalized snapshot
@@ -64,7 +64,7 @@ public class ProviderContractPricingItem {
     private String serviceCode;
     
     /**
-     * Category name - from EnterpriseMedicalService
+     * Category name - from Unified MedicalService
      */
     @Size(max = 255)
     @Column(name = "category_name", length = 255)
@@ -236,6 +236,6 @@ public class ProviderContractPricingItem {
         if (categoryName != null) {
             return categoryName;
         }
-        return medicalService != null ? medicalService.getCategory() : null;
+        return medicalService != null ? medicalService.getCategoryName() : null;
     }
 }

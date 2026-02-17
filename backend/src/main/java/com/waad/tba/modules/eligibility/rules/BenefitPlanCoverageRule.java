@@ -7,8 +7,8 @@ import com.waad.tba.modules.eligibility.domain.EligibilityRule;
 import com.waad.tba.modules.eligibility.domain.RuleResult;
 import com.waad.tba.modules.benefitpolicy.service.BenefitPolicyRuleService;
 import com.waad.tba.modules.benefitpolicy.dto.BenefitPolicyRuleResponseDto;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ import java.util.Map;
 public class BenefitPlanCoverageRule implements EligibilityRule {
 
     private final BenefitPolicyRuleService ruleService;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
 
     @Override
     public boolean isApplicable(EligibilityContext context) {
@@ -47,7 +47,7 @@ public class BenefitPlanCoverageRule implements EligibilityRule {
         com.waad.tba.modules.visit.entity.VisitType visitType = context.getVisitType();
 
         // 1. Resolve Medical Service
-        EnterpriseMedicalService service = serviceRepository.findByCode(serviceCode).orElse(null);
+        MedicalService service = serviceRepository.findByCode(serviceCode).orElse(null);
         if (service == null) {
             return RuleResult.fail(EligibilityReason.INVALID_REQUEST, 
                 "Medical service not found: " + serviceCode, 

@@ -2,8 +2,8 @@ package com.waad.tba.modules.medicaltaxonomy.controller;
 
 import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.modules.medicaltaxonomy.dto.MedicalServiceResponseDto;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MedicalServiceLookupController {
 
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
     private final MedicalCategoryRepository categoryRepository;
     
     // Cache for mapping category names to legacy IDs
@@ -56,17 +56,12 @@ public class MedicalServiceLookupController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String searchTerm,
-            @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) Boolean isMaster) {
         
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("code").ascending());
-        Page<EnterpriseMedicalService> services;
+        Page<MedicalService> services;
         
-        if (searchTerm != null && !searchTerm.isEmpty()) {
-            services = serviceRepository.searchActive(searchTerm, categoryId, pageRequest);
-        } else {
-            services = serviceRepository.findAll(pageRequest);
-        }
+        services = serviceRepository.findAllByFilters(true, isMaster, searchTerm, pageRequest);
 
         return ResponseEntity.ok(ApiResponse.success(services.map(this::mapToDto)));
     }
@@ -86,7 +81,7 @@ public class MedicalServiceLookupController {
             @RequestParam(required = false) String categoryId) {
         
         PageRequest pageRequest = PageRequest.of(0, 50, Sort.by("code").ascending());
-        Page<EnterpriseMedicalService> services = serviceRepository.searchActive(searchTerm != null ? searchTerm : "", categoryId, pageRequest);
+        Page<MedicalService> services = serviceRepository.findAllByFilters(true, null, searchTerm != null ? searchTerm : "", pageRequest);
         
         return ResponseEntity.ok(ApiResponse.success(
             services.getContent().stream().map(this::mapToDto).collect(Collectors.toList())
@@ -98,7 +93,7 @@ public class MedicalServiceLookupController {
     public ResponseEntity<ApiResponse<Map<String, Long>>> getStats() {
         long total = serviceRepository.count();
         // Adjust based on your repository methods
-        long active = serviceRepository.countByActive(true);
+        long active = serviceRepository.countByActiveTrue();
         long inactive = total - active;
         
         return ResponseEntity.ok(ApiResponse.success(Map.of(
@@ -123,13 +118,13 @@ public class MedicalServiceLookupController {
             @RequestBody MedicalServiceResponseDto dto) {
         
         return serviceRepository.findById(id).map(service -> {
-            service.setNameAr(dto.getName());
+            service.setName(dto.getName());
             service.setNameEn(dto.getNameEn());
             // Map category name back to system category if needed, or update based on categoryId
             // For now, updating basic fields to satisfy the edit form
             service.setActive(dto.isActive());
             
-            EnterpriseMedicalService saved = serviceRepository.save(service);
+            MedicalService saved = serviceRepository.save(service);
             return ResponseEntity.ok(ApiResponse.success(mapToDto(saved)));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -144,19 +139,19 @@ public class MedicalServiceLookupController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    private MedicalServiceResponseDto mapToDto(EnterpriseMedicalService entity) {
-        Long catId = categoryMap.get(entity.getCategory());
+    private MedicalServiceResponseDto mapToDto(MedicalService entity) {
+        Long catId = categoryMap.get(entity.getCategoryName() != null ? entity.getCategoryName() : "");
         
         return MedicalServiceResponseDto.builder()
                 .id(entity.getId()) 
                 .code(entity.getCode())
-                .name(entity.getNameAr()) 
+                .name(entity.getName()) 
                 .nameEn(entity.getNameEn())
                 .categoryId(catId) 
-                .categoryName(entity.getSubCategory()) 
-                .subCategory(entity.getCategory()) 
+                .categoryName(entity.getCategoryName()) 
+                .subCategory(entity.getSubCategory()) 
                 .active(entity.isActive())
-                .isMaster(entity.isMaster())
+                .isMaster(entity.getIsMaster())
                 .build();
     }
 }

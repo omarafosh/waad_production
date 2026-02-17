@@ -4,7 +4,7 @@ import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.modules.medicaltaxonomy.dto.CatalogStatsDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.MappingRequestDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.ProviderRawServiceDto;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseServiceMappingAudit;
+import com.waad.tba.modules.medicaltaxonomy.entity.ProviderMappingAudit;
 import com.waad.tba.modules.medicaltaxonomy.service.ProviderMappingService;
 import com.waad.tba.security.UserPrincipal;
 import jakarta.validation.Valid;
@@ -51,7 +51,7 @@ public class ProviderMappingController {
 
     @GetMapping("/audit")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<Page<EnterpriseServiceMappingAudit>> getMappingAuditLogs(Pageable pageable) {
+    public ResponseEntity<Page<ProviderMappingAudit>> getMappingAuditLogs(Pageable pageable) {
         return ResponseEntity.ok(mappingService.getMappingAuditLogs(pageable));
     }
 

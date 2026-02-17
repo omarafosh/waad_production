@@ -5,10 +5,10 @@ import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.modules.medicaltaxonomy.dto.CatalogStatsDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.MappingRequestDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.ProviderRawServiceDto;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseServiceMappingAudit;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseServiceMappingAuditRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.ProviderMappingAudit;
+import com.waad.tba.modules.medicaltaxonomy.repository.ProviderMappingAuditRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderRawService;
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderServiceMapping;
 import com.waad.tba.modules.medicaltaxonomy.repository.ProviderRawServiceRepository;
@@ -37,8 +37,8 @@ public class ProviderMappingService {
 
     private final ProviderRawServiceRepository rawServiceRepository;
     private final ProviderServiceMappingRepository mappingRepository;
-    private final EnterpriseServiceMappingAuditRepository auditLogRepository;
-    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
+    private final ProviderMappingAuditRepository auditRepository;
+    private final MedicalServiceRepository medicalServiceRepository;
     private final ProviderRepository providerRepository;
     private final ProviderContractPricingItemRepository pricingItemRepository;
     private final ProviderContractRepository contractRepository;
@@ -102,8 +102,8 @@ public class ProviderMappingService {
 
         if (ids.isEmpty()) return;
 
-        EnterpriseMedicalService masterService = medicalServiceRepository.findById(request.getMasterServiceId())
-                .orElseThrow(() -> new ResourceNotFoundException("EnterpriseMedicalService", "id", request.getMasterServiceId()));
+        MedicalService masterService = medicalServiceRepository.findById(request.getMasterServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", request.getMasterServiceId()));
 
         for (Long rawId : ids) {
             mapSingleService(rawId, masterService, request, currentUser);
@@ -130,7 +130,7 @@ public class ProviderMappingService {
             Optional<ProviderServiceMapping> mappingOpt = mappingRepository.findByProviderIdAndProviderServiceCode(
                     rawService.getProvider().getId(), rawService.getServiceCode());
 
-            EnterpriseMedicalService oldService = null;
+            MedicalService oldService = null;
             if (mappingOpt.isPresent()) {
                 ProviderServiceMapping mapping = mappingOpt.get();
                 oldService = mapping.getMasterService();
@@ -139,20 +139,20 @@ public class ProviderMappingService {
             }
 
             // 3. Audit Log
-            EnterpriseServiceMappingAudit audit = EnterpriseServiceMappingAudit.builder()
-                    .legacyRawService(rawService)
+            ProviderMappingAudit audit = ProviderMappingAudit.builder()
+                    .providerRawService(rawService)
                     .oldMedicalService(oldService)
                     .newMedicalService(null) // Unmapped
                     .reason("MANUAL_UNMAP")
                     .changedBy(currentUser.getUsername())
                     .build();
             
-            auditLogRepository.save(audit);
+            auditRepository.save(audit);
             log.info("Unmapped Provider Service [{}] by {}", rawService.getServiceCode(), currentUser.getUsername());
         }
     }
 
-    private void mapSingleService(Long rawId, EnterpriseMedicalService masterService, MappingRequestDto request, UserPrincipal currentUser) {
+    private void mapSingleService(Long rawId, MedicalService masterService, MappingRequestDto request, UserPrincipal currentUser) {
         ProviderRawService rawService = rawServiceRepository.findById(rawId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProviderRawService", "id", rawId));
         
@@ -167,7 +167,7 @@ public class ProviderMappingService {
                 rawService.getProvider().getId(), rawService.getServiceCode());
 
         ProviderServiceMapping mapping;
-        EnterpriseMedicalService oldService = null;
+        MedicalService oldService = null;
 
         if (existingMappingOpt.isPresent()) {
             mapping = existingMappingOpt.get();
@@ -195,15 +195,15 @@ public class ProviderMappingService {
         mapping = mappingRepository.saveAndFlush(mapping);
 
         // 4. Audit Log
-        EnterpriseServiceMappingAudit audit = EnterpriseServiceMappingAudit.builder()
-                .legacyRawService(rawService)
+        ProviderMappingAudit audit = ProviderMappingAudit.builder()
+                .providerRawService(rawService)
                 .oldMedicalService(oldService)
                 .newMedicalService(masterService)
                 .reason(request.getReasonCode())
                 .changedBy(currentUser.getUsername())
                 .build();
         
-        auditLogRepository.save(audit);
+        auditRepository.save(audit);
         log.info("Mapped Provider Service [{}] to Master [{}] by {}", rawService.getServiceCode(), masterService.getCode(), currentUser.getUsername());
     }
 
@@ -229,8 +229,8 @@ public class ProviderMappingService {
         rawServiceRepository.save(raw);
     }
 
-    public Page<EnterpriseServiceMappingAudit> getMappingAuditLogs(Pageable pageable) {
-        return auditLogRepository.findAll(pageable);
+    public Page<ProviderMappingAudit> getMappingAuditLogs(Pageable pageable) {
+        return auditRepository.findAll(pageable);
     }
 
     public CatalogStatsDto getCatalogStats() {
@@ -293,7 +293,7 @@ public class ProviderMappingService {
                 : item.getServiceCode();
             
             String name = item.getMedicalService() != null
-                ? item.getMedicalService().getNameAr()
+                ? item.getMedicalService().getName()
                 : item.getServiceName();
 
             // Skip if no code available

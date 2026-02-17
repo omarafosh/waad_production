@@ -7,8 +7,8 @@ import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimLine;
 import com.waad.tba.modules.claim.entity.ClaimStatus;
 import com.waad.tba.modules.claim.repository.ClaimRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.provider.entity.Provider;
@@ -43,7 +43,7 @@ import java.util.Optional;
 public class BulkClaimService {
 
     private final MemberRepository memberRepository;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
     private final ProviderRepository providerRepository;
     private final VisitRepository visitRepository;
     private final ClaimRepository claimRepository;
@@ -124,7 +124,7 @@ public class BulkClaimService {
         }
 
         // 3. Validate Service & Price
-        EnterpriseMedicalService service = serviceRepository.findByCode(serviceCode)
+        MedicalService service = serviceRepository.findByCode(serviceCode)
                 .orElseThrow(() -> new IllegalArgumentException("Service code invalid: " + serviceCode));
 
         // In a real scenario, we check the contract pricing here. 

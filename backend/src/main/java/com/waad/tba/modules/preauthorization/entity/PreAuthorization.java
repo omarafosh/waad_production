@@ -1,7 +1,7 @@
 package com.waad.tba.modules.preauthorization.entity;
 
 import com.waad.tba.common.entity.SoftDeleteEntity;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.visit.entity.Visit;
 import jakarta.persistence.*;
 import lombok.*;
@@ -75,12 +75,9 @@ public class PreAuthorization extends SoftDeleteEntity {
     
     // ==================== ENTERPRISE MEDICAL SERVICE ====================
 
-    /**
-     * Medical Service (FK to ent_medical_services)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id", nullable = false)
-    private EnterpriseMedicalService medicalService;
+    private MedicalService medicalService;
     
     /**
      * Service code (denormalized snapshot)
@@ -313,8 +310,8 @@ public class PreAuthorization extends SoftDeleteEntity {
         // Populate denormalized fields from EnterpriseMedicalService
         if (medicalService != null) {
             this.serviceCode = medicalService.getCode();
-            this.serviceName = medicalService.getNameAr();
-            this.serviceCategory = medicalService.getCategory();
+            this.serviceName = medicalService.getName();
+            this.serviceCategory = medicalService.getCategoryName();
             this.requiresPA = true; // PreAuthorizations always require PA
         }
         

@@ -9,8 +9,8 @@ import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRuleRepository;
 import com.waad.tba.modules.medicalpackage.MedicalPackage;
 import com.waad.tba.modules.medicalpackage.MedicalPackageRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,7 +34,7 @@ public class BenefitPolicyRuleService {
 
     private final BenefitPolicyRuleRepository ruleRepository;
     private final BenefitPolicyRepository policyRepository;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
     private final MedicalPackageRepository packageRepository;
     private final CoveragePriorityService priorityService;
 
@@ -172,10 +172,10 @@ public class BenefitPolicyRuleService {
      */
     @Transactional(readOnly = true)
     public Optional<BenefitPolicyRuleResponseDto> findCoverageForService(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
-        EnterpriseMedicalService service = serviceRepository.findById(serviceId)
+        MedicalService service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", serviceId));
         
-        String category = service.getCategory();
+        String category = service.getCategoryName();
 
         return findBestMatchingRule(policyId, serviceId, category, encounterType)
                 .map(BenefitPolicyRuleResponseDto::fromEntity);
@@ -270,7 +270,7 @@ public class BenefitPolicyRuleService {
                 .build();
 
         if (dto.getMedicalServiceId() != null) {
-            EnterpriseMedicalService service = serviceRepository.findById(dto.getMedicalServiceId())
+            MedicalService service = serviceRepository.findById(dto.getMedicalServiceId())
                     .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", dto.getMedicalServiceId()));
             
             if (ruleRepository.existsServiceRule(policyId, dto.getMedicalServiceId(), dto.getEncounterType(), null)) {

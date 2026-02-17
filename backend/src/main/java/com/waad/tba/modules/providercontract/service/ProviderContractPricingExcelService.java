@@ -3,8 +3,8 @@ package com.waad.tba.modules.providercontract.service;
 import com.waad.tba.modules.medicaltaxonomy.dto.ExcelImportResultDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.ExcelImportResultDto.ImportError;
 import com.waad.tba.modules.medicaltaxonomy.dto.ExcelImportResultDto.ImportSummary;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.providercontract.entity.ProviderContract;
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
 import com.waad.tba.modules.providercontract.repository.ProviderContractPricingItemRepository;
@@ -52,7 +52,7 @@ public class ProviderContractPricingExcelService {
 
     private final ProviderContractRepository contractRepository;
     private final ProviderContractPricingItemRepository pricingRepository;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
 
     /**
      * Column name mappings (supports both Arabic and English)
@@ -149,8 +149,8 @@ public class ProviderContractPricingExcelService {
             }
 
             // Build service code to ID map (for fast lookups)
-            Map<String, EnterpriseMedicalService> serviceByCode = new HashMap<>();
-            Map<String, EnterpriseMedicalService> serviceByName = new HashMap<>();
+            Map<String, MedicalService> serviceByCode = new HashMap<>();
+            Map<String, MedicalService> serviceByName = new HashMap<>();
             buildServiceMaps(serviceByCode, serviceByName);
 
             // Get current username
@@ -199,12 +199,12 @@ public class ProviderContractPricingExcelService {
                     }
 
                     // Find medical service
-                    EnterpriseMedicalService service = null;
+                    MedicalService service = null;
                     if (serviceCodeValue != null && !serviceCodeValue.isBlank()) {
                         service = serviceByCode.get(serviceCodeValue.trim().toUpperCase());
                         if (service != null) {
                             log.debug("Row {}: Found service by code: {} -> {}", 
-                                    rowNum + 1, serviceCodeValue, service.getNameAr());
+                                    rowNum + 1, serviceCodeValue, service.getName());
                         }
                     }
                     if (service == null && serviceNameValue != null && !serviceNameValue.isBlank()) {
@@ -382,17 +382,17 @@ public class ProviderContractPricingExcelService {
     /**
      * Build service lookup maps for performance
      */
-    private void buildServiceMaps(Map<String, EnterpriseMedicalService> byCode, Map<String, EnterpriseMedicalService> byName) {
-        List<EnterpriseMedicalService> allServices = serviceRepository.findAll();
+    private void buildServiceMaps(Map<String, MedicalService> byCode, Map<String, MedicalService> byName) {
+        List<MedicalService> allServices = serviceRepository.findAll();
 
-        for (EnterpriseMedicalService service : allServices) {
+        for (MedicalService service : allServices) {
             if (service.getCode() != null) {
                 byCode.put(service.getCode().toUpperCase(), service);
             }
             
             // Index by name (Arabic or English)
-            if (service.getNameAr() != null && !service.getNameAr().isBlank()) {
-                byName.put(service.getNameAr().trim(), service);
+            if (service.getName() != null && !service.getName().isBlank()) {
+                byName.put(service.getName().trim(), service);
             }
             if (service.getNameEn() != null && !service.getNameEn().isBlank()) {
                 byName.put(service.getNameEn().trim(), service);

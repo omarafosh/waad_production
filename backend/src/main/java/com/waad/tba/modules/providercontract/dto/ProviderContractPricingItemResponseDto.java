@@ -80,9 +80,9 @@ public class ProviderContractPricingItemResponseDto {
             serviceDto = ServiceSummaryDto.builder()
                     .id(entity.getMedicalService().getId())
                     .code(entity.getMedicalService().getCode())
-                    .name(entity.getMedicalService().getNameAr()) // Use Arabic name
+                    .name(entity.getMedicalService().getName()) // Use Arabic name
                     .build();
-            serviceCategory = entity.getMedicalService().getCategory();
+            serviceCategory = entity.getMedicalService().getCategoryName();
         }
 
         // Determine effective category name
@@ -101,7 +101,7 @@ public class ProviderContractPricingItemResponseDto {
         // Get display name: prefer medical service name, fallback to serviceName field
         String displayServiceName = entity.getServiceName();
         if (entity.getMedicalService() != null) {
-             displayServiceName = entity.getMedicalService().getNameAr();
+             displayServiceName = entity.getMedicalService().getName();
         }
 
         return ProviderContractPricingItemResponseDto.builder()

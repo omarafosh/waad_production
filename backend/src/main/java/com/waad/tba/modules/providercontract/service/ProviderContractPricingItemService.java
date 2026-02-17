@@ -1,8 +1,8 @@
 package com.waad.tba.modules.providercontract.service;
 
 import com.waad.tba.common.exception.BusinessRuleException;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.providercontract.dto.*;
 import com.waad.tba.modules.providercontract.entity.ProviderContract;
 import com.waad.tba.modules.providercontract.entity.ProviderContract.ContractStatus;
@@ -38,7 +38,7 @@ public class ProviderContractPricingItemService {
 
     private final ProviderContractPricingItemRepository pricingRepository;
     private final ProviderContractRepository contractRepository;
-    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
+    private final MedicalServiceRepository medicalServiceRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // READ OPERATIONS
@@ -169,7 +169,7 @@ public class ProviderContractPricingItemService {
         }
 
         // 1. Resolve Medical Service (if provided) or validate Custom Service
-        EnterpriseMedicalService service = null;
+        MedicalService service = null;
         String serviceName;
         String serviceCode;
 
@@ -186,7 +186,7 @@ public class ProviderContractPricingItemService {
                         "Pricing already exists for this service in contract. Update instead.");
             }
 
-            serviceName = service.getNameAr();
+            serviceName = service.getName();
             serviceCode = service.getCode();
             
             // Auto-populate specialty if not provided and service has it
@@ -222,7 +222,7 @@ public class ProviderContractPricingItemService {
         // Resolve category
         String category = dto.getCategoryName();
         if ((category == null || category.isBlank()) && service != null) {
-            category = service.getCategory();
+            category = service.getCategoryName();
         }
 
         // ARCHITECTURAL ENFORCEMENT: Pricing items MUST have a category
@@ -444,7 +444,7 @@ public class ProviderContractPricingItemService {
         int fixedCount = 0;
 
         for (ProviderContractPricingItem item : unmappedItems) {
-            EnterpriseMedicalService service = null;
+            MedicalService service = null;
 
             // Try lookup by Code
             if (item.getServiceCode() != null && !item.getServiceCode().isEmpty()) {
@@ -454,7 +454,7 @@ public class ProviderContractPricingItemService {
             // Try lookup by Name
             if (service == null && item.getServiceName() != null) {
                 // Try exact Arabic name match first
-                service = medicalServiceRepository.findByNameAr(item.getServiceName()).orElse(null);
+                service = medicalServiceRepository.findByName(item.getServiceName()).orElse(null);
             }
 
             if (service != null) {
@@ -503,7 +503,7 @@ public class ProviderContractPricingItemService {
                 .map(p -> ContractServiceDto.builder()
                         .id(p.getMedicalService().getId())
                         .code(p.getMedicalService().getCode())
-                        .name(p.getMedicalService().getNameAr())
+                        .name(p.getMedicalService().getName())
                         .categoryName(categoryName)
                         .contractPrice(p.getContractPrice())
                         .basePrice(p.getBasePrice())
@@ -526,8 +526,8 @@ public class ProviderContractPricingItemService {
                 .map(p -> ContractServiceDto.builder()
                         .id(p.getMedicalService().getId())
                         .code(p.getMedicalService().getCode())
-                        .name(p.getMedicalService().getNameAr())
-                        .categoryName(p.getMedicalService().getCategory() != null ? p.getMedicalService().getCategory() : p.getCategoryName())
+                        .name(p.getMedicalService().getName())
+                        .categoryName(p.getMedicalService().getCategoryName() != null ? p.getMedicalService().getCategoryName() : p.getCategoryName())
                         .contractPrice(p.getContractPrice())
                         .basePrice(p.getBasePrice())
                         .discountPercent(p.getDiscountPercent())

@@ -24,8 +24,8 @@ import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimStatus;
 import com.waad.tba.modules.claim.entity.ClaimLine;
 import com.waad.tba.modules.claim.repository.ClaimRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import com.waad.tba.modules.member.entity.Member;
@@ -61,7 +61,7 @@ public class ModulesDataSeeder implements CommandLineRunner {
 
     private final OrganizationRepository organizationRepository;
     private final BenefitPolicyRepository benefitPolicyRepository;
-    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
+    private final MedicalServiceRepository medicalServiceRepository;
     private final ProviderRepository providerRepository;
     private final ProviderContractRepository providerContractRepository;
     private final MemberRepository memberRepository;
@@ -95,9 +95,9 @@ public class ModulesDataSeeder implements CommandLineRunner {
         Organization employerOrg = createOrg("Tech Solutions Ltd", "TECH-SOL", "EMPLOYER");
 
         // 2. Medical Services
-        EnterpriseMedicalService consultation = createService("GP Consultation", "استشارة عامة", "GP-001", consultationsCat);
-        EnterpriseMedicalService xRay = createService("Chest X-Ray", "أشعة صدر", "IMG-001", diagnosticsCat);
-        EnterpriseMedicalService bloodTest = createService("CBC Blood Test", "تحليل دم شامل", "LAB-001", diagnosticsCat);
+        MedicalService consultation = createService("GP Consultation", "استشارة عامة", "GP-001", consultationsCat);
+        MedicalService xRay = createService("Chest X-Ray", "أشعة صدر", "IMG-001", diagnosticsCat);
+        MedicalService bloodTest = createService("CBC Blood Test", "تحليل دم شامل", "LAB-001", diagnosticsCat);
 
         // 3. Benefit Policy
         BenefitPolicy policy = createPolicy(insuranceOrg, employerOrg);
@@ -131,13 +131,13 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .build());
     }
 
-    private EnterpriseMedicalService createService(String nameEn, String nameAr, String code, String category) {
+    private MedicalService createService(String nameEn, String nameAr, String code, String category) {
         return medicalServiceRepository.findByCode(code)
-                .orElseGet(() -> medicalServiceRepository.save(EnterpriseMedicalService.builder()
-                        .nameAr(nameAr)
+                .orElseGet(() -> medicalServiceRepository.save(MedicalService.builder()
+                        .name(nameAr)
                         .nameEn(nameEn)
                         .code(code)
-                        .category(category)
+                        .categoryName(category)
                         .isMaster(true)
                         .active(true)
                         .build()));
@@ -156,7 +156,7 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .build());
     }
     
-    private void createRule(BenefitPolicy policy, EnterpriseMedicalService service, double coverage, double copay) {
+    private void createRule(BenefitPolicy policy, MedicalService service, double coverage, double copay) {
          benefitPolicyRuleRepository.save(BenefitPolicyRule.builder()
                 .benefitPolicy(policy)
                 .medicalService(service)
@@ -223,8 +223,8 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .build());
     }
 
-    private PreAuthorization createPreAuth(Visit visit, Provider provider, List<EnterpriseMedicalService> services) {
-        EnterpriseMedicalService service = services.get(0);
+    private PreAuthorization createPreAuth(Visit visit, Provider provider, List<MedicalService> services) {
+        MedicalService service = services.get(0);
         return preAuthorizationRepository.save(PreAuthorization.builder()
                 .visit(visit)
                 .memberId(visit.getMember().getId())
@@ -237,7 +237,7 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .build());
     }
 
-    private void createClaim(Visit visit, PreAuthorization preAuth, Provider provider, EnterpriseMedicalService service) {
+    private void createClaim(Visit visit, PreAuthorization preAuth, Provider provider, MedicalService service) {
         log.info("📝 Creating sample claim for visit: {}", visit.getId());
         
         // 1. Create the line first
@@ -246,8 +246,8 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .quantity(1)
                 .unitPrice(new BigDecimal("150.00"))
                 .serviceCode(service.getCode())
-                .serviceName(service.getNameAr())
-                .serviceCategory(service.getCategory())
+                .serviceName(service.getName())
+                .serviceCategory(service.getCategoryName())
                 .requiresPA(false)
                 .build();
 

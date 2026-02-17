@@ -1,8 +1,8 @@
 package com.waad.tba.modules.provider.service;
 
 import com.waad.tba.common.exception.BusinessRuleException;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.provider.dto.ProviderServiceAssignDto;
 import com.waad.tba.modules.provider.dto.ProviderServiceResponseDto;
 import com.waad.tba.modules.provider.entity.Provider;
@@ -36,7 +36,7 @@ public class ProviderServiceService {
 
     private final ProviderServiceRepository providerServiceRepository;
     private final ProviderRepository providerRepository;
-    private final EnterpriseMedicalServiceRepository medicalServiceRepository;
+    private final MedicalServiceRepository medicalServiceRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // ASSIGN SERVICE
@@ -64,7 +64,7 @@ public class ProviderServiceService {
         }
 
         // 2. Validate service exists and is active
-        EnterpriseMedicalService medicalService = medicalServiceRepository
+        MedicalService medicalService = medicalServiceRepository
                 .findByCode(dto.getServiceCode())
                 .orElseThrow(() -> new BusinessRuleException(
                         "Medical service not found with code: " + dto.getServiceCode()));
@@ -216,16 +216,16 @@ public class ProviderServiceService {
     // ═══════════════════════════════════════════════════════════════════════════
 
     private ProviderServiceResponseDto mapToResponseDto(
-            ProviderService entity, EnterpriseMedicalService medicalService) {
+            ProviderService entity, MedicalService medicalService) {
         
         return ProviderServiceResponseDto.builder()
                 .id(medicalService.getId())  // Enterprise UUID
                 .assignmentId(entity.getId()) // Junction ID
                 .providerId(entity.getProviderId())
                 .serviceCode(entity.getServiceCode())
-                .serviceName(medicalService.getNameAr())           // Arabic name
-                .categoryCode(medicalService.getCategory())
-                .categoryName(medicalService.getCategory()) // Use category as name if separate lookup removed
+                .serviceName(medicalService.getName())           // Arabic name
+                .categoryCode(medicalService.getCategoryName())
+                .categoryName(medicalService.getCategoryName()) // Use category as name if separate lookup removed
                 .requiresPreAuth(false) // PA requirement comes from BenefitPolicyRule
                 .active(entity.getActive())
                 .createdAt(entity.getCreatedAt())
@@ -234,7 +234,7 @@ public class ProviderServiceService {
     }
 
     private ProviderServiceResponseDto mapToResponseDtoWithServiceLookup(ProviderService entity) {
-        EnterpriseMedicalService medicalService = medicalServiceRepository
+        MedicalService medicalService = medicalServiceRepository
                 .findByCode(entity.getServiceCode())
                 .orElse(null);
 

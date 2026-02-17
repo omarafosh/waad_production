@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto.ClaimDetail;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto.LineStatus;
@@ -347,14 +347,14 @@ public class ProviderSettlementReportService {
         String serviceCategory = null;
         
         if (line.getMedicalService() != null) {
-            EnterpriseMedicalService ems = line.getMedicalService();
+            MedicalService ems = line.getMedicalService();
             if (serviceCode == null) {
                 serviceCode = ems.getCode();
             }
             if (serviceName == null) {
-                serviceName = ems.getNameAr();
+                serviceName = ems.getName();
             }
-            serviceCategory = ems.getCategory();
+            serviceCategory = ems.getCategoryName();
         }
         
         return ServiceLineDetail.builder()

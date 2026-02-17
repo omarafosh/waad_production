@@ -380,7 +380,7 @@ public class MedicalServiceBulkImportService {
         if (basePrice != null) {
             service.setBasePrice(basePrice);
         }
-        service.setRequiresPA(false); // DEPRECATED: pre-approval now comes from BenefitPolicyRule
+        // service.setRequiresPA(false); // DEPRECATED: pre-approval now comes from BenefitPolicyRule
         service.setActive(isActive);
         service.setUpdatedAt(LocalDateTime.now());
 

@@ -58,13 +58,11 @@ public class MedicalTaxonomyServiceService {
             throw new BusinessRuleException("Base price must be >= 0");
         }
 
-        // Create entity
         MedicalService service = MedicalService.builder()
                 .code(dto.getCode())
                 .name(dto.getName())
                 .categoryId(dto.getCategoryId())
                 .basePrice(dto.getBasePrice())
-                .requiresPA(dto.getRequiresPA() != null ? dto.getRequiresPA() : false)
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .build();
 
@@ -110,9 +108,8 @@ public class MedicalTaxonomyServiceService {
 
     @Transactional(readOnly = true)
     public Page<MedicalServiceResponseDto> findServicesRequiringPA(Pageable pageable) {
-        log.debug("Finding services requiring PA");
-        return serviceRepository.findServicesRequiringPA(pageable)
-                .map(this::toDto);
+        log.info("⚠️ findServicesRequiringPA is deprecated. Returning all services.");
+        return findAll(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -124,10 +121,10 @@ public class MedicalTaxonomyServiceService {
             BigDecimal maxPrice,
             Pageable pageable) {
         
-        log.debug("Searching services: term={}, category={}, requiresPA={}, price=[{}, {}]",
-                searchTerm, categoryId, requiresPA, minPrice, maxPrice);
+        log.debug("Searching services: term={}, category={}, price=[{}, {}]",
+                searchTerm, categoryId, minPrice, maxPrice);
         
-        return serviceRepository.advancedSearch(searchTerm, categoryId, requiresPA, minPrice, maxPrice, pageable)
+        return serviceRepository.advancedSearch(searchTerm, categoryId, minPrice, maxPrice, pageable)
                 .map(this::toDto);
     }
 
@@ -158,9 +155,7 @@ public class MedicalTaxonomyServiceService {
             }
             service.setBasePrice(dto.getBasePrice());
         }
-        if (dto.getRequiresPA() != null) {
-            service.setRequiresPA(dto.getRequiresPA());
-        }
+        // requiresPA skip (deprecated)
         if (dto.getActive() != null) {
             service.setActive(dto.getActive());
         }
@@ -208,7 +203,7 @@ public class MedicalTaxonomyServiceService {
                 .categoryName(category != null ? category.getName() : null)
                 .categoryCode(category != null ? category.getCode() : null)
                 .basePrice(service.getBasePrice())
-                .requiresPA(service.isRequiresPA())
+                .requiresPA(true) // Default to true after field removal
                 .active(service.isActive())
                 .createdAt(service.getCreatedAt())
                 .updatedAt(service.getUpdatedAt())

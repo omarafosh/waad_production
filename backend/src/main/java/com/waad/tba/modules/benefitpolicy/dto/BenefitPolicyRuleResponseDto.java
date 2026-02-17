@@ -89,9 +89,9 @@ public class BenefitPolicyRuleResponseDto {
             if (rule.getMedicalService() != null) {
                 builder.medicalServiceId(rule.getMedicalService().getId())
                        .medicalServiceCode(rule.getMedicalService().getCode())
-                       .medicalServiceNameAr(rule.getMedicalService().getNameAr())
+                       .medicalServiceNameAr(rule.getMedicalService().getName())
                        .medicalServiceNameEn(rule.getMedicalService().getNameEn())
-                       .medicalCategory(rule.getMedicalService().getCategory());
+                       .medicalCategory(rule.getMedicalService().getCategoryName());
             }
         } else if (rule.isPackageRule()) {
             builder.ruleType("PACKAGE");

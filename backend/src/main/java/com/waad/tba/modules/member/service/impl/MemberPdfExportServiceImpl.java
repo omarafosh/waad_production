@@ -5,8 +5,8 @@ import com.lowagie.text.pdf.*;
 import java.awt.Color;
 import com.waad.tba.modules.member.dto.MemberViewDto;
 import com.waad.tba.modules.member.service.MemberPdfExportService;
-import com.waad.tba.modules.company.repository.CompanyRepository;
-import com.waad.tba.modules.company.entity.Company;
+import com.waad.tba.modules.company.dto.SettingDto;
+import com.waad.tba.modules.company.service.SettingService;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.qrcode.QRCodeWriter;
@@ -35,7 +35,7 @@ import java.util.Objects;
 public class MemberPdfExportServiceImpl implements MemberPdfExportService {
 
     private static final String REPORT_TITLE = "تقرير قائمة المنتفعين";
-    private final CompanyRepository companyRepository;
+    private final SettingService settingService;
     
     @Override
     public byte[] generateMembersPdf(List<MemberViewDto> members, String filterDescription) {
@@ -62,15 +62,11 @@ public class MemberPdfExportServiceImpl implements MemberPdfExportService {
     }
 
     private void addHeader(Document document, String filterDescription) throws DocumentException {
-        Company company = companyRepository.findByIsDefaultTrue()
-                .orElseGet(() -> Company.builder()
-                        .name("نظام TBA WAAD للتأمين الطبي")
-                        .businessType("إدارة المطالبات الطبية")
-                        .build());
+        SettingDto settings = settingService.getSettings();
         
-        if (company.getLogoUrl() != null && !company.getLogoUrl().isEmpty()) {
+        if (settings.getLogoUrl() != null && !settings.getLogoUrl().isEmpty()) {
             try {
-                Image logo = Image.getInstance(company.getLogoUrl());
+                Image logo = Image.getInstance(settings.getLogoUrl());
                 logo.scaleToFit(80, 80);
                 logo.setAlignment(Element.ALIGN_CENTER);
                 document.add(logo);
@@ -80,14 +76,14 @@ public class MemberPdfExportServiceImpl implements MemberPdfExportService {
             }
         }
         
-        Paragraph companyName = new Paragraph(company.getName() != null ? company.getName() : "نظام TBA WAAD", new Font(Font.HELVETICA, 16, Font.BOLD));
-        companyName.setAlignment(Element.ALIGN_CENTER);
-        document.add(companyName);
+        Paragraph systemName = new Paragraph(settings.getSystemName() != null ? settings.getSystemName() : "نظام TBA WAAD", new Font(Font.HELVETICA, 16, Font.BOLD));
+        systemName.setAlignment(Element.ALIGN_CENTER);
+        document.add(systemName);
         
-        if (company.getBusinessType() != null && !company.getBusinessType().isEmpty()) {
-            Paragraph businessType = new Paragraph(company.getBusinessType(), new Font(Font.HELVETICA, 11, Font.ITALIC));
-            businessType.setAlignment(Element.ALIGN_CENTER);
-            document.add(businessType);
+        if (settings.getWebsite() != null && !settings.getWebsite().isEmpty()) {
+            Paragraph website = new Paragraph(settings.getWebsite(), new Font(Font.HELVETICA, 11, Font.ITALIC));
+            website.setAlignment(Element.ALIGN_CENTER);
+            document.add(website);
         }
         
         document.add(new Paragraph(" "));
@@ -151,7 +147,7 @@ public class MemberPdfExportServiceImpl implements MemberPdfExportService {
     }
 
     private void addFooter(PdfWriter writer, Document document) {
-        Company company = companyRepository.findByIsDefaultTrue().orElse(new Company());
+        SettingDto settings = settingService.getSettings();
         PdfContentByte cb = writer.getDirectContent();
         Font f = new Font(Font.HELVETICA, 8, Font.NORMAL);
         float y = document.bottom() - 10;

@@ -1,7 +1,7 @@
 package com.waad.tba.modules.benefitpolicy.entity;
 
 import com.waad.tba.modules.benefitpolicy.enums.DistributionType;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -48,11 +48,11 @@ public class CoverageDistribution {
     private String medicalCategory;
 
     /**
-     * Target Enterprise Medical Service (FK)
+     * Target Unified Medical Service (FK)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id")
-    private EnterpriseMedicalService medicalService;
+    private MedicalService medicalService;
 
     /**
      * The limit amount allocated for this specific target.

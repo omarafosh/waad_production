@@ -2,7 +2,7 @@ package com.waad.tba.modules.member.service;
 
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
-import com.waad.tba.modules.company.entity.Company;
+import com.waad.tba.modules.company.dto.SettingDto;
 import com.waad.tba.modules.member.dto.MemberViewDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.List;
 @Service
 public class MemberPdfGeneratorService {
 
-    public byte[] generateMembersPdf(List<MemberViewDto> members, String filterDescription, Company company) throws DocumentException {
+    public byte[] generateMembersPdf(List<MemberViewDto> members, String filterDescription, SettingDto settings) throws DocumentException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate());
         
@@ -28,22 +28,22 @@ public class MemberPdfGeneratorService {
         writer.setPageEvent(new PdfPageEventHelper() {
             @Override
             public void onEndPage(PdfWriter writer, Document document) {
-                addFooter(writer, document, company);
+                addFooter(writer, document, settings);
             }
         });
         
         document.open();
-        addHeader(document, filterDescription, company);
+        addHeader(document, filterDescription, settings);
         addMembersTable(document, members);
         document.close();
         
         return outputStream.toByteArray();
     }
 
-    private void addHeader(Document document, String filterDescription, Company company) throws DocumentException {
+    private void addHeader(Document document, String filterDescription, SettingDto settings) throws DocumentException {
         // ... (Header logic extracted from original MemberPdfExportService)
         Font companyNameFont = new Font(Font.HELVETICA, 16, Font.BOLD);
-        Paragraph companyName = new Paragraph(company.getName() != null ? company.getName() : "TBA WAAD", companyNameFont);
+        Paragraph companyName = new Paragraph(settings.getSystemName() != null ? settings.getSystemName() : "TBA WAAD", companyNameFont);
         companyName.setAlignment(Element.ALIGN_CENTER);
         document.add(companyName);
 
@@ -99,12 +99,12 @@ public class MemberPdfGeneratorService {
         document.add(table);
     }
 
-    private void addFooter(PdfWriter writer, Document document, Company company) {
+    private void addFooter(PdfWriter writer, Document document, SettingDto settings) {
         PdfContentByte cb = writer.getDirectContent();
         Font footerFont = new Font(Font.HELVETICA, 8, Font.NORMAL);
         float yPosition = document.bottom() - 10;
         
-        String text = "© " + LocalDateTime.now().getYear() + " " + (company.getName() != null ? company.getName() : "WAAD") + 
+        String text = "© " + LocalDateTime.now().getYear() + " " + (settings.getSystemName() != null ? settings.getSystemName() : "WAAD") + 
                      " | Page " + writer.getPageNumber();
         ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(text, footerFont), 
                                   document.getPageSize().getWidth() / 2, yPosition, 0);

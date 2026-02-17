@@ -6,8 +6,8 @@ import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicyRule;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRuleRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.common.exception.BusinessRuleException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class CoverageSimulationService {
 
     private final BenefitPolicyRepository policyRepository;
     private final BenefitPolicyRuleRepository ruleRepository;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
     private final BenefitPolicyRuleService ruleService;
 
     /**
@@ -41,7 +41,7 @@ public class CoverageSimulationService {
         BenefitPolicy policy = policyRepository.findById(request.getPolicyId())
                 .orElseThrow(() -> new BusinessRuleException("Policy not found"));
 
-        EnterpriseMedicalService service = serviceRepository.findById(request.getServiceId())
+        MedicalService service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new BusinessRuleException("Service not found"));
 
         // Use the existing core logic from BenefitPolicyRuleService
@@ -49,14 +49,14 @@ public class CoverageSimulationService {
                 policy.getId(), 
                 service.getId(), 
                 java.util.Collections.emptyList(), 
-                service.getCategory(), 
+                service.getCategoryName(), 
                 request.getEncounterType())
                 .stream().findFirst(); // Simplification: pick first or best match logic needed if multiple
 
         SimulationResultDto.SimulationResultDtoBuilder builder = SimulationResultDto.builder()
                 .policyName(policy.getName())
-                .serviceName(service.getNameAr())
-                .categoryName(service.getCategory() != null ? service.getCategory() : "Unknown");
+                .serviceName(service.getName())
+                .categoryName(service.getCategoryName() != null ? service.getCategoryName() : "Unknown");
 
         if (ruleOpt.isPresent()) {
             BenefitPolicyRule rule = ruleOpt.get();

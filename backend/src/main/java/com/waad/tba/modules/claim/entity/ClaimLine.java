@@ -1,6 +1,6 @@
 package com.waad.tba.modules.claim.entity;
 
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * ClaimLine Entity (CANONICAL REBUILD 2026-02-15 - UNIFIED DICTIONARY)
+ * ClaimLine Entity (CANONICAL REBUILD 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "claim_lines", indexes = {
@@ -31,14 +31,14 @@ public class ClaimLine {
     @JoinColumn(name = "claim_id", nullable = false)
     private Claim claim;
 
-    // ==================== MEDICAL SERVICE (ENTERPRISE DICTIONARY) ====================
+    // ==================== MEDICAL SERVICE (UNIFIED DICTIONARY) ====================
     
     /**
-     * Enterprise Medical Service (FK)
+     * Unified Medical Service (FK)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id", nullable = false)
-    private EnterpriseMedicalService medicalService;
+    private MedicalService medicalService;
 
     /**
      * Service code (denormalized snapshot)
@@ -128,13 +128,13 @@ public class ClaimLine {
     }
     
     /**
-     * Populate denormalized fields from EnterpriseMedicalService
+     * Populate denormalized fields from MedicalService
      */
     private void populateDenormalizedFields() {
         if (medicalService != null) {
             this.serviceCode = medicalService.getCode();
-            this.serviceName = medicalService.getNameAr(); // Default to Arabic name for snapshot
-            this.serviceCategory = medicalService.getCategory();
+            this.serviceName = medicalService.getName(); // Default to Arabic name (name field) for snapshot
+            this.serviceCategory = medicalService.getCategoryName();
         }
     }
 
@@ -151,9 +151,9 @@ public class ClaimLine {
      * Validate architectural rules
      */
     private void validateArchitecturalRules() {
-        // RULE: EnterpriseMedicalService is MANDATORY
+        // RULE: MedicalService is MANDATORY
         if (medicalService == null) {
-            throw new IllegalStateException("ARCHITECTURAL VIOLATION: ClaimLine MUST reference an EnterpriseMedicalService");
+            throw new IllegalStateException("ARCHITECTURAL VIOLATION: ClaimLine MUST reference a MedicalService");
         }
         
         // RULE: Category is MANDATORY

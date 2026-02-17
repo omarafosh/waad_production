@@ -12,8 +12,8 @@ import com.waad.tba.modules.benefitpolicy.repository.CoverageDistributionReposit
 import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimLine;
 import com.waad.tba.modules.claim.repository.ClaimRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.member.entity.Member;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +66,7 @@ public class BenefitPolicyCoverageService {
 
     private final BenefitPolicyRepository policyRepository;
     private final BenefitPolicyRuleRepository ruleRepository;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
     private final ClaimRepository claimRepository;
     private final CoveragePriorityService priorityService;
     private final com.waad.tba.modules.medicalpackage.MedicalPackageRepository packageRepository;
@@ -177,11 +177,11 @@ public class BenefitPolicyCoverageService {
 
         if (!policy.isActive()) return Optional.empty();
 
-        EnterpriseMedicalService service = serviceRepository.findById(serviceId).orElse(null);
+        MedicalService service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) return Optional.empty();
 
         Optional<BenefitPolicyRule> ruleOpt = findBestMatchingRule(
-            policy.getId(), serviceId, service.getCategory(), encounterType);
+            policy.getId(), serviceId, service.getCategoryName(), encounterType);
 
         if (ruleOpt.isPresent()) {
             BenefitPolicyRule rule = ruleOpt.get();
@@ -205,7 +205,7 @@ public class BenefitPolicyCoverageService {
             .coveragePercent(policy.getDefaultCoveragePercent())
             .requiresPreApproval(DEFAULT_REQUIRES_PA)
             .ruleType("POLICY_DEFAULT")
-            .serviceName(service.getNameAr())
+            .serviceName(service.getName())
             .active(true)
             .build());
     }
@@ -318,7 +318,7 @@ public class BenefitPolicyCoverageService {
                 .build();
         }
 
-        EnterpriseMedicalService service = serviceRepository.findById(serviceId).orElse(null);
+        MedicalService service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) {
             return ServiceCoverageResult.builder()
                 .serviceId(serviceId)
@@ -328,7 +328,7 @@ public class BenefitPolicyCoverageService {
                 .build();
         }
 
-        String category = service.getCategory();
+        String category = service.getCategoryName();
 
         Optional<BenefitPolicyRule> ruleOpt = findBestMatchingRule(
             policy.getId(), serviceId, category, encounterType);
@@ -627,14 +627,14 @@ public class BenefitPolicyCoverageService {
         }
         
         // Try to find the medical service by code
-        Optional<EnterpriseMedicalService> serviceOpt = serviceRepository.findByCode(serviceCode);
+        Optional<MedicalService> serviceOpt = serviceRepository.findByCode(serviceCode);
         if (serviceOpt.isEmpty()) {
             log.debug("Service code {} not found, skipping waiting period check for this line", serviceCode);
             return;
         }
         
-        EnterpriseMedicalService service = serviceOpt.get();
-        String category = service.getCategory();
+        MedicalService service = serviceOpt.get();
+        String category = service.getCategoryName();
         
         Optional<BenefitPolicyRule> ruleOpt = findBestMatchingRule(
             benefitPolicy.getId(), service.getId(), category, encounterType);
@@ -645,7 +645,7 @@ public class BenefitPolicyCoverageService {
             
             if (ruleWaitingDays != null && ruleWaitingDays > 0 && daysSinceEnrollment < ruleWaitingDays) {
                 LocalDate eligibleDate = memberStartDate.plusDays(ruleWaitingDays);
-                String serviceName = service.getNameAr();
+                String serviceName = service.getName();
                 throw new BusinessRuleException(
                     String.format("فترة الانتظار للخدمة '%s' لم تكتمل. العضو سيكون مؤهلاً من %s (مطلوب %d يوم)",
                         serviceName, eligibleDate, ruleWaitingDays)
@@ -670,14 +670,14 @@ public class BenefitPolicyCoverageService {
             return; // Nothing to validate
         }
         
-        EnterpriseMedicalService service = serviceRepository.findById(serviceId).orElse(null);
+        MedicalService service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) {
             throw new BusinessRuleException("الخدمة الطبية غير موجودة: " + serviceId);
         }
         
         // Use Priority Logic
         Optional<BenefitPolicyRule> ruleOpt = findBestMatchingRule(
-            benefitPolicy.getId(), serviceId, service.getCategory(), encounterType);
+            benefitPolicy.getId(), serviceId, service.getCategoryName(), encounterType);
         
         if (ruleOpt.isPresent()) {
             BenefitPolicyRule rule = ruleOpt.get();
@@ -707,7 +707,7 @@ public class BenefitPolicyCoverageService {
             return;
         }
         
-        EnterpriseMedicalService service = serviceRepository.findByCode(serviceCode).orElse(null);
+        MedicalService service = serviceRepository.findByCode(serviceCode).orElse(null);
         if (service != null) {
             validateServiceCoverage(service.getId(), benefitPolicy, encounterType);
         } else {
@@ -954,12 +954,12 @@ public class BenefitPolicyCoverageService {
             return DEFAULT_REQUIRES_PA;
         }
         
-        EnterpriseMedicalService service = serviceRepository.findById(serviceId).orElse(null);
+        MedicalService service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) {
             return DEFAULT_REQUIRES_PA;
         }
         
-        ResolvedCoverage coverage = resolveCoverage(policy.getId(), serviceId, service.getCategory(), encounterType);
+        ResolvedCoverage coverage = resolveCoverage(policy.getId(), serviceId, service.getCategoryName(), encounterType);
         if (coverage == null) {
             return DEFAULT_REQUIRES_PA;
         }
@@ -980,12 +980,12 @@ public class BenefitPolicyCoverageService {
             return 0;
         }
         
-        EnterpriseMedicalService service = serviceRepository.findById(serviceId).orElse(null);
+        MedicalService service = serviceRepository.findById(serviceId).orElse(null);
         if (service == null) {
             return 0;
         }
         
-        ResolvedCoverage coverage = resolveCoverage(policy.getId(), serviceId, service.getCategory(), encounterType);
+        ResolvedCoverage coverage = resolveCoverage(policy.getId(), serviceId, service.getCategoryName(), encounterType);
         if (coverage == null || !coverage.isCovered()) {
             return 0;
         }

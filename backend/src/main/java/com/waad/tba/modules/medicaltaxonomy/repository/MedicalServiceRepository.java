@@ -39,8 +39,21 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
 
     /**
      * Find service by exact name (for duplicate checking during import)
+     * Maps to name_ar in the database
      */
     Optional<MedicalService> findByName(String name);
+
+    /**
+     * Alias for findByName to support old EnterpriseMedicalService queries
+     */
+    default Optional<MedicalService> findByNameAr(String nameAr) {
+        return findByName(nameAr);
+    }
+
+    /**
+     * Find service by English name
+     */
+    Optional<MedicalService> findByNameEn(String nameEn);
 
     /**
      * Check if code exists (for duplicate validation)
@@ -73,7 +86,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
      * Find all inactive services - paginated
      * Must use NATIVE query to bypass @SQLRestriction("active = true")
      */
-    @Query(value = "SELECT * FROM medical_services WHERE active = false", nativeQuery = true)
+    @Query(value = "SELECT * FROM ent_medical_services WHERE active = false", nativeQuery = true)
     Page<MedicalService> findByActiveFalse(Pageable pageable);
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -113,31 +126,8 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
     @Query("SELECT COUNT(ms) FROM MedicalService ms WHERE ms.categoryId = :categoryId")
     long countActiveByCategoryId(@Param("categoryId") Long categoryId);
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PRE-AUTHORIZATION QUERIES
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Find all services requiring pre-authorization
-     */
-    @Query("SELECT ms FROM MedicalService ms WHERE ms.requiresPA = true")
-    List<MedicalService> findServicesRequiringPA();
-
-    /**
-     * Find all services requiring pre-authorization - paginated
-     */
-    @Query("SELECT ms FROM MedicalService ms WHERE ms.requiresPA = true")
-    Page<MedicalService> findServicesRequiringPA(Pageable pageable);
-
-    /**
-     * Find services in category requiring PA
-     */
-    @Query("""
-        SELECT ms FROM MedicalService ms
-        WHERE ms.categoryId = :categoryId
-          AND ms.requiresPA = true
-    """)
-    List<MedicalService> findServicesRequiringPAByCategory(@Param("categoryId") Long categoryId);
+    // NOTE: Pre-authorization requirement is now determined by BenefitPolicyRule
+    // findServicesRequiringPA queries removed as the field is deprecated in MedicalService entity.
 
     // ═══════════════════════════════════════════════════════════════════════════
     // SEARCH QUERIES
@@ -161,22 +151,17 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
     """)
     Page<MedicalService> searchByName(@Param("searchTerm") String searchTerm, Pageable pageable);
 
-    /**
-     * Advanced search with multiple filters
-     */
     @Query("""
         SELECT ms FROM MedicalService ms
         WHERE (:searchTerm IS NULL 
             OR LOWER(ms.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
           AND (:categoryId IS NULL OR ms.categoryId = :categoryId)
-          AND (:requiresPA IS NULL OR ms.requiresPA = :requiresPA)
           AND (:minPrice IS NULL OR ms.basePrice >= :minPrice)
           AND (:maxPrice IS NULL OR ms.basePrice <= :maxPrice)
     """)
     Page<MedicalService> advancedSearch(
         @Param("searchTerm") String searchTerm,
         @Param("categoryId") Long categoryId,
-        @Param("requiresPA") Boolean requiresPA,
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
         Pageable pageable
@@ -307,7 +292,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
         SELECT 
             ms.id as id,
             ms.code as code,
-            ms.name as name,
+            ms.name_ar as name,
             ms.category_id as categoryId,
             mc.name as categoryName
         FROM medical_services ms
@@ -315,7 +300,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
         WHERE ms.active = true
           AND (:query IS NULL OR :query = '' 
                OR LOWER(ms.code) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(ms.name) LIKE LOWER(CONCAT('%', :query, '%'))
+               OR LOWER(ms.name_ar) LIKE LOWER(CONCAT('%', :query, '%'))
                OR LOWER(mc.name) LIKE LOWER(CONCAT('%', :query, '%')))
           AND (:categoryId IS NULL OR ms.category_id = :categoryId)
         ORDER BY COALESCE(mc.name, 'zzz'), ms.name

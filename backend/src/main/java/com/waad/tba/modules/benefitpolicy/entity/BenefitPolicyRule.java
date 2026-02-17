@@ -1,7 +1,7 @@
 package com.waad.tba.modules.benefitpolicy.entity;
 
 import com.waad.tba.modules.benefitpolicy.enums.ApplyOnType;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.visit.entity.VisitType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * BenefitPolicyRule Entity (REFACTORED 2026-02-15 - UNIFIED DICTIONARY)
+ * BenefitPolicyRule Entity (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "benefit_policy_rules", indexes = {
@@ -59,11 +59,11 @@ public class BenefitPolicyRule {
     private String medicalCategory;
 
     /**
-     * Target Enterprise Medical Service (FK)
+     * Target Unified Medical Service (FK)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id")
-    private EnterpriseMedicalService medicalService;
+    private MedicalService medicalService;
 
     /**
      * Type of target (CATEGORY / SERVICE / PACKAGE)
@@ -210,7 +210,7 @@ public class BenefitPolicyRule {
      */
     public String getLabel() {
         if (medicalService != null) {
-            return medicalService.getNameAr();
+            return medicalService.getName();
         }
         if (medicalPackage != null) {
             return medicalPackage.getName();

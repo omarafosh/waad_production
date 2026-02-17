@@ -6,8 +6,8 @@ import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.modules.benefitpolicy.entity.CoverageDistribution;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
 import com.waad.tba.modules.benefitpolicy.repository.CoverageDistributionRepository;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.repository.EnterpriseMedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class CoverageDistributionService {
     private final CoverageDistributionRepository distributionRepository;
     private final BenefitPolicyRepository policyRepository;
     private final MedicalCategoryRepository categoryRepository;
-    private final EnterpriseMedicalServiceRepository serviceRepository;
+    private final MedicalServiceRepository serviceRepository;
 
     @Transactional(readOnly = true)
     public List<CoverageDistributionDto> findByPolicyId(Long policyId) {
@@ -51,7 +51,7 @@ public class CoverageDistributionService {
             }
         }
 
-        EnterpriseMedicalService service = null;
+        MedicalService service = null;
         if (dto.getServiceId() != null) {
             service = serviceRepository.findById(dto.getServiceId())
                     .orElseThrow(() -> new BusinessRuleException("Service not found: " + dto.getServiceId()));

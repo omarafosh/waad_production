@@ -311,7 +311,7 @@ public class MedicalCategoryService {
                 .categoryCode(category.getCode())
                 .description(service.getDescription())
                 .basePrice(service.getBasePrice())
-                .requiresPA(service.isRequiresPA())
+                .requiresPA(true)
                 .active(service.isActive())
                 .createdAt(service.getCreatedAt())
                 .updatedAt(service.getUpdatedAt())

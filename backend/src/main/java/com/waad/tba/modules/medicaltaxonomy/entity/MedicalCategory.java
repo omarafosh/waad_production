@@ -30,42 +30,39 @@ public class MedicalCategory {
     private Long id;
 
     /**
-     * Unique business identifier (immutable)
-     * Examples: "CONSULTATION", "SURGERY", "CARDIOLOGY_CONSULT"
+     * كود التصنيف الموحد (Unique business identifier)
+     * Examples: "CONSULTATION", "LAB", "PHARMACY"
      */
     @Column(nullable = false, unique = true, length = 255)
     private String code;
 
     /**
-     * Category name (unified - Arabic-only system)
+     * اسم التصنيف بالعربي
      */
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
     /**
-     * Parent category for hierarchy support
-     * NULL = root category
-     * NOT NULL = subcategory
+     * التصنيف الأب (لدعم الهيكلية الشجرية)
+     * NULL = تصنيف رئيسي (Root)
      */
-    @Column(name = "parent_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private MedicalCategory parent;
+
+    @Column(name = "parent_id", insertable = false, updatable = false)
     private Long parentId;
 
     /**
-     * Soft delete flag
+     * حالة النشاط
      */
     @Column(nullable = false)
     @Builder.Default
     private boolean active = true;
 
-    /**
-     * Audit: creation timestamp
-     */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Audit: last update timestamp
-     */
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -80,3 +77,4 @@ public class MedicalCategory {
         updatedAt = LocalDateTime.now();
     }
 }
+

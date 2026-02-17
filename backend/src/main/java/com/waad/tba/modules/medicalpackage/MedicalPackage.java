@@ -1,6 +1,6 @@
 package com.waad.tba.modules.medicalpackage;
 
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -40,7 +40,7 @@ public class MedicalPackage {
     private String description;
 
     /**
-     * Many-to-Many relationship with EnterpriseMedicalService
+     * Many-to-Many relationship with Unified MedicalService
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -49,7 +49,7 @@ public class MedicalPackage {
         inverseJoinColumns = @JoinColumn(name = "service_id")
     )
     @Builder.Default
-    private Set<EnterpriseMedicalService> services = new HashSet<>();
+    private Set<MedicalService> services = new HashSet<>();
 
     /**
      * Total coverage limit for this package (optional)

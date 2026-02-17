@@ -1,7 +1,7 @@
 package com.waad.tba.modules.providercontract.repository;
 
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
-import com.waad.tba.modules.medicaltaxonomy.enterprise.entity.EnterpriseMedicalService;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -61,7 +61,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     @Query("SELECT p FROM ProviderContractPricingItem p WHERE p.contract = :contract AND p.medicalService = :service AND p.active = true")
     Optional<ProviderContractPricingItem> findByContractAndMedicalService(
             @Param("contract") com.waad.tba.modules.providercontract.entity.ProviderContract contract,
-            @Param("service") EnterpriseMedicalService service);
+            @Param("service") MedicalService service);
 
     /**
      * Check if pricing exists for service in contract
@@ -84,7 +84,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     @Query("SELECT p FROM ProviderContractPricingItem p " +
            "WHERE p.contract.id = :contractId " +
            "AND p.active = true " +
-           "AND p.medicalService.category = :category")
+           "AND p.medicalService.categoryName = :category")
     List<ProviderContractPricingItem> findByContractIdAndServiceCategory(
             @Param("contractId") Long contractId,
             @Param("category") String category);
@@ -129,7 +129,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "WHERE p.contract.id = :contractId " +
            "AND p.active = true " +
            "AND (LOWER(p.medicalService.code) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "     OR LOWER(p.medicalService.nameAr) LIKE LOWER(CONCAT('%', :search, '%'))" +
+           "     OR LOWER(p.medicalService.name) LIKE LOWER(CONCAT('%', :search, '%'))" +
            "     OR LOWER(p.medicalService.nameEn) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<ProviderContractPricingItem> searchByServiceCodeOrName(
             @Param("contractId") Long contractId,
@@ -257,12 +257,12 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     /**
      * Get distinct categories available in active contracts for a provider
      */
-    @Query("SELECT DISTINCT p.medicalService.category FROM ProviderContractPricingItem p " +
+    @Query("SELECT DISTINCT p.medicalService.categoryName FROM ProviderContractPricingItem p " +
            "WHERE p.contract.provider.id = :providerId " +
            "AND p.active = true " +
            "AND p.contract.active = true " +
            "AND p.contract.status = 'ACTIVE' " +
-           "AND p.medicalService.category IS NOT NULL " +
+           "AND p.medicalService.categoryName IS NOT NULL " +
            "AND p.contract.startDate <= CURRENT_DATE " +
            "AND (p.contract.endDate IS NULL OR p.contract.endDate >= CURRENT_DATE)")
     List<String> findDistinctCategoriesByProvider(
@@ -276,7 +276,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND p.active = true " +
            "AND p.contract.active = true " +
            "AND p.contract.status = 'ACTIVE' " +
-           "AND p.medicalService.category = :category " +
+           "AND p.medicalService.categoryName = :category " +
            "AND p.contract.startDate <= CURRENT_DATE " +
            "AND (p.contract.endDate IS NULL OR p.contract.endDate >= CURRENT_DATE)")
     List<ProviderContractPricingItem> findServicesByProviderAndCategory(

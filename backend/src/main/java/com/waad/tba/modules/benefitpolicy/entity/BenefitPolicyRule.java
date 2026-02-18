@@ -13,7 +13,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -110,15 +109,7 @@ public class BenefitPolicyRule {
     @Column(name = "coverage_percent")
     private Integer coveragePercent;
 
-    /**
-     * Maximum amount limit per claim/service (in LYD)
-     * If null, no specific amount limit (policy limit applies)
-     * 
-     * Example: 500.00 means max 500 LYD per service claim
-     */
-    @DecimalMin(value = "0.00", message = "Amount limit must be >= 0")
-    @Column(name = "amount_limit", precision = 15, scale = 2)
-    private BigDecimal amountLimit;
+
 
     /**
      * Maximum number of times this benefit can be used per period
@@ -154,11 +145,13 @@ public class BenefitPolicyRule {
     private String notes;
 
     /**
-     * The type of encounter this rule applies to (OPD, ER, IPD, etc.)
-     * If null, the rule applies to ALL encounter types.
+     * MANDATORY: The coverage type this rule applies to.
+     * Values: OUTPATIENT, INPATIENT, EMERGENCY, LABORATORY,
+     *         RADIOLOGY, PHARMACY, DENTAL, PHYSIOTHERAPY
      */
+    @NotNull(message = "نوع التغطية إلزامي")
     @Enumerated(EnumType.STRING)
-    @Column(name = "encounter_type", length = 30)
+    @Column(name = "encounter_type", length = 30, nullable = false)
     private VisitType encounterType;
 
     /**
@@ -255,17 +248,21 @@ public class BenefitPolicyRule {
     @PreUpdate
     public void validateTarget() {
         // Skip validation if we are soft-deleting the rule
-        // This allows removing rules that might have invalid state/corruption
         if (deleted) return;
+
+        // Validate encounterType is mandatory
+        if (encounterType == null) {
+            throw new IllegalStateException("نوع التغطية إلزامي — يجب تحديد نوع التغطية لكل قاعدة");
+        }
 
         boolean hasCategory = (medicalCategory != null && !medicalCategory.isBlank()) || medicalCategoryRef != null;
         boolean hasService = medicalService != null;
         boolean hasPackage = medicalPackage != null;
-        
+
         int count = (hasCategory ? 1 : 0) + (hasService ? 1 : 0) + (hasPackage ? 1 : 0);
-        
+
         if (count != 1) {
-            throw new IllegalStateException("Rule must target exactly ONE of: category, service, or package");
+            throw new IllegalStateException("Rule must target exactly ONE of: category or service");
         }
 
         // Set the applyOn type automatically

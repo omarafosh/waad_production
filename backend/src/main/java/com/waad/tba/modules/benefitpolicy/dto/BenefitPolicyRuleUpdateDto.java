@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 
 /**
  * DTO for updating an existing Benefit Policy Rule.
@@ -26,11 +25,6 @@ public class BenefitPolicyRuleUpdateDto {
     @Max(value = 100, message = "Coverage percent must be <= 100")
     private Integer coveragePercent;
 
-    /**
-     * Maximum amount limit per claim (in LYD)
-     */
-    @DecimalMin(value = "0.00", message = "Amount limit must be >= 0")
-    private BigDecimal amountLimit;
 
     /**
      * Maximum times this benefit can be used per period

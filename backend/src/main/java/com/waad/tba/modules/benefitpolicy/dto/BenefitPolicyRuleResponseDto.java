@@ -7,12 +7,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * DTO for returning Benefit Policy Rule information (REFACTORED for Unified Dictionary).
+ * DTO for returning Benefit Policy Rule information.
+ * amountLimit removed — redundant with timesLimit.
  */
 @Data
 @Builder
@@ -21,42 +20,46 @@ import java.util.UUID;
 public class BenefitPolicyRuleResponseDto {
 
     private Long id;
-    
+
     // Parent policy info
     private Long benefitPolicyId;
     private String benefitPolicyName;
-    
+
     // Target info
-    private String ruleType; // "CATEGORY", "SERVICE", or "PACKAGE"
-    
-    // Category info (String-based in Unified Dictionary)
+    private String ruleType; // "CATEGORY" or "SERVICE"
+
+    // Category info
     private String medicalCategory;
+    private Long medicalCategoryId;
     private String medicalCategoryCode;
-    
-    // Service info (UUID-based in Unified Dictionary)
+    private String medicalCategoryName;
+
+    // Service info
     private Long medicalServiceId;
     private String medicalServiceCode;
     private String medicalServiceNameAr;
     private String medicalServiceNameEn;
-    
-    // Package info
-    private Long medicalPackageId;
-    private String medicalPackageName;
-    
+
     // Coverage settings
     private Integer coveragePercent;
     private Integer effectiveCoveragePercent;
-    private BigDecimal amountLimit;
     private Integer timesLimit;
     private Integer waitingPeriodDays;
     private boolean requiresPreApproval;
-    
+
     private String label;
     private String notes;
+
+    /**
+     * MANDATORY: The coverage type context for this rule.
+     * Values: OUTPATIENT, INPATIENT, EMERGENCY, LABORATORY,
+     *         RADIOLOGY, PHARMACY, DENTAL, PHYSIOTHERAPY
+     */
     private VisitType encounterType;
+
     private boolean active;
     private boolean deleted;
-    
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -65,7 +68,6 @@ public class BenefitPolicyRuleResponseDto {
                 .id(rule.getId())
                 .coveragePercent(rule.getCoveragePercent())
                 .effectiveCoveragePercent(rule.getEffectiveCoveragePercent())
-                .amountLimit(rule.getAmountLimit())
                 .timesLimit(rule.getTimesLimit())
                 .waitingPeriodDays(rule.getWaitingPeriodDays())
                 .requiresPreApproval(rule.isRequiresPreApproval())
@@ -85,10 +87,12 @@ public class BenefitPolicyRuleResponseDto {
         if (rule.isCategoryRule()) {
             builder.ruleType("CATEGORY");
             if (rule.getMedicalCategoryRef() != null) {
-                String code = rule.getMedicalCategoryRef().getCode();
-                builder.medicalCategory(code)
-                       .medicalCategoryCode(code); 
+                builder.medicalCategoryId(rule.getMedicalCategoryRef().getId())
+                       .medicalCategoryCode(rule.getMedicalCategoryRef().getCode())
+                       .medicalCategoryName(rule.getMedicalCategoryRef().getName())
+                       .medicalCategory(rule.getMedicalCategoryRef().getCode());
             } else {
+                // Legacy fallback: category stored as string code
                 builder.medicalCategory(rule.getMedicalCategory())
                        .medicalCategoryCode(rule.getMedicalCategory());
             }
@@ -98,14 +102,12 @@ public class BenefitPolicyRuleResponseDto {
                 builder.medicalServiceId(rule.getMedicalService().getId())
                        .medicalServiceCode(rule.getMedicalService().getCode())
                        .medicalServiceNameAr(rule.getMedicalService().getName())
-                       .medicalServiceNameEn(rule.getMedicalService().getNameEn())
-                       .medicalCategory(rule.getMedicalService().getCategoryName());
-            }
-        } else if (rule.isPackageRule()) {
-            builder.ruleType("PACKAGE");
-            if (rule.getMedicalPackage() != null) {
-                builder.medicalPackageId(rule.getMedicalPackage().getId())
-                       .medicalPackageName(rule.getMedicalPackage().getName());
+                       .medicalServiceNameEn(rule.getMedicalService().getNameEn());
+                // Also populate category from service's primary category
+                if (rule.getMedicalService().getCategory() != null) {
+                    builder.medicalCategoryCode(rule.getMedicalService().getCategory().getCode())
+                           .medicalCategoryName(rule.getMedicalService().getCategory().getName());
+                }
             }
         }
 

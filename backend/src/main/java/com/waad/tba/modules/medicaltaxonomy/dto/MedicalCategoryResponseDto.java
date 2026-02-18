@@ -23,6 +23,7 @@ public class MedicalCategoryResponseDto {
     private Long parentId;
     private String parentName; // For UX - display parent category name
     private boolean active;
+    private Integer serviceCount; // Number of associated medical services
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

@@ -64,9 +64,8 @@ public class MedicalServiceLookupService {
 
     @Transactional(readOnly = true)
     public List<MedicalServiceResponseDto> lookupServices(String query, Long categoryId) {
-        // Use existing filter method with a small page size for autocomplete
-        // We filter by active=true and isMaster=true (Unified Dictionary)
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20, org.springframework.data.domain.Sort.by("code"));
+        // Use existing filter method — increased page size to 500 to show all services in autocomplete
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 500, org.springframework.data.domain.Sort.by("code"));
         return serviceRepository.findAllByFilters(true, true, categoryId, query, pageable)
                 .map(this::mapToDto)
                 .getContent();

@@ -47,8 +47,8 @@ public class MedicalServiceLookupService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MedicalServiceResponseDto> getServices(Boolean active, Boolean isMaster, String searchTerm, Pageable pageable) {
-        Page<MedicalService> services = serviceRepository.findAllByFilters(active, isMaster, searchTerm, pageable);
+    public Page<MedicalServiceResponseDto> getServices(Boolean active, Boolean isMaster, Long categoryId, String searchTerm, Pageable pageable) {
+        Page<MedicalService> services = serviceRepository.findAllByFilters(active, isMaster, categoryId, searchTerm, pageable);
         return services.map(this::mapToDto);
     }
 
@@ -60,6 +60,16 @@ public class MedicalServiceLookupService {
     @Transactional(readOnly = true)
     public Optional<MedicalServiceResponseDto> getServiceById(Long id) {
         return serviceRepository.findById(id).map(this::mapToDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicalServiceResponseDto> lookupServices(String query, Long categoryId) {
+        // Use existing filter method with a small page size for autocomplete
+        // We filter by active=true and isMaster=true (Unified Dictionary)
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20, org.springframework.data.domain.Sort.by("code"));
+        return serviceRepository.findAllByFilters(true, true, categoryId, query, pageable)
+                .map(this::mapToDto)
+                .getContent();
     }
 
     @Transactional(readOnly = true)

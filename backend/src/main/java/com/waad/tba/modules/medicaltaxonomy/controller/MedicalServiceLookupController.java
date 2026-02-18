@@ -15,6 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/medical-services")
 @Tag(name = "Medical Service Lookup", description = "Endpoints for looking up medical services from the enterprise dictionary")
@@ -31,10 +33,13 @@ public class MedicalServiceLookupController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Boolean isMaster) {
         
+        log.info("Medical Service Search: term='{}', categoryId={}, isMaster={}", searchTerm, categoryId, isMaster);
+        
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("code").ascending());
-        Page<MedicalServiceResponseDto> services = lookupService.getServices(true, isMaster, searchTerm, pageRequest);
+        Page<MedicalServiceResponseDto> services = lookupService.getServices(true, isMaster, categoryId, searchTerm, pageRequest);
 
         return ResponseEntity.ok(ApiResponse.success(services));
     }
@@ -46,11 +51,19 @@ public class MedicalServiceLookupController {
     }
 
     @GetMapping("/lookup")
-    @Operation(summary = "Lookup service by code", description = "Returns detail for a specific medical service")
-    public ResponseEntity<ApiResponse<MedicalServiceResponseDto>> lookupService(@RequestParam String code) {
-        return lookupService.getServiceByCode(code)
-                .map(s -> ResponseEntity.ok(ApiResponse.success(s)))
-                .orElse(ResponseEntity.notFound().build());
+    @Operation(summary = "Lookup services", description = "Returns list of services matching code or name")
+    public ResponseEntity<ApiResponse<List<MedicalServiceResponseDto>>> lookupServices(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) Long categoryId) {
+            
+        if (code != null && !code.isEmpty()) {
+            return lookupService.getServiceByCode(code)
+                    .map(s -> ResponseEntity.ok(ApiResponse.success(List.of(s))))
+                    .orElse(ResponseEntity.ok(ApiResponse.success(List.of())));
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(lookupService.lookupServices(q, categoryId)));
     }
 
     @GetMapping("/{id}")

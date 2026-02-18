@@ -274,6 +274,7 @@ const MedicalServiceSelector = ({
         placeholder={placeholder}
         required={required}
         error={error}
+        helperText={helperText || LABELS.searchHelper}
         size={size}
         InputProps={{
           ...params.InputProps,

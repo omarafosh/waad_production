@@ -27,13 +27,13 @@ public interface MedicalPackageRepository extends JpaRepository<MedicalPackage, 
     
     @Query("SELECT mp FROM MedicalPackage mp WHERE " +
            "(:search IS NULL OR :search = '' OR " +
-           "LOWER(mp.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(mp.code) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "LOWER(CAST(mp.name AS string)) LIKE LOWER(CAST(CONCAT('%', :search, '%') AS string)) OR " +
+           "LOWER(CAST(mp.code AS string)) LIKE LOWER(CAST(CONCAT('%', :search, '%') AS string)))")
     Page<MedicalPackage> findAllWithSearch(@Param("search") String search, Pageable pageable);
     
     @Query("SELECT mp FROM MedicalPackage mp WHERE " +
-           "LOWER(mp.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(mp.code) LIKE LOWER(CONCAT('%', :query, '%'))")
+           "LOWER(CAST(mp.name AS string)) LIKE LOWER(CAST(CONCAT('%', :query, '%') AS string)) OR " +
+           "LOWER(CAST(mp.code AS string)) LIKE LOWER(CAST(CONCAT('%', :query, '%') AS string))")
     List<MedicalPackage> search(@Param("query") String query);
 
     @Query("SELECT mp FROM MedicalPackage mp JOIN mp.services s WHERE s.id = :serviceId AND mp.active = true")

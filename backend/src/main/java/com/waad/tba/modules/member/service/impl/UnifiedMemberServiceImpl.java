@@ -168,9 +168,10 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
         dependent.setBenefitPolicy(principal.getBenefitPolicy());
         dependent.setPolicyNumber(principal.getPolicyNumber());
         dependent.setCardNumber(cardNumberGenerator.generateSmartCardNumber(dependent));
-        dependent.setBarcode(barcodeGenerator.generateFromCardNumber(dependent));
+        // REMOVED: Barcode is forbidden for dependents
         dependent = memberRepository.save(dependent);
-        logWorkflowHistory(dependent, null, dependent.getStatus().name(), "Initial Creation (Dependent)");
+        String statusName = (dependent.getStatus() != null) ? dependent.getStatus().name() : "ACTIVE";
+        logWorkflowHistory(dependent, null, statusName, "Initial Creation (Dependent)");
         return dependent;
     }
 

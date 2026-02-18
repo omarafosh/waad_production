@@ -152,7 +152,7 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
      */
     @Query("""
         SELECT ms FROM MedicalService ms
-        WHERE LOWER(ms.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+        WHERE LOWER(CAST(ms.name AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))
     """)
     List<MedicalService> searchByName(@Param("searchTerm") String searchTerm);
 
@@ -161,14 +161,14 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
      */
     @Query("""
         SELECT ms FROM MedicalService ms
-        WHERE LOWER(ms.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+        WHERE LOWER(CAST(ms.name AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))
     """)
     Page<MedicalService> searchByName(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     @Query("""
         SELECT ms FROM MedicalService ms
         WHERE (:searchTerm IS NULL 
-            OR LOWER(ms.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+            OR LOWER(CAST(ms.name AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string)))
           AND (:categoryId IS NULL OR ms.categoryId = :categoryId)
           AND (:minPrice IS NULL OR ms.basePrice >= :minPrice)
           AND (:maxPrice IS NULL OR ms.basePrice <= :maxPrice)
@@ -259,22 +259,25 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
         LEFT JOIN FETCH ms.category
         WHERE (:active IS NULL OR ms.active = :active)
           AND (:isMaster IS NULL OR ms.isMaster = :isMaster)
+          AND (:categoryId IS NULL OR ms.categoryId = :categoryId)
           AND (:searchTerm IS NULL OR :searchTerm = '' 
-               OR LOWER(ms.code) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-               OR LOWER(ms.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-               OR LOWER(ms.nameEn) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+               OR (LOWER(CAST(ms.code AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))
+               OR LOWER(CAST(ms.name AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))
+               OR LOWER(CAST(ms.nameEn AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))))
     """, countQuery = """
         SELECT COUNT(ms) FROM MedicalService ms
         WHERE (:active IS NULL OR ms.active = :active)
           AND (:isMaster IS NULL OR ms.isMaster = :isMaster)
+          AND (:categoryId IS NULL OR ms.categoryId = :categoryId)
           AND (:searchTerm IS NULL OR :searchTerm = '' 
-               OR LOWER(ms.code) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-               OR LOWER(ms.name) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-               OR LOWER(ms.nameEn) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+               OR (LOWER(CAST(ms.code AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))
+               OR LOWER(CAST(ms.name AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))
+               OR LOWER(CAST(ms.nameEn AS string)) LIKE LOWER(CAST(CONCAT('%', :searchTerm, '%') AS string))))
     """)
     Page<MedicalService> findAllByFilters(
         @Param("active") Boolean active, 
         @Param("isMaster") Boolean isMaster, 
+        @Param("categoryId") Long categoryId,
         @Param("searchTerm") String searchTerm,
         Pageable pageable
     );
@@ -313,9 +316,9 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
         LEFT JOIN medical_categories mc ON ms.category_id = mc.id
         WHERE ms.active = true
           AND (:query IS NULL OR :query = '' 
-               OR LOWER(ms.code) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(ms.name_ar) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(mc.name) LIKE LOWER(CONCAT('%', :query, '%')))
+               OR LOWER(CAST(ms.code AS text)) LIKE LOWER(CAST(CONCAT('%', :query, '%') AS text))
+               OR LOWER(CAST(ms.name_ar AS text)) LIKE LOWER(CAST(CONCAT('%', :query, '%') AS text))
+               OR LOWER(CAST(mc.name AS text)) LIKE LOWER(CAST(CONCAT('%', :query, '%') AS text)))
           AND (:categoryId IS NULL OR ms.category_id = :categoryId)
         ORDER BY COALESCE(mc.name, 'zzz'), ms.name
         """, nativeQuery = true)

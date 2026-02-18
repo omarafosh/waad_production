@@ -41,6 +41,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@lombok.ToString(exclude = {"benefitPolicy", "medicalCategoryRef"})
+@lombok.EqualsAndHashCode(exclude = {"benefitPolicy", "medicalCategoryRef"})
 public class BenefitPolicyRule {
 
     @Id
@@ -53,10 +55,23 @@ public class BenefitPolicyRule {
     private BenefitPolicy benefitPolicy;
 
     /**
-     * Target Medical Category (String-based in Unified Dictionary - Legacy)
+     * Category Code (String) - Transient helper, not a DB column
+     * REFACTORED 2026-02-18: This column does NOT exist in DB V04.
+     * We use it as a transient property that delegates to medicalCategoryRef.
      */
-    @Column(name = "medical_category", length = 100)
+    @Transient
     private String medicalCategory;
+
+    public String getMedicalCategory() {
+        if (medicalCategoryRef != null) {
+            return medicalCategoryRef.getCode();
+        }
+        return medicalCategory;
+    }
+
+    public void setMedicalCategory(String medicalCategory) {
+        this.medicalCategory = medicalCategory;
+    }
 
     /**
      * Target Medical Category (FK-based - REFACTORED 2026-02-18)
@@ -224,10 +239,13 @@ public class BenefitPolicyRule {
         if (medicalPackage != null) {
             return medicalPackage.getName();
         }
+        if (medicalCategoryRef != null) {
+            return medicalCategoryRef.getName();
+        }
         if (medicalCategory != null && !medicalCategory.isBlank()) {
             return medicalCategory;
         }
-        return "Rule #" + id;
+        return "Rule #" + (id != null ? id : "NEW");
     }
 
     /**

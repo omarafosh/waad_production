@@ -31,6 +31,7 @@ public class BenefitPolicyRuleResponseDto {
     
     // Category info (String-based in Unified Dictionary)
     private String medicalCategory;
+    private String medicalCategoryCode;
     
     // Service info (UUID-based in Unified Dictionary)
     private Long medicalServiceId;
@@ -83,7 +84,14 @@ public class BenefitPolicyRuleResponseDto {
 
         if (rule.isCategoryRule()) {
             builder.ruleType("CATEGORY");
-            builder.medicalCategory(rule.getMedicalCategory());
+            if (rule.getMedicalCategoryRef() != null) {
+                String code = rule.getMedicalCategoryRef().getCode();
+                builder.medicalCategory(code)
+                       .medicalCategoryCode(code); 
+            } else {
+                builder.medicalCategory(rule.getMedicalCategory())
+                       .medicalCategoryCode(rule.getMedicalCategory());
+            }
         } else if (rule.isServiceRule()) {
             builder.ruleType("SERVICE");
             if (rule.getMedicalService() != null) {

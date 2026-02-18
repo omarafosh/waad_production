@@ -262,33 +262,34 @@ const MedicalCatalogList = () => {
     // ========================================
     // STYLES
     // ========================================
-    const headerButtonStyle = (type) => {
+    const headerButtonStyle = (type, theme) => {
         const isExcel = type === 'excel';
         const isDelete = type === 'delete';
         const isAdd = type === 'add';
-        const brandColor = '#008e92';
-        const color = isExcel ? '#1b5e20' : (isDelete ? '#d32f2f' : brandColor);
+        const isWizard = type === 'wizard';
+        const color = isExcel ? theme.palette.success.main : (isDelete ? theme.palette.error.main : theme.palette.primary.main);
 
         return {
-            minWidth: '155px',
-            color: color || '#fff',
+            minWidth: '140px',
+            color: color,
             borderColor: color,
             '&:hover': {
-                backgroundColor: color ? `${color}10` : undefined,
+                backgroundColor: `${color}10`,
                 borderColor: color,
                 color: isDelete && showDeleted ? '#fff' : color
             },
             '&.MuiButton-contained': {
                 color: '#fff',
-                backgroundColor: isAdd ? brandColor : undefined,
+                backgroundColor: color,
                 '&:hover': {
-                    backgroundColor: isAdd ? '#00797c' : undefined
+                    backgroundColor: isAdd || isWizard ? theme.palette.primary.dark : theme.palette.success.dark
                 }
             },
-            fontWeight: 700,
+            fontWeight: theme.typography.button.fontWeight,
+            fontSize: theme.typography.button.fontSize,
             whiteSpace: 'nowrap',
-            px: 1.5,
-            height: '40px'
+            px: 2,
+            height: '38px'
         };
     };
 
@@ -351,7 +352,7 @@ const MedicalCatalogList = () => {
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="روابط المزودين">
-                            <IconButton size="small" sx={{ color: '#008e92' }} onClick={() => handleViewMappings(row.original.id)}>
+                            <IconButton size="small" color="primary" onClick={() => handleViewMappings(row.original.id)}>
                                 <AccountTreeIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -409,7 +410,7 @@ const MedicalCatalogList = () => {
                                 variant="contained"
                                 startIcon={<AutoFixHighIcon />}
                                 onClick={handleOpenWizard}
-                                sx={{ bgcolor: '#008e92', '&:hover': { bgcolor: '#007a7e' }, fontWeight: 'bold' }}
+                                sx={(theme) => headerButtonStyle('wizard', theme)}
                             >
                                 معالج الربط الذكي
                             </Button>
@@ -417,20 +418,26 @@ const MedicalCatalogList = () => {
                             {/* View/Action Group */}
                             <Button
                                 variant={showDeleted ? 'contained' : 'outlined'}
-                                color="error"
                                 startIcon={showDeleted ? <VisibilityIcon /> : <DeleteIcon />}
                                 onClick={() => setShowDeleted(!showDeleted)}
-                                sx={{ fontWeight: 'bold' }}
+                                sx={(theme) => ({
+                                    ...headerButtonStyle('delete', theme),
+                                    backgroundColor: showDeleted ? theme.palette.error.main : 'transparent',
+                                    color: showDeleted ? theme.palette.error.contrastText : theme.palette.error.main,
+                                    '&:hover': {
+                                        backgroundColor: showDeleted ? theme.palette.error.dark : `${theme.palette.error.main}10`,
+                                        color: showDeleted ? theme.palette.error.contrastText : theme.palette.error.main,
+                                    }
+                                })}
                             >
                                 {showDeleted ? 'العودة للقائمة النشطة' : 'المحذوفات'}
                             </Button>
 
                             <Button
                                 variant="contained"
-                                color="primary"
                                 startIcon={<AddIcon />}
                                 onClick={() => navigate('/medical-catalog/create')}
-                                sx={{ fontWeight: 'bold', px: 3 }}
+                                sx={(theme) => headerButtonStyle('add', theme)}
                             >
                                 إضافة خدمة جديدة
                             </Button>

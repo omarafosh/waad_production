@@ -26,7 +26,7 @@ export default function LogoMain({ reverse }) {
 
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
-      {logoUrl ? (
+      {(logoUrl || waadLogoFallback) ? (
         <Box
           component="img"
           src={logoSrc}
@@ -35,6 +35,10 @@ export default function LogoMain({ reverse }) {
             height: 40,
             width: 'auto',
             objectFit: 'contain'
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
           }}
         />
       ) : (

@@ -25,6 +25,7 @@ export const SystemSettingsProvider = ({ children }) => {
         systemName: settings?.systemName || 'Top Doctors TPA',
         systemCode: settings?.systemCode || 'TOP_DOCS',
         logoUrl: settings?.logoUrl,
+        businessType: settings?.businessType,
         currency: settings?.currency || 'LYD',
         primaryColor: settings?.primaryColor || '#1890ff',
         fontFamily: settings?.fontFamily || 'Cairo'

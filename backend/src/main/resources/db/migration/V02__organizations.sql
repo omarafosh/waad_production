@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS settings (
     system_code VARCHAR(50) UNIQUE NOT NULL,    -- كود المنظومة
     logo_url TEXT,                              -- رابط الشعار
     favicon_url TEXT,                           -- رابط أيقونة المتصفح
+    business_type VARCHAR(100),
     
     -- بيانات التواصل الأساسية للمنظومة
     phone VARCHAR(50),

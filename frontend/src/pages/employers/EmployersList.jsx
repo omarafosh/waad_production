@@ -129,38 +129,31 @@ const EmployersList = () => {
   });
 
   // Common Header Button Style matching UnifiedMembersList
-
-  // Common Header Button Style matching UnifiedMembersList
-  const headerButtonStyle = (type) => {
+  const headerButtonStyle = (type, theme) => {
     const isExcel = type === 'excel';
-    const isDelete = type === 'delete';
     const isAdd = type === 'add';
-    const brandColor = '#008e92';
-    const color = isExcel ? '#1b5e20' : (isDelete ? '#d32f2f' : brandColor);
+    const color = isExcel ? theme.palette.success.main : theme.palette.primary.main;
 
     return {
-      minWidth: isExcel ? '135px' : '155px',
-      color: color || '#fff',
+      minWidth: '140px',
+      color: color,
       borderColor: color,
       '&:hover': {
-        backgroundColor: color ? `${color}10` : undefined,
-        borderColor: color,
-        color: isDelete && showArchived ? '#fff' : color
+        backgroundColor: `${color}10`,
+        borderColor: color
       },
       '&.MuiButton-contained': {
         color: '#fff',
-        backgroundColor: isAdd ? brandColor : undefined,
+        backgroundColor: color,
         '&:hover': {
-          backgroundColor: isAdd ? '#00797c' : undefined
+          backgroundColor: isAdd ? theme.palette.primary.dark : theme.palette.success.dark
         }
       },
-      '& .MuiButton-startIcon': {
-        margin: 0
-      },
-      fontWeight: 700,
+      fontWeight: theme.typography.button.fontWeight,
+      fontSize: theme.typography.button.fontSize,
       whiteSpace: 'nowrap',
-      px: 1.5,
-      height: '40px'
+      px: 2,
+      height: '38px'
     };
   };
 
@@ -701,15 +694,15 @@ const EmployersList = () => {
                 variant={showArchived ? "contained" : "outlined"}
                 startIcon={showArchived ? <VisibilityIcon /> : <DeleteIcon />}
                 onClick={toggleShowArchived}
-                sx={{
-                  ...headerButtonStyle('delete'),
-                  backgroundColor: showArchived ? '#d32f2f' : 'transparent',
-                  color: showArchived ? '#fff' : '#d32f2f',
+                sx={(theme) => ({
+                  ...headerButtonStyle('delete', theme),
+                  backgroundColor: showArchived ? theme.palette.error.main : 'transparent',
+                  color: showArchived ? theme.palette.error.contrastText : theme.palette.error.main,
                   '&:hover': {
-                    backgroundColor: showArchived ? '#b71c1c' : '#d32f2f10',
-                    color: showArchived ? '#fff' : '#d32f2f',
+                    backgroundColor: showArchived ? theme.palette.error.dark : `${theme.palette.error.main}10`,
+                    color: showArchived ? theme.palette.error.contrastText : theme.palette.error.main,
                   }
-                }}
+                })}
               >
                 {showArchived ? 'العودة للقائمة النشطة' : 'المحذوفات'}
               </Button>
@@ -720,7 +713,7 @@ const EmployersList = () => {
                 variant="outlined"
                 startIcon={<FileDownloadIcon />}
                 onClick={handleExport}
-                sx={headerButtonStyle('excel')}
+                sx={(theme) => headerButtonStyle('excel', theme)}
               >
                 تصدير لإكسل
               </Button>
@@ -729,10 +722,9 @@ const EmployersList = () => {
             <RBACGuard requiredPermissions={[PERMISSIONS.EMPLOYER_CREATE]}>
               <Button
                 variant="contained"
-                color="success"
                 startIcon={<AddIcon />}
                 onClick={() => handleOpenForm()}
-                sx={headerButtonStyle('add')}
+                sx={(theme) => headerButtonStyle('add', theme)}
               >
                 إضافة جهة عمل
               </Button>

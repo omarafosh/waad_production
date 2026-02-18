@@ -26,13 +26,15 @@ public class CardNumberGeneratorServiceImpl implements CardNumberGeneratorServic
 
     private final MemberRepository memberRepository;
     private final SystemSettingRepository systemSettingRepository;
+    private final com.waad.tba.modules.company.repository.SettingRepository settingRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Override
     @Transactional
     public String generateSmartCardNumber(Member member) {
-        String format = systemSettingRepository.findBySettingKey("CARD_NUMBER_FORMAT")
-                .map(com.waad.tba.common.entity.SystemSetting::getSettingValue)
-                .orElse("[PRO]-[YEAR]-[EMP_NO][REL_SUFFIX]");
+        String format = settingRepository.findById(1L)
+                .map(com.waad.tba.modules.company.entity.Setting::getCardNumberFormat)
+                .orElse("[PRO]-[YEAR]-[MP_NO][REL_SUFFIX]");
 
         String providerCode = determineProviderCode(member);
         String companyCode = determineCompanyCode(member);
@@ -45,6 +47,7 @@ public class CardNumberGeneratorServiceImpl implements CardNumberGeneratorServic
                 .replace("[COMP]", companyCode)
                 .replace("[YEAR]", year)
                 .replace("[EMP_NO]", idPart)
+                .replace("[MP_NO]", idPart)
                 .replace("[REL_SUFFIX]", relSuffix)
                 .replace("--", "-");
 
@@ -74,6 +77,20 @@ public class CardNumberGeneratorServiceImpl implements CardNumberGeneratorServic
     @Override
     public String getRelationshipCode(Member.Relationship relationship) {
         if (relationship == null) return "X";
+        
+        try {
+            String json = settingRepository.findById(1L)
+                    .map(com.waad.tba.modules.company.entity.Setting::getDependentSuffixes)
+                    .orElse("{}");
+            
+            java.util.Map<String, String> suffixMap = objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, String>>() {});
+            String code = suffixMap.get(relationship.name());
+            if (code != null) return code;
+        } catch (Exception e) {
+            log.error("❌ Error parsing dependent suffixes: {}", e.getMessage());
+        }
+
+        // Fallback to defaults if parsing fails or code not found
         return switch (relationship) {
             case WIFE -> "W";
             case HUSBAND -> "H";
@@ -82,7 +99,7 @@ public class CardNumberGeneratorServiceImpl implements CardNumberGeneratorServic
             case FATHER -> "F";
             case MOTHER -> "M";
             case BROTHER -> "B";
-            case SISTER -> "I"; // Assuming 'I' or similar for Sister, or default to O if not standard
+            case SISTER -> "I";
             default -> "O";
         };
     }

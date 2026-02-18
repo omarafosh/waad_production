@@ -22,15 +22,15 @@ public class SettingService {
      * Get system settings (ID: 1)
      * If not exists, return null or handle accordingly.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public SettingDto getSettings() {
         log.info("Fetching global system settings");
         
-        // Strategy: In single-tenant mode, we take the first available record
+        // Resilience Strategy: Return first record or initialize if table is empty
         return settingRepository.findAll().stream()
                 .findFirst()
                 .map(settingMapper::toDto)
-                .orElseThrow(() -> new ResourceNotFoundException("Global settings not found. System configuration missing."));
+                .orElseGet(this::initializeDefaultSettings);
     }
 
     /**
@@ -40,7 +40,9 @@ public class SettingService {
     public SettingDto updateSettings(SettingDto dto, String updatedBy) {
         log.info("Updating global system settings by {}", updatedBy);
 
-        Setting setting = settingRepository.findById(1L)
+        // Resilience Strategy: Find first available or throw if absolutely none
+        Setting setting = settingRepository.findAll().stream()
+                .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Global settings not found. Cannot update."));
 
         settingMapper.updateEntityFromDto(dto, setting);
@@ -62,8 +64,11 @@ public class SettingService {
             Setting defaultSetting = Setting.builder()
                     .systemName("Top Doctors TPA")
                     .systemCode("TOP_DOCS")
+                    .businessType("Health Insurance")
                     .currency("LYD")
                     .barcodePrefix("TD")
+                    .cardNumberFormat("[MP_NO]-[YEAR]-[PRO]")
+                    .dependentSuffixes("{\"WIFE\":\"W\",\"HUSBAND\":\"H\",\"SON\":\"S\",\"DAUGHTER\":\"D\",\"FATHER\":\"F\",\"MOTHER\":\"M\",\"BROTHER\":\"B\",\"SISTER\":\"I\"}")
                     .claimSlaDays(10)
                     .preApprovalSlaDays(3)
                     .primaryColor("#1890ff")

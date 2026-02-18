@@ -37,6 +37,9 @@ public class Setting {
     @Column(name = "system_code", nullable = false, unique = true, length = 50)
     private String systemCode;
 
+    @Column(name = "business_type", length = 100)
+    private String businessType;
+
     // ============================================================================
     // BRANDING & IDENTITY FIELDS
     // ============================================================================
@@ -85,6 +88,10 @@ public class Setting {
     @Builder.Default
     private String fontFamily = "Tajawal";
 
+    @Column(name = "font_size")
+    @Builder.Default
+    private Double fontSize = 12.0;
+
     @Column(name = "date_calendar", length = 20)
     @Builder.Default
     private String dateCalendar = "gregory";
@@ -92,6 +99,14 @@ public class Setting {
     @Column(name = "barcode_prefix", length = 20)
     @Builder.Default
     private String barcodePrefix = "WAAD";
+
+    @Column(name = "card_number_format", length = 100)
+    @Builder.Default
+    private String cardNumberFormat = "[PRO]-[YEAR]-[MP_NO][REL_SUFFIX]";
+
+    @Column(name = "dependent_suffixes", columnDefinition = "TEXT")
+    @Builder.Default
+    private String dependentSuffixes = "{\"WIFE\":\"W\",\"HUSBAND\":\"H\",\"SON\":\"S\",\"DAUGHTER\":\"D\",\"FATHER\":\"F\",\"MOTHER\":\"M\",\"BROTHER\":\"B\",\"SISTER\":\"I\"}";
 
     // ============================================================================
     // AUDIT FIELDS

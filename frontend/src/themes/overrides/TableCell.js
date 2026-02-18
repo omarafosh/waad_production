@@ -25,10 +25,10 @@ export default function TableCell(theme) {
       styleOverrides: {
         root: ({ ownerState }) => {
           const baseStyle = {
-            fontSize: theme.typography.body2.fontSize, // Dynamic scaling per user config
-            padding: 16, // increased from 12px for better spacing
+            fontSize: theme.typography.body1.fontSize, // L2 Content (1rem)
+            padding: 16,
             borderColor: varsPalette.divider ?? theme.palette.divider,
-            lineHeight: 1.6 // improved line height for Arabic text
+            lineHeight: 1.7 // Unified line height
           };
 
           const align = ownerState.align;
@@ -67,8 +67,8 @@ export default function TableCell(theme) {
           fontSize: theme.typography.body2.fontSize
         },
         head: {
-          fontWeight: 700,
-          fontSize: theme.typography.body2.fontSize,
+          fontWeight: theme.typography.subtitle1.fontWeight, // L2-b: Bold
+          fontSize: theme.typography.subtitle1.fontSize, // L2: 1rem
           ...commonCell
         },
         footer: { ...commonCell }

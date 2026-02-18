@@ -12,13 +12,21 @@ import { Link as RouterLink } from 'react-router-dom';
  * - A React component (e.g., PeopleAltIcon) - will be rendered as <Icon sx={...} />
  * - A JSX element (e.g., <LocalHospitalIcon />) - will be cloned with sx props
  */
-const ModernPageHeader = ({ title, subtitle, breadcrumbs = [], actions, statusChip, icon, children, sx = {} }) => {
+const ModernPageHeader = ({ title, subtitle, breadcrumbs = [], actions, statusChip, icon, noIconBox, children, sx = {} }) => {
   // ... existing code ...
   // Render icon - handles both ComponentType and JSX Element
   const renderIcon = () => {
     if (!icon) return null;
 
-    const iconSx = { fontSize: '1.5rem' };
+    const iconSx = { fontSize: '2rem' };
+
+    if (noIconBox) {
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.main', mr: 1 }}>
+          {isValidElement(icon) ? icon : <Box component={icon} sx={iconSx} />}
+        </Box>
+      );
+    }
 
     // If icon is a JSX element (e.g., <LocalHospitalIcon />), clone it with sx
     if (isValidElement(icon)) {

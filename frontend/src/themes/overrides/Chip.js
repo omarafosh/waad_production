@@ -53,8 +53,9 @@ export default function Chip(theme) {
           '&.MuiChip-colorWarning': getColor({ color: 'warning', theme })
         },
         sizeSmall: {
-          fontSize: '1rem',
-          height: 28
+          fontSize: '0.8125rem', // Matches subtitle2/caption
+          height: 24, // reduced for consistent button-like chips
+          fontWeight: 600
         },
         sizeLarge: {
           fontSize: theme.typography.body1.fontSize,

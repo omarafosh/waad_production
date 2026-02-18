@@ -41,7 +41,7 @@ import waadLogoFallback from 'assets/images/waad-logo.png';
 export default function HeaderContent() {
   const { state } = useConfig();
   const { user } = useAuth();
-  const { systemName, logoUrl } = useSystemSettings(); // Destructure new fields
+  const { systemName, logoUrl, businessType } = useSystemSettings(); // Destructure new fields
   const { pathname } = useLocation();// Force HMR Update
 
   const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));
@@ -177,33 +177,37 @@ export default function HeaderContent() {
               />
             ) : null}
 
-            {/* Fallback initials avatar */}
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                width: 32,
-                height: 32,
-                fontSize: '1rem',
-                display: logoUrl ? 'none' : 'flex'
-              }}
-            >
-              {systemName ? systemName.charAt(0).toUpperCase() : 'S'}
-            </Avatar>
+            {/* Show initials avatar only IF no logo (custom or fallback) is available */}
+            {!(logoUrl || waadLogoFallback) && (
+              <Avatar
+                sx={{
+                  bgcolor: 'primary.main',
+                  width: 32,
+                  height: 32,
+                  fontSize: '1rem'
+                }}
+              >
+                {systemName ? systemName.charAt(0).toUpperCase() : 'S'}
+              </Avatar>
+            )}
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography
                 variant="subtitle2"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 600,
                   lineHeight: 1.1,
                   color: 'primary.main',
-                  fontSize: '1rem',
+                  fontSize: '0.95rem',
                   whiteSpace: 'nowrap'
                 }}
               >
                 {displayName}
               </Typography>
-
-
+              {businessType && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.85rem', lineHeight: 1, mt: 0.2 }}>
+                  {businessType || settings?.businessType || 'Health Insurance'}
+                </Typography>
+              )}
             </Box>
 
 

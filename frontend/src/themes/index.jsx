@@ -24,12 +24,14 @@ export default function ThemeCustomization({ children }) {
   // Get Company Settings to access primaryColor
   const { settings } = useSystemSettings(); // Changed
 
-  // Prioritize local user preference (state), then company settings, then default
-  const fontFamily = state.fontFamily || settings?.fontFamily;
-  const fontSize = state.fontSize || settings?.fontSize || 12;
+  // BRANDING STRATEGY (2026-02-18): 
+  // Prioritize system-wide settings (from database) over local session config.
+  // This ensures branding changes are visible to all users immediately.
+  const fontFamily = settings?.fontFamily || state.fontFamily;
+  const fontSize = settings?.fontSize || state.fontSize || 12;
 
-  // Use company primary color if available
-  const primaryColor = settings?.primaryColor;
+  // Use company primary color if available, fallback to preset
+  const primaryColor = settings?.primaryColor || null;
 
   // Apply Font and Scaling to document root for global rem consistency
   useMemo(() => {

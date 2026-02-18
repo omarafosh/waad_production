@@ -1,4 +1,3 @@
-```javascript
 // material-ui
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
@@ -21,18 +20,22 @@ const LogoIcon = () => {
   // Get Company Settings (Logo)
   const { logoUrl, systemName, primaryColor } = useSystemSettings();
 
-  // Return Logo if available
-  if (logoUrl) {
+  // Return Logo if available (custom or fallback)
+  if (logoUrl || waadLogoFallback) {
     return (
-      <Box 
+      <Box
         component="img"
-        src={logoUrl}
+        src={logoUrl || waadLogoFallback}
         alt={systemName || 'System Logo'}
-        sx={{ 
+        sx={{
           width: 40,
           height: 'auto',
           maxHeight: 40,
           objectFit: 'contain'
+        }}
+        onError={(e) => {
+          e.target.style.display = 'none';
+          if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
         }}
       />
     );
@@ -40,8 +43,8 @@ const LogoIcon = () => {
 
   // Fallback: Initials avatar
   return (
-    <Avatar 
-      sx={{ 
+    <Avatar
+      sx={{
         bgcolor: primaryColor || '#1976d2',
         width: 40,
         height: 40,
@@ -55,4 +58,3 @@ const LogoIcon = () => {
 };
 
 export default LogoIcon;
-```

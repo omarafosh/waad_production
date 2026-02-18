@@ -122,22 +122,24 @@ const ProviderContractsList = () => {
     tableState.clearFilters();
   };
 
-  const headerButtonStyle = (type) => {
+  const headerButtonStyle = (type, theme) => {
     const isAdd = type === 'add';
-    const brandColor = '#008e92';
-    const color = brandColor;
+    const color = theme.palette.primary.main;
 
     return {
-      minWidth: '155px',
+      minWidth: '140px',
       color: isAdd ? '#fff' : color,
       borderColor: color,
-      backgroundColor: isAdd ? brandColor : 'transparent',
+      backgroundColor: isAdd ? color : 'transparent',
       '&:hover': {
-        backgroundColor: isAdd ? '#00797c' : `${color}10`,
-        borderColor: isAdd ? '#00797c' : color,
+        backgroundColor: isAdd ? theme.palette.primary.dark : `${color}10`,
+        borderColor: isAdd ? theme.palette.primary.dark : color,
       },
-      fontWeight: 700,
-      height: '40px'
+      fontWeight: theme.typography.button.fontWeight,
+      fontSize: theme.typography.button.fontSize,
+      whiteSpace: 'nowrap',
+      px: 2,
+      height: '38px'
     };
   };
 
@@ -270,7 +272,7 @@ const ProviderContractsList = () => {
             <Tooltip title="عرض التفاصيل">
               <IconButton
                 size="small"
-                sx={{ color: '#008e92' }}
+                color="primary"
                 onClick={(e) => { e.stopPropagation(); handleNavigateView(row.original?.id); }}
               >
                 <VisibilityIcon fontSize="small" />
@@ -280,7 +282,7 @@ const ProviderContractsList = () => {
               <Tooltip title="تعديل">
                 <IconButton
                   size="small"
-                  sx={{ color: '#008e92' }}
+                  color="primary"
                   onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original?.id); }}
                   disabled={row.original?.status === 'TERMINATED'}
                 >
@@ -313,7 +315,7 @@ const ProviderContractsList = () => {
                   variant="contained"
                   startIcon={<AddIcon />}
                   onClick={handleNavigateAdd}
-                  sx={headerButtonStyle('add')}
+                  sx={(theme) => headerButtonStyle('add', theme)}
                 >
                   إنشاء عقد جديد
                 </Button>

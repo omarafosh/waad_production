@@ -320,12 +320,12 @@ const ProvidersList = () => {
       cell: ({ row }) => (
         <Stack direction="row" spacing={0.5} justifyContent="center">
           <Tooltip title="عرض">
-            <IconButton size="small" sx={{ color: '#008e92' }} onClick={(e) => { e.stopPropagation(); handleNavigateView(row.original.id); }}>
+            <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleNavigateView(row.original.id); }}>
               <VisibilityIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="تعديل">
-            <IconButton size="small" sx={{ color: '#008e92' }} onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original.id); }}>
+            <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original.id); }}>
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -357,17 +357,26 @@ const ProvidersList = () => {
   const providers = data?.content || [];
   const totalCount = data?.totalElements || 0;
 
-  const headerButtonStyle = (type) => ({
-    minWidth: '150px',
-    borderRadius: '8px',
-    px: 2,
-    py: 0.8,
-    fontSize: '0.875rem',
-    fontWeight: 600,
-    boxShadow: 'none',
-    '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
-    ...(type === 'add' && { bgcolor: '#008e92', '&:hover': { bgcolor: '#007a7e' } })
-  });
+  const headerButtonStyle = (type, theme) => {
+    const isAdd = type === 'add';
+    const color = theme.palette.primary.main;
+
+    return {
+      minWidth: '140px',
+      color: isAdd ? '#fff' : color,
+      borderColor: color,
+      backgroundColor: isAdd ? color : 'transparent',
+      '&:hover': {
+        backgroundColor: isAdd ? theme.palette.primary.dark : `${color}10`,
+        borderColor: isAdd ? theme.palette.primary.dark : color
+      },
+      fontWeight: theme.typography.button.fontWeight,
+      fontSize: theme.typography.button.fontSize,
+      whiteSpace: 'nowrap',
+      px: 2,
+      height: '38px'
+    };
+  };
 
   return (
     <Box sx={{ height: 'calc(100vh - 130px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -378,10 +387,10 @@ const ProvidersList = () => {
         breadcrumbs={[{ label: 'الرئيسية', path: '/' }, { label: 'مقدمي الخدمات' }]}
         actions={
           <Stack direction="row" spacing={1}>
-            <Button variant="outlined" startIcon={<FileDownloadIcon />} sx={headerButtonStyle('export')}>تصدير</Button>
-            <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={headerButtonStyle('import')}>استيراد</Button>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} sx={(theme) => headerButtonStyle('export', theme)}>تصدير</Button>
+            <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={(theme) => headerButtonStyle('import', theme)}>استيراد</Button>
             <RBACGuard requiredPermissions={['providers.create']}>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={handleNavigateAdd} sx={headerButtonStyle('add')}>إضافة مزود</Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={handleNavigateAdd} sx={(theme) => headerButtonStyle('add', theme)}>إضافة مزود</Button>
             </RBACGuard>
           </Stack>
         }

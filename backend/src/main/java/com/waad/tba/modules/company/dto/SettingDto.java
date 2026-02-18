@@ -15,6 +15,7 @@ public class SettingDto {
     private Long id;
     private String systemName;
     private String systemCode;
+    private String businessType;
     private String logoUrl;
     private String faviconUrl;
     private String phone;
@@ -27,8 +28,11 @@ public class SettingDto {
     private Integer preApprovalSlaDays;
     private String primaryColor;
     private String fontFamily;
+    private Double fontSize;
     private String dateCalendar;
     private String barcodePrefix;
+    private String cardNumberFormat;
+    private String dependentSuffixes;
     private LocalDateTime updatedAt;
     private String updatedBy;
 }

@@ -14,6 +14,7 @@ public class SettingMapper {
                 .id(entity.getId())
                 .systemName(entity.getSystemName())
                 .systemCode(entity.getSystemCode())
+                .businessType(entity.getBusinessType())
                 .logoUrl(entity.getLogoUrl())
                 .faviconUrl(entity.getFaviconUrl())
                 .phone(entity.getPhone())
@@ -26,8 +27,11 @@ public class SettingMapper {
                 .preApprovalSlaDays(entity.getPreApprovalSlaDays())
                 .primaryColor(entity.getPrimaryColor())
                 .fontFamily(entity.getFontFamily())
+                .fontSize(entity.getFontSize())
                 .dateCalendar(entity.getDateCalendar())
                 .barcodePrefix(entity.getBarcodePrefix())
+                .cardNumberFormat(entity.getCardNumberFormat())
+                .dependentSuffixes(entity.getDependentSuffixes())
                 .updatedAt(entity.getUpdatedAt())
                 .updatedBy(entity.getUpdatedBy())
                 .build();
@@ -40,6 +44,7 @@ public class SettingMapper {
                 .id(dto.getId())
                 .systemName(dto.getSystemName())
                 .systemCode(dto.getSystemCode())
+                .businessType(dto.getBusinessType())
                 .logoUrl(dto.getLogoUrl())
                 .faviconUrl(dto.getFaviconUrl())
                 .phone(dto.getPhone())
@@ -52,8 +57,11 @@ public class SettingMapper {
                 .preApprovalSlaDays(dto.getPreApprovalSlaDays())
                 .primaryColor(dto.getPrimaryColor())
                 .fontFamily(dto.getFontFamily())
+                .fontSize(dto.getFontSize())
                 .dateCalendar(dto.getDateCalendar())
                 .barcodePrefix(dto.getBarcodePrefix())
+                .cardNumberFormat(dto.getCardNumberFormat())
+                .dependentSuffixes(dto.getDependentSuffixes())
                 .build();
     }
 
@@ -62,6 +70,7 @@ public class SettingMapper {
 
         entity.setSystemName(dto.getSystemName());
         entity.setSystemCode(dto.getSystemCode());
+        entity.setBusinessType(dto.getBusinessType());
         entity.setLogoUrl(dto.getLogoUrl());
         entity.setFaviconUrl(dto.getFaviconUrl());
         entity.setPhone(dto.getPhone());
@@ -74,7 +83,10 @@ public class SettingMapper {
         entity.setPreApprovalSlaDays(dto.getPreApprovalSlaDays());
         entity.setPrimaryColor(dto.getPrimaryColor());
         entity.setFontFamily(dto.getFontFamily());
+        entity.setFontSize(dto.getFontSize());
         entity.setDateCalendar(dto.getDateCalendar());
         entity.setBarcodePrefix(dto.getBarcodePrefix());
+        entity.setCardNumberFormat(dto.getCardNumberFormat());
+        entity.setDependentSuffixes(dto.getDependentSuffixes());
     }
 }

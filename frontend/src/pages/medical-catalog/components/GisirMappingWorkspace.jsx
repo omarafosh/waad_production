@@ -64,6 +64,7 @@ const GisirMappingWorkspace = () => {
     const [selectedMasterService, setSelectedMasterService] = useState(null);
     const [selectedProviderId, setSelectedProviderId] = useState('');
     const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'mapped', 'unmapped'
+    const [isMapping, setIsMapping] = useState(false);
 
     // Add Raw Service Dialog State
     const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -125,8 +126,9 @@ const GisirMappingWorkspace = () => {
 
         const targetMaster = masterService;
 
-        if (ids.length === 0 || !targetMaster) return;
+        if (ids.length === 0 || !targetMaster || isMapping) return;
 
+        setIsMapping(true);
         try {
             await medicalCatalogService.mapService({
                 rawServiceIds: ids,
@@ -143,12 +145,15 @@ const GisirMappingWorkspace = () => {
         } catch (error) {
             console.error('Mapping failed', error);
             enqueueSnackbar('فشل عملية الربط', { variant: 'error' });
+        } finally {
+            setIsMapping(false);
         }
     };
 
     const handleUnlink = async (ids) => {
-        if (!ids || ids.length === 0) return;
+        if (!ids || ids.length === 0 || isMapping) return;
 
+        setIsMapping(true);
         try {
             await medicalCatalogService.unmapServices(ids);
             enqueueSnackbar('تم فك الربط بنجاح', { variant: 'success' });
@@ -157,6 +162,8 @@ const GisirMappingWorkspace = () => {
         } catch (error) {
             console.error('Unlink failed', error);
             enqueueSnackbar('فشل فك الربط', { variant: 'error' });
+        } finally {
+            setIsMapping(false);
         }
     };
 
@@ -440,12 +447,12 @@ const GisirMappingWorkspace = () => {
                 {/* 2. منطقة الجسر (المنتصف) */}
                 <Grid size={{ xs: 12, md: 1 }} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Stack spacing={2} alignItems="center">
-                        <Tooltip title="ربط عبر الجسر">
+                        <Tooltip title={isMapping ? "جاري المعالجة..." : "ربط عبر الجسر"}>
                             <Box component="span">
                                 <Button
                                     variant="contained"
                                     onClick={() => handleMap()}
-                                    disabled={(selectedRawServiceIds.length === 0 && !selectedRawService) || !selectedMasterService}
+                                    disabled={isMapping || (selectedRawServiceIds.length === 0 && !selectedRawService) || !selectedMasterService}
                                     sx={{
                                         width: 80,
                                         height: 80,
@@ -455,7 +462,7 @@ const GisirMappingWorkspace = () => {
                                         boxShadow: '0 8px 16px rgba(0,128,128,0.2)'
                                     }}
                                 >
-                                    <LinkIcon />
+                                    {isMapping ? <CircularProgress size={24} color="inherit" /> : <LinkIcon />}
                                 </Button>
                             </Box>
                         </Tooltip>

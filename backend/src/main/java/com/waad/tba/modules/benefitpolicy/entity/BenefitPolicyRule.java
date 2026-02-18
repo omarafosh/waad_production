@@ -53,10 +53,17 @@ public class BenefitPolicyRule {
     private BenefitPolicy benefitPolicy;
 
     /**
-     * Target Medical Category (String-based in Unified Dictionary)
+     * Target Medical Category (String-based in Unified Dictionary - Legacy)
      */
     @Column(name = "medical_category", length = 100)
     private String medicalCategory;
+
+    /**
+     * Target Medical Category (FK-based - REFACTORED 2026-02-18)
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "medical_category_id")
+    private com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory medicalCategoryRef;
 
     /**
      * Target Unified Medical Service (FK)
@@ -183,7 +190,9 @@ public class BenefitPolicyRule {
      * Check if this rule targets a category
      */
     public boolean isCategoryRule() {
-        return medicalCategory != null && !medicalCategory.isBlank() && medicalService == null && medicalPackage == null;
+        boolean hasCategoryStr = medicalCategory != null && !medicalCategory.isBlank();
+        boolean hasCategoryRef = medicalCategoryRef != null;
+        return (hasCategoryStr || hasCategoryRef) && medicalService == null && medicalPackage == null;
     }
 
     /**
@@ -231,7 +240,7 @@ public class BenefitPolicyRule {
         // This allows removing rules that might have invalid state/corruption
         if (deleted) return;
 
-        boolean hasCategory = medicalCategory != null;
+        boolean hasCategory = (medicalCategory != null && !medicalCategory.isBlank()) || medicalCategoryRef != null;
         boolean hasService = medicalService != null;
         boolean hasPackage = medicalPackage != null;
         

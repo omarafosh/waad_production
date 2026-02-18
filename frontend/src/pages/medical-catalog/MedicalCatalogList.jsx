@@ -314,14 +314,34 @@ const MedicalCatalogList = () => {
                 minWidth: 200
             },
             {
-                accessorKey: 'subCategory',
-                header: 'التصنيف الرئيسي',
-                minWidth: 180
-            },
-            {
-                accessorKey: 'categoryName',
-                header: 'التصنيف الفرعي',
-                minWidth: 180
+                id: 'categories',
+                header: 'التصنيفات والارتباطات',
+                minWidth: 250,
+                cell: ({ row }) => {
+                    const mappings = row.original.categories || [];
+                    if (mappings.length === 0) {
+                        return <Typography variant="caption" color="error">غير مصنف</Typography>;
+                    }
+                    return (
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                            {mappings.map((m, idx) => (
+                                <Tooltip key={idx} title={`Context: ${m.context}`}>
+                                    <Chip
+                                        label={m.categoryName}
+                                        size="small"
+                                        variant={m.primary ? "filled" : "outlined"}
+                                        color={m.primary ? "primary" : "secondary"}
+                                        sx={{
+                                            fontSize: '0.7rem',
+                                            height: '20px',
+                                            '& .MuiChip-label': { px: 1 }
+                                        }}
+                                    />
+                                </Tooltip>
+                            ))}
+                        </Stack>
+                    );
+                }
             },
             {
                 accessorKey: 'active',

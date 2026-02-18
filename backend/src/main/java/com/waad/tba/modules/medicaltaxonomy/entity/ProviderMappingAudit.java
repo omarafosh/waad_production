@@ -10,7 +10,7 @@ import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderRawService;
 
 @Entity
-@Table(name = "ent_service_mapping_audit")
+@Table(name = "provider_mapping_audit")
 @Getter
 @Setter
 @NoArgsConstructor

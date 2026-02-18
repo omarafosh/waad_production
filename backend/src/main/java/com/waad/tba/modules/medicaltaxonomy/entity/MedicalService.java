@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Medical Service Entity (Reference Data)
@@ -89,6 +91,14 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
     private Long categoryId;
 
     /**
+     * قائمة التصنيفات المرتبطة بالخدمة (دعم تعدد التصنيفات والربط المتعدد)
+     * REFACTORED 2026-02-18
+     */
+    @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ServiceCategoryMapping> categoryMappings = new ArrayList<>();
+
+    /**
      * التصنيف (نصي - للتوافق مع الأنظمة القديمة)
      */
     @Column(name = "category", length = 255)
@@ -145,7 +155,11 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
      */
     private void validateArchitecturalRules() {
         // القاعدة: التصنيف إلزامي للخدمات النشطة لضمان عمل محرك التغطية
-        if ((status == MedicalServiceStatus.ACTIVE || active) && categoryId == null && categoryName == null) {
+        // تم التحديث لدعم التحقق من القائمة الجديدة أيضاً
+        boolean hasCategory = categoryId != null || categoryName != null || 
+                             (categoryMappings != null && !categoryMappings.isEmpty());
+                             
+        if ((status == MedicalServiceStatus.ACTIVE || active) && !hasCategory) {
             throw com.waad.tba.common.exception.ArchitecturalViolationException.serviceWithoutCategory(code);
         }
         

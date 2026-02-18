@@ -111,6 +111,20 @@ public interface MedicalServiceRepository extends JpaRepository<MedicalService, 
     Page<MedicalService> findActiveByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
 
     /**
+     * Find all services in a category through the Multi-Category Junction Table (REFACTORED 2026-02-18)
+     */
+    @Query("""
+        SELECT ms FROM MedicalService ms
+        JOIN ms.categoryMappings m
+        WHERE m.category.id = :categoryId
+          AND (:context IS NULL OR m.context = :context OR m.context = 'ANY')
+    """)
+    List<MedicalService> findActiveByCategoryIdInMultiMapping(
+        @Param("categoryId") Long categoryId,
+        @Param("context") String context
+    );
+
+    /**
      * Check if category has services (for delete validation)
      */
     boolean existsByCategoryId(Long categoryId);

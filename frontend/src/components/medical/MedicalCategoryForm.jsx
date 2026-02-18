@@ -149,7 +149,7 @@ const MedicalCategoryForm = ({ initialValues, onSubmit, onCancel, isEditMode }) 
         active: initialValues?.active ?? true
     });
 
-    const [categoryType] = useState(CATEGORY_TYPE.SUB); // Always SUB
+    const [categoryType, setCategoryType] = useState(CATEGORY_TYPE.SUB); // Default to SUB
 
     const [categories, setCategories] = useState([]); // Parent options
     const [loadingParents, setLoadingParents] = useState(false);

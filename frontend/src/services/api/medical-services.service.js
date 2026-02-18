@@ -230,3 +230,41 @@ export const getReclassifyImpact = async (id, newCategoryId) => {
   });
   return unwrap(response);
 };
+/**
+ * Add category mapping to a medical service (Many-to-Many - REFACTORED 2026-02-18)
+ * @param {number} serviceId - Service ID
+ * @param {number} categoryId - Category ID to link
+ * @param {boolean} isPrimary - Whether this is the primary category
+ * @param {string} context - Context (ANY, OUTPATIENT, INPATIENT, EMERGENCY)
+ */
+export const addServiceCategory = async (serviceId, categoryId, isPrimary = false, context = 'ANY') => {
+  const response = await axiosClient.post(`${BASE_URL}/${serviceId}/categories/${categoryId}`, null, {
+    params: { isPrimary, context }
+  });
+  return unwrap(response);
+};
+
+/**
+ * Remove category mapping from a medical service
+ * @param {number} serviceId - Service ID
+ * @param {number} categoryId - Category ID to unlink
+ * @param {string} context - Context for the mapping
+ */
+export const removeServiceCategory = async (serviceId, categoryId, context = 'ANY') => {
+  const response = await axiosClient.delete(`${BASE_URL}/${serviceId}/categories/${categoryId}`, {
+    params: { context }
+  });
+  return unwrap(response);
+};
+
+/**
+ * Get services by category with optional context
+ * @param {number} categoryId - Category ID
+ * @param {string} context - Optional context
+ */
+export const getServicesByCategory = async (categoryId, context = null) => {
+  const response = await axiosClient.get(`/medical-categories/${categoryId}/medical-services`, {
+    params: { context }
+  });
+  return unwrap(response);
+};

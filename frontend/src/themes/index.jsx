@@ -26,9 +26,11 @@ export default function ThemeCustomization({ children }) {
 
   // BRANDING STRATEGY (2026-02-18): 
   // Prioritize system-wide settings (from database) over local session config.
-  // This ensures branding changes are visible to all users immediately.
+  // Sanity check: Ensure fontSize is reasonable (min 8px, default 14px)
   const fontFamily = settings?.fontFamily || state.fontFamily;
-  const fontSize = settings?.fontSize || state.fontSize || 12;
+  let fontSize = settings?.fontSize || state.fontSize || 14;
+  if (fontSize < 8) fontSize = 14;
+  if (fontSize > 30) fontSize = 14; // Upper sanity check
 
   // Use company primary color if available, fallback to preset
   const primaryColor = settings?.primaryColor || null;

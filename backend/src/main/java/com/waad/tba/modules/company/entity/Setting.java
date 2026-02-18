@@ -90,7 +90,7 @@ public class Setting {
 
     @Column(name = "font_size")
     @Builder.Default
-    private Double fontSize = 12.0;
+    private Double fontSize = 14.0;
 
     @Column(name = "date_calendar", length = 20)
     @Builder.Default

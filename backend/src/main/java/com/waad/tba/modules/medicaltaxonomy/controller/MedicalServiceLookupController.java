@@ -1,10 +1,10 @@
 package com.waad.tba.modules.medicaltaxonomy.controller;
 
 import com.waad.tba.common.dto.ApiResponse;
+import com.waad.tba.modules.medicaltaxonomy.dto.CatalogStatsDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.MedicalServiceResponseDto;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
+import com.waad.tba.modules.medicaltaxonomy.service.MedicalServiceLookupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +15,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.annotation.PostConstruct;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 @RestController
 @RequestMapping("/api/medical-services")
 @Tag(name = "Medical Service Lookup", description = "Endpoints for looking up medical services from the enterprise dictionary")
@@ -28,27 +22,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MedicalServiceLookupController {
 
-    private final MedicalServiceRepository serviceRepository;
-    private final MedicalCategoryRepository categoryRepository;
-    
-    // Cache for mapping category names to legacy IDs
-    private Map<String, Long> categoryMap = new ConcurrentHashMap<>();
-
-    @PostConstruct
-    public void init() {
-        refreshCategoryMap();
-    }
-
-    private void refreshCategoryMap() {
-        log.info("[MEDICAL-SERVICES] Refreshing category name-to-id map");
-        try {
-            categoryRepository.findAll().forEach(cat -> 
-                categoryMap.put(cat.getName(), cat.getId())
-            );
-        } catch (Exception e) {
-            log.error("Failed to load categories into map: {}", e.getMessage());
-        }
-    }
+    private final MedicalServiceLookupService lookupService;
+    private final com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository serviceRepository;
 
     @GetMapping
     @Operation(summary = "Get paginated services", description = "Return paginated medical services from the master dictionary")
@@ -59,55 +34,30 @@ public class MedicalServiceLookupController {
             @RequestParam(required = false) Boolean isMaster) {
         
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("code").ascending());
-        Page<MedicalService> services;
-        
-        services = serviceRepository.findAllByFilters(true, isMaster, searchTerm, pageRequest);
+        Page<MedicalServiceResponseDto> services = lookupService.getServices(true, isMaster, searchTerm, pageRequest);
 
-        return ResponseEntity.ok(ApiResponse.success(services.map(this::mapToDto)));
+        return ResponseEntity.ok(ApiResponse.success(services));
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Get service statistics", description = "Returns counts for master services, raw services, and mapping progress")
+    public ResponseEntity<ApiResponse<CatalogStatsDto>> getStats() {
+        return ResponseEntity.ok(ApiResponse.success(lookupService.getStats()));
     }
 
     @GetMapping("/lookup")
     @Operation(summary = "Lookup service by code", description = "Returns detail for a specific medical service")
     public ResponseEntity<ApiResponse<MedicalServiceResponseDto>> lookupService(@RequestParam String code) {
-        return serviceRepository.findByCode(code)
-                .map(s -> ResponseEntity.ok(ApiResponse.success(mapToDto(s))))
+        return lookupService.getServiceByCode(code)
+                .map(s -> ResponseEntity.ok(ApiResponse.success(s)))
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "Search medical services", description = "Advanced search for medical services")
-    public ResponseEntity<ApiResponse<List<MedicalServiceResponseDto>>> searchServices(
-            @RequestParam(required = false) String searchTerm,
-            @RequestParam(required = false) String categoryId) {
-        
-        PageRequest pageRequest = PageRequest.of(0, 50, Sort.by("code").ascending());
-        Page<MedicalService> services = serviceRepository.findAllByFilters(true, null, searchTerm != null ? searchTerm : "", pageRequest);
-        
-        return ResponseEntity.ok(ApiResponse.success(
-            services.getContent().stream().map(this::mapToDto).collect(Collectors.toList())
-        ));
-    }
-
-    @GetMapping("/stats")
-    @Operation(summary = "Get service statistics", description = "Returns total, active, and inactive service counts")
-    public ResponseEntity<ApiResponse<Map<String, Long>>> getStats() {
-        long total = serviceRepository.count();
-        // Adjust based on your repository methods
-        long active = serviceRepository.countByActiveTrue();
-        long inactive = total - active;
-        
-        return ResponseEntity.ok(ApiResponse.success(Map.of(
-            "total", total,
-            "active", active,
-            "inactive", inactive
-        )));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get service by ID", description = "Returns details for a specific medical service by its numeric ID")
     public ResponseEntity<ApiResponse<MedicalServiceResponseDto>> getServiceById(@PathVariable Long id) {
-        return serviceRepository.findById(id)
-                .map(s -> ResponseEntity.ok(ApiResponse.success(mapToDto(s))))
+        return lookupService.getServiceById(id)
+                .map(s -> ResponseEntity.ok(ApiResponse.success(s)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -121,11 +71,10 @@ public class MedicalServiceLookupController {
             service.setName(dto.getName());
             service.setNameEn(dto.getNameEn());
             // Map category name back to system category if needed, or update based on categoryId
-            // For now, updating basic fields to satisfy the edit form
             service.setActive(dto.isActive());
             
             MedicalService saved = serviceRepository.save(service);
-            return ResponseEntity.ok(ApiResponse.success(mapToDto(saved)));
+            return ResponseEntity.ok(ApiResponse.success(lookupService.mapToDto(saved)));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -137,21 +86,5 @@ public class MedicalServiceLookupController {
         }
         serviceRepository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    private MedicalServiceResponseDto mapToDto(MedicalService entity) {
-        Long catId = categoryMap.get(entity.getCategoryName() != null ? entity.getCategoryName() : "");
-        
-        return MedicalServiceResponseDto.builder()
-                .id(entity.getId()) 
-                .code(entity.getCode())
-                .name(entity.getName()) 
-                .nameEn(entity.getNameEn())
-                .categoryId(catId) 
-                .categoryName(entity.getCategoryName()) 
-                .subCategory(entity.getSubCategory()) 
-                .active(entity.isActive())
-                .isMaster(entity.getIsMaster())
-                .build();
     }
 }

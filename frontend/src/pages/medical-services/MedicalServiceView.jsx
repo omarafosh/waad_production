@@ -140,8 +140,8 @@ const MedicalServiceView = () => {
   // COMPUTED VALUES
   // ========================================
 
-  const categoryName = useMemo(() => {
-    return service?.categoryName || '-';
+  const categoriesList = useMemo(() => {
+    return Array.isArray(service?.categories) ? service.categories : [];
   }, [service]);
 
   // ========================================
@@ -247,7 +247,26 @@ const MedicalServiceView = () => {
 
         <Grid container spacing={3}>
           <DetailRow label="الرمز" value={service?.code} />
-          <DetailRow label="التصنيف الطبي" value={categoryName} />
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              التصنيفات المرتبطة
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {categoriesList.length === 0 ? (
+                <Typography variant="body1" color="error">- غير مصنف -</Typography>
+              ) : (
+                categoriesList.map((m, idx) => (
+                  <Chip
+                    key={idx}
+                    label={`${m.categoryName} (${m.context})`}
+                    color={m.primary ? "primary" : "secondary"}
+                    variant={m.primary ? "filled" : "outlined"}
+                    size="small"
+                  />
+                ))
+              )}
+            </Stack>
+          </Grid>
           <DetailRow label="الاسم" value={service?.name} />
           <DetailRow label="الوصف" value={service?.description} fullWidth />
         </Grid>

@@ -96,12 +96,15 @@ CREATE TABLE IF NOT EXISTS settings (
     currency VARCHAR(10) DEFAULT 'LYD',         -- العملة الافتراضية
     claim_sla_days INTEGER NOT NULL DEFAULT 10, -- مدة معالجة المطالبات (أيام)
     pre_approval_sla_days INTEGER NOT NULL DEFAULT 3, -- مدة معالجة الموافقات المسبقة
+    card_number_format VARCHAR(100) DEFAULT '[MP_NO]-[YEAR]-[PRO]', -- تنسيق رقم البطاقة
+    dependent_suffixes TEXT,                    -- زوائد أرقام التابعين (JSON)
     
     -- ═══════════════════════════════════════════════════════════════════════
     -- إعدادات المظهر والطباعة (Theme & Print Settings)
     -- ═══════════════════════════════════════════════════════════════════════
-    primary_color VARCHAR(20) DEFAULT '#1890ff', -- اللون الأساسي للهوية
+    primary_color VARCHAR(20) DEFAULT '#06935d', -- اللون الأساسي للهوية
     font_family VARCHAR(50) DEFAULT 'Tajawal',   -- الخط المستخدم
+    font_size DOUBLE PRECISION DEFAULT 12.0,    -- حجم الخط الافتراضي (px)
     date_calendar VARCHAR(20) DEFAULT 'gregory', -- نوع التقويم (ميلادي/هجري)
     barcode_prefix VARCHAR(20) DEFAULT 'WAAD',  -- بادئة الباركود للكروت
     
@@ -118,11 +121,15 @@ CREATE TABLE IF NOT EXISTS settings (
 -- ═══════════════════════════════════════════════════════════════════════════
 INSERT INTO settings (
     system_name, system_code, currency, barcode_prefix, 
-    claim_sla_days, pre_approval_sla_days, primary_color
+    claim_sla_days, pre_approval_sla_days, primary_color,
+    card_number_format, dependent_suffixes, font_size
 ) 
 VALUES (
     'Top Doctors TPA', 'TOP_DOCS', 'LYD', 'WAAD', 
-    10, 3, '#1890ff'
+    10, 3, '#1890ff',
+    '[MP_NO]-[YEAR]-[PRO]', 
+    '{"WIFE":"W","HUSBAND":"H","SON":"S","DAUGHTER":"D","FATHER":"F","MOTHER":"M","BROTHER":"B","SISTER":"I"}',
+    14.0
 ) 
 ON CONFLICT (system_code) DO NOTHING;
 

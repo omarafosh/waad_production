@@ -14,7 +14,7 @@ CREATE SEQUENCE IF NOT EXISTS member_card_number_seq START WITH 1000000 INCREMEN
 -- This section ensures all mapping tables exist with correct types and dependencies.
 
 -- Unified Raw Services (Depends on medical_services in V03)
-CREATE TABLE IF NOT EXISTS ent_provider_raw_services (
+CREATE TABLE IF NOT EXISTS provider_raw_services (
     id BIGSERIAL PRIMARY KEY,
     provider_id BIGINT NOT NULL,
     raw_name VARCHAR(255) NOT NULL,
@@ -48,10 +48,10 @@ CREATE TABLE IF NOT EXISTS provider_service_mappings (
 CREATE INDEX IF NOT EXISTS idx_psm_provider ON provider_service_mappings(provider_id);
 CREATE INDEX IF NOT EXISTS idx_psm_master ON provider_service_mappings(master_service_id);
 
--- Mapping Audit & Governance (Depends on ent_provider_raw_services and medical_services)
-CREATE TABLE IF NOT EXISTS ent_service_mapping_audit (
+-- Mapping Audit & Governance (Depends on provider_raw_services and medical_services)
+CREATE TABLE IF NOT EXISTS provider_mapping_audit (
     id BIGSERIAL PRIMARY KEY,
-    provider_raw_service_id BIGINT NOT NULL REFERENCES ent_provider_raw_services(id),
+    provider_raw_service_id BIGINT NOT NULL REFERENCES provider_raw_services(id),
     old_medical_service_id BIGINT REFERENCES medical_services(id),
     new_medical_service_id BIGINT REFERENCES medical_services(id),
     changed_by VARCHAR(100) NOT NULL,

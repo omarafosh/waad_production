@@ -360,6 +360,7 @@ public class MedicalCategoryService {
                 .name(category.getName())
                 .parentId(category.getParentId())
                 .parentName(parentName)
+                .serviceCount((int) serviceRepository.countActiveByCategoryId(category.getId()))
                 .active(category.isActive())
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())

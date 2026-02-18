@@ -44,7 +44,8 @@ import {
   RestoreFromTrash as RestoreIcon,
   DeleteForever as DeleteForeverIcon,
   History as HistoryIcon,
-  ArrowBack as BackIcon
+  ArrowBack as BackIcon,
+  Inventory as PackageIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -54,6 +55,7 @@ import RBACGuard from 'components/tba/RBACGuard';
 import MedicalServiceSelector from 'components/tba/MedicalServiceSelector';
 import GenericDataTable from 'components/GenericDataTable/GenericDataTable';
 import ConfirmDialog from 'components/common/ConfirmDialog';
+import ApplyTemplateDialog from './ApplyTemplateDialog';
 
 import {
   getPolicyRulesPaged,
@@ -419,7 +421,7 @@ const RuleFormModal = ({
           {/* Impact Preview — shown when category is selected */}
           {formData.targetType === 'CATEGORY' && formData.medicalCategoryId && (() => {
             const selectedCat = categories?.find(c => c.id === Number(formData.medicalCategoryId));
-            const affectedServices = selectedCat?.serviceCount ?? selectedCat?.servicesCount ?? null;
+            const affectedServices = selectedCat?.serviceCount ?? 0;
             const overriddenRules = existingRules.filter(
               r => r.ruleType === 'SERVICE' &&
                 r.medicalCategoryCode === selectedCat?.code &&
@@ -438,11 +440,19 @@ const RuleFormModal = ({
               }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'info.dark' }}>معاينة التأثير:</Typography>
                 <Stack direction="row" spacing={2}>
-                  {affectedServices !== null && (
+                  {affectedServices > 0 ? (
                     <Chip
                       size="small"
                       label={`${affectedServices} خدمة متأثرة`}
                       color="info"
+                      variant="outlined"
+                      sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                    />
+                  ) : (
+                    <Chip
+                      size="small"
+                      label="لا توجد خدمات في هذا التصنيف"
+                      color="default"
                       variant="outlined"
                       sx={{ fontWeight: 600, fontSize: '0.72rem' }}
                     />
@@ -757,6 +767,7 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
   const [formModal, setFormModal] = useState({ open: false, data: null, isEdit: false });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, rule: null, isHard: false });
   const [quickWizardOpen, setQuickWizardOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DATA FETCHING
@@ -1291,6 +1302,16 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
+                    color="primary"
+                    startIcon={<PackageIcon />}
+                    onClick={() => setTemplateDialogOpen(true)}
+                    size="small"
+                    sx={{ height: 40 }}
+                  >
+                    تطبيق باقة
+                  </Button>
+                  <Button
+                    variant="outlined"
                     color="secondary"
                     startIcon={<ListIcon />}
                     onClick={handleQuickWizardOpen}
@@ -1299,7 +1320,13 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
                   >
                     معالج القواعد
                   </Button>
-                  <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAddRule} size="small" sx={{ height: 40 }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddRule}
+                    size="small"
+                    sx={{ height: 40, whiteSpace: 'nowrap' }}
+                  >
                     إضافة قاعدة
                   </Button>
                 </Stack>
@@ -1313,9 +1340,9 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         <GenericDataTable
           columns={columns}
           data={rules}
-          totalCount={totalElements}
-          isLoading={loadingRules || fetchingRules}
-          tableState={tableState}
+          totalElements={totalElements}
+          loading={loadingRules || fetchingRules}
+          state={tableState}
           emptyMessage={showDeleted ? 'سلة المهملات فارغة' : 'لا توجد قواعد تغطية محددة'}
           enableFiltering={false}
           maxHeight="none"
@@ -1330,7 +1357,7 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         isEdit={formModal.isEdit}
         initialData={formModal.data}
         onSubmit={handleFormSubmit}
-        loading={createMutation.isPending || updateMutation.isPending}
+        loading={isLoading}
         categories={categories}
         loadingCategories={loadingCategories}
         distributionType={distributionType}
@@ -1343,6 +1370,16 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         onSubmit={handleQuickWizardSubmit}
         categories={categories}
         loading={bulkCreateMutation.isPending}
+      />
+
+      <ApplyTemplateDialog
+        open={templateDialogOpen}
+        onClose={() => setTemplateDialogOpen(false)}
+        policyId={policyId}
+        onApplied={() => {
+          queryClient.invalidateQueries(['benefit-policy-rules', policyId]);
+          queryClient.invalidateQueries(['benefit-policy-rules-count', policyId]);
+        }}
       />
 
       {/* Unified Confirm Dialog */}

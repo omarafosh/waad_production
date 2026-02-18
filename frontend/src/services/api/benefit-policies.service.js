@@ -268,6 +268,33 @@ export const simulateCoverage = async (payload) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// RULE TEMPLATES (PACKAGES) OPERATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get all available rule templates
+ * Endpoint: GET /api/benefit-rule-templates
+ */
+export const getRuleTemplates = async () => {
+  const response = await axiosClient.get('/benefit-rule-templates');
+  return unwrap(response);
+};
+
+/**
+ * Apply a rule template to a policy
+ * Endpoint: POST /api/benefit-rule-templates/{templateId}/apply/{policyId}
+ * @param {number} templateId - Template ID
+ * @param {number} policyId - Target Policy ID
+ * @param {boolean} replaceExisting - Whether to delete current rules first
+ */
+export const applyRuleTemplate = async (templateId, policyId, replaceExisting = false) => {
+  const response = await axiosClient.post(`/benefit-rule-templates/${templateId}/apply/${policyId}`, null, {
+    params: { replaceExisting }
+  });
+  return unwrap(response);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ADMIN OPERATIONS
 // ═══════════════════════════════════════════════════════════════════════════
 

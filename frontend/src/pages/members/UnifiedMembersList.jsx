@@ -11,6 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
+import { useImportProgress } from 'contexts/GlobalImportProgressContext';
 import {
   Avatar,
   Box,
@@ -111,6 +112,22 @@ const UnifiedMembersList = () => {
   const { user } = useAuth();
   const { settings } = useSystemSettings(); // Changed
   const { refreshKey } = useTableRefresh();
+
+  // Import Progress Context
+  const { activeImport } = useImportProgress();
+  const [currentImportBatchId, setCurrentImportBatchId] = useState(null);
+
+  // Auto-refresh when import completes
+  useEffect(() => {
+    if (activeImport &&
+      activeImport.batchId === currentImportBatchId &&
+      activeImport.status === 'COMPLETED') {
+
+      enqueueSnackbar('تم استيراد المستفيدين بنجاح', { variant: 'success' });
+      fetchMembers();
+      setCurrentImportBatchId(null);
+    }
+  }, [activeImport, currentImportBatchId]);
 
   // Table State Management
   const tableState = useTableState({
@@ -227,13 +244,14 @@ const UnifiedMembersList = () => {
   const handleHardDeleteClick = (member) => {
     setConfirmDialog({
       open: true,
-      title: 'حذف نهائي؟',
-      content: `سيتم حذف المستفيد ${member.fullName} نهائياً من قاعدة البيانات. هذا الإجراء لا يمكن التراجع عنه!`,
+      title: 'حذف نهائي للمستفيد؟',
+      content: `هل أنت متأكد من الحذف النهائي للمستفيد ${member.fullName}؟ سيتم حذف كافة البيانات المرتبطة (المطالبات، المستندات، والسجلات) بشكل دائم. لا يمكن التراجع عن هذا الإجراء إطلاقاً!`,
       severity: 'error',
       confirmText: 'نعم، احذفه نهائياً',
+      cancelText: 'إلغاء',
       onConfirm: () => handleConfirmAction(
         () => hardDeleteMember(member.id),
-        'تم حذف المستفيد نهائياً',
+        'تم حذف المستفيد وكافة بياناته نهائياً',
         'خطأ في الحذف النهائي للمستفيد'
       )
     });
@@ -916,7 +934,11 @@ const UnifiedMembersList = () => {
       </Drawer>
 
       {/* Import Wizard */}
-      < DataImportWizard open={importDialogOpen} onClose={handleCloseImportDialog} />
+      < DataImportWizard
+        open={importDialogOpen}
+        onClose={handleCloseImportDialog}
+        onImportStarted={(batchId) => setCurrentImportBatchId(batchId)}
+      />
 
       {/* Confirmation Dialog */}
       < Dialog

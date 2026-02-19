@@ -45,7 +45,7 @@ import { useTableState } from 'hooks/useTableState';
 // Style Utils
 import { headerButtonStyle } from 'utils/styleUtils';
 
-import { getBenefitPolicies, deleteBenefitPolicy, restoreBenefitPolicy, activateBenefitPolicy } from 'services/api/benefit-policies.service';
+import { getBenefitPolicies, activateBenefitPolicy } from 'services/api/benefit-policies.service';
 
 const QUERY_KEY = 'benefit-policies';
 
@@ -104,60 +104,6 @@ const BenefitPoliciesList = () => {
   const closeDialog = () => {
     setConfirmDialog(prev => ({ ...prev, open: false }));
   };
-
-  // Restore Mutation
-  const restoreMutation = useMutation({
-    mutationFn: restoreBenefitPolicy,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      enqueueSnackbar('تم استعادة الوثيقة بنجاح', { variant: 'success' });
-      closeDialog();
-    },
-    onError: (err) => {
-      enqueueSnackbar(err.response?.data?.message || 'فشلت عملية الاستعادة', { variant: 'error' });
-      closeDialog();
-    }
-  });
-
-  // Delete Mutation
-  const deleteMutation = useMutation({
-    mutationFn: deleteBenefitPolicy,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      enqueueSnackbar('تم حذف الوثيقة بنجاح', { variant: 'success' });
-      closeDialog();
-    },
-    onError: (err) => {
-      enqueueSnackbar(err.response?.data?.message || 'فشل الحذف', { variant: 'error' });
-      closeDialog();
-    }
-  });
-
-  const handleDelete = useCallback((id) => {
-    setConfirmDialog({
-      open: true,
-      title: 'هل أنت متأكد؟',
-      content: "سيتم نقل الوثيقة إلى سلة المحذوفات",
-      confirmText: 'نعم، احذفها',
-      severity: 'error',
-      onConfirm: () => {
-        deleteMutation.mutate(id);
-      }
-    });
-  }, [deleteMutation]);
-
-  const handleRestore = useCallback((id) => {
-    setConfirmDialog({
-      open: true,
-      title: 'تأكيد الاستعادة',
-      content: "هل تريد استعادة هذه الوثيقة؟",
-      confirmText: 'نعم، استعادة',
-      severity: 'success',
-      onConfirm: () => {
-        restoreMutation.mutate(id);
-      }
-    });
-  }, [restoreMutation]);
 
   // Activate Mutation
   const activateMutation = useMutation({
@@ -336,7 +282,7 @@ const BenefitPoliciesList = () => {
         )
       }
     }
-  ], [handleNavigateView, handleNavigateEdit, handleDelete, handleRestore, handleActivate, handleOpenLifecycle]);
+  ], [handleNavigateView, handleNavigateEdit, handleActivate, handleOpenLifecycle]);
 
   return (
     <RBACGuard requiredPermissions={[PERMISSIONS.BENEFIT_POLICY_VIEW]}>

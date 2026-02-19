@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Custom UserPrincipal to hold user details including ID and organizational context.
+ * Custom UserPrincipal to hold user details including ID and organizational
+ * context.
  */
 @Data
 @AllArgsConstructor
@@ -22,6 +23,7 @@ public class UserPrincipal implements UserDetails {
     private Long id;
     private String username;
     private String password;
+    private String fullName;
     private String email;
     private Long employerId;
     private Long companyId;
@@ -32,6 +34,7 @@ public class UserPrincipal implements UserDetails {
                 .id(user.getId())
                 .username(user.getUsername())
                 .password(user.getPassword())
+                .fullName(user.getFullName())
                 .email(user.getEmail())
                 .employerId(user.getEmployerId())
                 .companyId(user.getCompanyId())

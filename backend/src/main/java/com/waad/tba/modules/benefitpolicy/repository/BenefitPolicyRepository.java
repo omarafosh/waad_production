@@ -27,7 +27,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
      * Find by ID including soft-deleted items.
      * Overrides @SQLRestriction("active=true") by using native query or similar approach.
      */
-    @Query(value = "SELECT * FROM benefit_policies WHERE id = :id", nativeQuery = true)
+    @Query("SELECT bp FROM BenefitPolicy bp WHERE bp.id = :id")
     Optional<BenefitPolicy> findByIdIncludeDeleted(@Param("id") Long id);
 
     /**
@@ -59,16 +59,15 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
      * Find all deleted (soft-deleted) policies - paginated.
      * Use native query to bypass @SQLRestriction.
      */
-    @Query(value = "SELECT * FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.active = false", 
-           countQuery = "SELECT COUNT(*) FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.active = false",
-           nativeQuery = true)
+    @Query("SELECT bp FROM BenefitPolicy bp WHERE bp.active = false")
     Page<BenefitPolicy> findByActiveFalseNative(Pageable pageable);
 
     /**
      * Find all policies (active + deleted) - paginated.
+     * Use native query to bypass @SQLRestriction("active = true") on the entity.
      */
-    @Query(value = "SELECT * FROM (SELECT * FROM benefit_policies) AS bp", 
-           countQuery = "SELECT COUNT(*) FROM benefit_policies",
+    @Query(value = "SELECT * FROM benefit_policies", 
+           countQuery = "SELECT count(*) FROM benefit_policies", 
            nativeQuery = true)
     Page<BenefitPolicy> findAllIncludingDeleted(Pageable pageable);
 
@@ -122,9 +121,7 @@ public interface BenefitPolicyRepository extends JpaRepository<BenefitPolicy, Lo
      * Find paginated policies for an employer (including inactive/deleted).
      * Use native query to bypass @SQLRestriction.
      */
-    @Query(value = "SELECT * FROM (SELECT * FROM benefit_policies) AS bp WHERE bp.employer_org_id = :employerOrgId",
-           countQuery = "SELECT COUNT(*) FROM benefit_policies WHERE employer_org_id = :employerOrgId",
-           nativeQuery = true)
+    @Query("SELECT bp FROM BenefitPolicy bp WHERE bp.employerOrganization.id = :employerOrgId")
     Page<BenefitPolicy> findByEmployerOrganizationIdNative(@Param("employerOrgId") Long employerOrgId, Pageable pageable);
 
     /**

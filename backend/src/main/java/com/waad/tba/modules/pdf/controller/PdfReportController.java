@@ -1,7 +1,7 @@
 package com.waad.tba.modules.pdf.controller;
 
-import com.waad.tba.services.pdf.HtmlToPdfService;
-import com.waad.tba.services.pdf.PdfTemplateService;
+import com.waad.tba.modules.pdf.service.HtmlToPdfService;
+import com.waad.tba.modules.pdf.service.PdfTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;

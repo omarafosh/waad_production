@@ -7,6 +7,10 @@ ALTER TABLE benefit_policy_rules DROP CONSTRAINT IF EXISTS chk_bpr_target;
 
 -- 2. Add a relaxed constraint that allows ALL to be NULL (Global rule)
 -- but still prevents having two targets at once.
+ALTER TABLE benefit_policy_rules ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE benefit_policy_rules ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+ALTER TABLE benefit_policy_rules ADD COLUMN IF NOT EXISTS deleted_by VARCHAR(100);
+
 ALTER TABLE benefit_policy_rules ADD CONSTRAINT chk_bpr_target CHECK (
     -- Case 1: Category rule
     (medical_category_id IS NOT NULL AND medical_service_id IS NULL AND medical_package_id IS NULL) OR

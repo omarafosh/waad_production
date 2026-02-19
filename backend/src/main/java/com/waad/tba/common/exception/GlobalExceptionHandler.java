@@ -12,6 +12,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import com.waad.tba.common.error.ErrorCode;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.HashMap;
@@ -25,16 +28,36 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
+
+    private String getMessage(String key, Object... args) {
+        try {
+            return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String getMessage(ErrorCode code) {
+        String msg = getMessage("error." + code.name());
+        return msg != null ? msg : code.name();
+    }
+
     /**
      * Handle Business Rule Exceptions
      */
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessRuleException(
             BusinessRuleException ex, WebRequest request) {
-        log.warn("Business rule violation: {}", ex.getMessage());
+        log.warn("Business rule violation: {} - {}", ex.getErrorCode(), ex.getMessage());
+        String translatedMessage = getMessage(ex.getErrorCode());
         return ResponseEntity
                 .badRequest()
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getErrorCode().name(), translatedMessage != null ? translatedMessage : ex.getMessage()));
     }
 
     /**
@@ -50,9 +73,10 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         log.warn("Validation failed: {}", errors);
+        String message = getMessage(ErrorCode.VALIDATION_ERROR);
         return ResponseEntity
                 .badRequest()
-                .body(ApiResponse.error("خطأ في التحقق من البيانات: " + errors.toString()));
+                .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR.name(), message != null ? message : "Validation failed", errors.toString()));
     }
 
     /**
@@ -62,9 +86,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
             AccessDeniedException ex, WebRequest request) {
         log.warn("Access denied: {}", ex.getMessage());
+        String message = getMessage(ErrorCode.ACCESS_DENIED);
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("غير مصرح لك بالوصول إلى هذا المورد"));
+                .body(ApiResponse.error(ErrorCode.ACCESS_DENIED.name(), message));
     }
 
     /**
@@ -74,9 +99,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleBadCredentialsException(
             BadCredentialsException ex, WebRequest request) {
         log.warn("Authentication failed: {}", ex.getMessage());
+        String message = getMessage(ErrorCode.INVALID_CREDENTIALS);
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("بيانات الاعتماد غير صحيحة"));
+                .body(ApiResponse.error(ErrorCode.INVALID_CREDENTIALS.name(), message));
     }
 
     /**
@@ -88,7 +114,7 @@ public class GlobalExceptionHandler {
         log.warn("Resource not found: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error("RESOURCE_NOT_FOUND", ex.getMessage()));
     }
 
     /**
@@ -141,14 +167,50 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle Method Not Supported (405)
+     */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupportedException(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+        log.warn("Method not supported: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.error("طريقة الطلب (Method) غير مدعومة لهذا المسار"));
+    }
+
+    /**
+     * Handle Media Type Not Supported (415)
+     */
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMediaTypeNotSupportedException(
+            org.springframework.web.HttpMediaTypeNotSupportedException ex) {
+        log.warn("Media type not supported: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(ApiResponse.error("نوع البيانات المرسل غير مدعوم"));
+    }
+
+    /**
+     * Handle Missing Search Params (400)
+     */
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParamsException(
+            org.springframework.web.bind.MissingServletRequestParameterException ex) {
+        log.warn("Missing parameter: {}", ex.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(ApiResponse.error("هناك باراميترات مطلوبة مفقودة في الطلب: " + ex.getParameterName()));
+    }
+
+    /**
      * Handle All Other Exceptions
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(
             Exception ex, WebRequest request) {
-        log.error("Unexpected error occurred", ex);
+        log.error("Unexpected error occurred", ex); // Stack trace is logged but NOT returned to user
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."));
+                .body(ApiResponse.error("حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى لاحقاً."));
     }
 }

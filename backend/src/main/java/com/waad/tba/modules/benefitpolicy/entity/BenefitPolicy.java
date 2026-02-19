@@ -35,6 +35,10 @@ import java.util.List;
     @Index(name = "idx_benefit_policy_status", columnList = "status"),
     @Index(name = "idx_benefit_policy_dates", columnList = "start_date, end_date")
 })
+@NamedEntityGraph(
+    name = "BenefitPolicy.rules",
+    attributeNodes = @NamedAttributeNode("rules")
+)
 @Data
 @lombok.experimental.SuperBuilder
 @NoArgsConstructor
@@ -42,7 +46,6 @@ import java.util.List;
 @lombok.EqualsAndHashCode(callSuper = true, exclude = {"rules", "distributions"})
 @lombok.ToString(exclude = {"rules", "distributions"})
 @org.hibernate.annotations.SQLDelete(sql = "UPDATE benefit_policies SET active = false, updated_at = NOW() WHERE id = ?")
-@org.hibernate.annotations.SQLRestriction("active = true")
 public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
@@ -166,6 +169,15 @@ public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
     private Integer defaultWaitingPeriodDays = 0;
 
     /**
+     * Default deductible amount per service/visit (policy-level default).
+     * Individual BenefitPolicyRule can override this.
+     */
+    @DecimalMin(value = "0.00", message = "Default deductible must be >= 0")
+    @Column(name = "default_deductible_amount", precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal defaultDeductibleAmount = BigDecimal.ZERO;
+
+    /**
      * Policy status
      */
     @NotNull
@@ -206,6 +218,7 @@ public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
      * Coverage rules defined under this policy.
      * Each rule specifies coverage for a category or specific service.
      */
+    @org.hibernate.annotations.BatchSize(size = 20)
     @OneToMany(mappedBy = "benefitPolicy", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     private List<BenefitPolicyRule> rules = new ArrayList<>();

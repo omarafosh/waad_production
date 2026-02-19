@@ -39,7 +39,8 @@ const DataImportWizard = ({
     onClose,
     baseApiUrl = '/api/unified-members/import',
     entityName = 'المستفيدين',
-    hideContextSelectors = false
+    hideContextSelectors = false,
+    onImportStarted = null
 }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [file, setFile] = useState(null);
@@ -194,11 +195,21 @@ const DataImportWizard = ({
             const result = response.data?.data || response.data?.result || response.data;
 
             if (result?.batchId) {
-                // Start Background Monitoring with the specific pricing status endpoint
+                // Determine correct status URL based on entity
+                const statusUrl = entityName === 'بنود الأسعار'
+                    ? `provider-contracts/pricing/import/status/${result.batchId}`
+                    : `unified-members/import/status/${result.batchId}`;
+
+                // Notify parent component
+                if (onImportStarted && typeof onImportStarted === 'function') {
+                    onImportStarted(result.batchId);
+                }
+
+                // Start Background Monitoring with the specific status endpoint
                 startImport(
                     result.batchId,
                     file?.name || 'import.xlsx',
-                    `provider-contracts/pricing/import/status/${result.batchId}`
+                    statusUrl
                 );
                 // Close dialog and let background widget handle progress
                 if (onClose) onClose();

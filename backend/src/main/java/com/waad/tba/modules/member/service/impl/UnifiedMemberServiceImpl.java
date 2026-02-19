@@ -11,6 +11,8 @@ import com.waad.tba.modules.member.dto.*;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.entity.MemberWorkflowHistory;
 import com.waad.tba.modules.member.mapper.UnifiedMemberMapper;
+import com.waad.tba.modules.claim.repository.ClaimRepository;
+import com.waad.tba.modules.member.repository.MemberDocumentRepository;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.member.repository.MemberWorkflowHistoryRepository;
 import com.waad.tba.modules.member.service.BarcodeGeneratorService;
@@ -54,6 +56,8 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     private final UnifiedMemberMapper mapper;
     private final AuthorizationService authorizationService;
     private final DocumentService documentService;
+    private final ClaimRepository claimRepository;
+    private final MemberDocumentRepository documentRepository;
 
     @Override
     @Transactional
@@ -247,7 +251,32 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     @Override
     @Transactional
     public void hardDeleteMember(Long id) {
-        memberRepository.delete(memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found")));
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+
+        log.info("💀 HARD DELETING member (and dependencies): {} (ID: {})", member.getFullName(), id);
+
+        // 1. Cleanup dependencies for all children if principal
+        if (member.getType() == Member.MemberType.PRINCIPAL) {
+            List<Member> dependents = memberRepository.findByParentId(id);
+            for (Member dependent : dependents) {
+                cleanupMemberDependencies(dependent.getId());
+                // Dependents themselves will be deleted by principal.dependents CascadeType.ALL
+            }
+        }
+
+        // 2. Cleanup dependencies for the member itself
+        cleanupMemberDependencies(id);
+
+        // 3. Physical delete (will cascade to attributes and dependents' member records)
+        memberRepository.delete(member);
+    }
+
+    private void cleanupMemberDependencies(Long memberId) {
+        log.debug("Cleaning up dependencies for member ID: {}", memberId);
+        workflowHistoryRepository.deleteByMemberId(memberId);
+        documentRepository.deleteByMemberId(memberId);
+        claimRepository.deleteByMemberId(memberId);
     }
 
     @Override
@@ -266,7 +295,7 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
 
         if (target == null) throw new ResourceNotFoundException("Member not found");
         Member principal = target.getParent() != null ? target.getParent() : target;
-        return mapper.toFamilyEligibilityResponse(principal, memberRepository.findByParentId(principal.getId()));
+        return mapper.toFamilyEligibilityResponse(principal, memberRepository.findByParentIdAndActiveTrue(principal.getId()));
     }
 
     @Override

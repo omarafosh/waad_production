@@ -1,6 +1,8 @@
 spring:
   application:
     name: tba-waad-system-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   # ==============================  # 🌐 Server & Encoding
   # ==============================
@@ -12,7 +14,6 @@ spring:
       charset: UTF-8
       enabled: true
       force: true
-
 
   # ==============================
   # 🆔 Member Card Number Configuration
@@ -60,7 +61,7 @@ spring:
     # Docker PostgreSQL uses port 5433, native uses 5432
     url: ${DB_URL:jdbc:postgresql://localhost:5432/tba_waad_system}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres} # Default for local dev robustness
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: TBA-WAAD-HikariPool
@@ -74,9 +75,7 @@ spring:
   # ==============================
   jpa:
     hibernate:
-      # ⚠️ CRITICAL: Use 'validate' for production-grade stability
-      # Schema MUST be created via Flyway migrations
-      ddl-auto: update # Changed from validate to update to resolve schema-validation errors in dev
+      ddl-auto: validate
     show-sql: ${SHOW_SQL:false}
     open-in-view: false
     properties:
@@ -86,19 +85,17 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
-  
+
   # ==============================
   # 🚀 Flyway Database Migration
   # ==============================
   flyway:
     enabled: ${FLYWAY_ENABLED:true}
     baseline-on-migrate: true
-    baseline-version: '0'
+    baseline-version: "0"
     locations: classpath:db/migration
-    # ⚠️ PRODUCTION: validate-on-migrate must be TRUE
-    # 🔧 LOCAL DEV: set to false if you need to repair checksums
-    validate-on-migrate: false
-    out-of-order: true
+    validate-on-migrate: true
+    out-of-order: false
     # 🛡️ SECURITY: Never use clean-disabled=false in production
     clean-disabled: true
     # 📝 Allow migrations to run even if checksum changed (DEV ONLY)
@@ -125,7 +122,11 @@ spring:
   # 🧠 Caching Configuration
   # ==============================
   cache:
-    type: ${CACHE_TYPE:simple} # Default to simple (In-memory) for dev, use 'redis' for production
+    type: ${CACHE_TYPE:redis} # Changed from simple to redis
+    redis:
+      time-to-live: 3600000 # 1 hour
+      cache-null-values: false
+ # Default to simple (In-memory) for dev, use 'redis' for production
 
 # ==============================
 # 🌐 Server
@@ -133,24 +134,24 @@ spring:
 server:
   port: 8080
   error:
-    include-message: always
-    include-stacktrace: on_param
+    include-message: never
+    include-stacktrace: never
 
   servlet:
     session:
-      timeout: 30m                        # Session expires after 30 minutes of inactivity
+      timeout: 30m # Session expires after 30 minutes of inactivity
       cookie:
-        name: JSESSIONID                  # Default Spring session cookie name
-        http-only: true                   # Prevents XSS attacks (JavaScript cannot access cookie)
-        same-site: strict                # Prevents CSRF attacks (cookie only sent to same site)
-        secure: false                   # local  Set to 'true' in production (HTTPS only) - false for dev
-        max-age: 1800                       # 30 minutes in seconds (matches session timeout)
+        name: JSESSIONID # Default Spring session cookie name
+        http-only: true # Prevents XSS attacks (JavaScript cannot access cookie)
+        same-site: strict # Prevents CSRF attacks (cookie only sent to same site)
+        secure: true # HTTPS only (override in dev profile)
+        max-age: 1800 # 30 minutes in seconds (matches session timeout)
 
 # ==============================
 # 🔐 JWT (محفوظ للموبايل)
 # ==============================
 jwt:
-  secret: ${JWT_SECRET:VGhpcy1pcy1hLUJhc2U2NC1leGFtcGxlLXNlY3JldC0uLi4=} # ⚠️ Default added for dev robustness
+  secret: ${JWT_SECRET} # CRITICAL: MUST be provided via environment variable
   expiration: 86400000
 
 # ==============================
@@ -165,28 +166,28 @@ app:
 
     # Password reset token validity (in hours)
     password-reset-token-validity-hours: ${PASSWORD_RESET_TOKEN_VALIDITY_HOURS:1}
-    
+
     # Email verification token validity (in hours)
     email-verification-token-validity-hours: ${EMAIL_VERIFICATION_TOKEN_VALIDITY_HOURS:24}
-    
+
     # Require email verification before allowing login
     # Set to false in development, true in production
     require-email-verification: ${REQUIRE_EMAIL_VERIFICATION:false}
-    
+
     # Account lockout duration (in minutes)
     account-lockout-duration-minutes: ${ACCOUNT_LOCKOUT_DURATION_MINUTES:30}
-    
+
     # Maximum failed login attempts before lockout
     max-failed-login-attempts: ${MAX_FAILED_LOGIN_ATTEMPTS:5}
-  
+
   # Frontend URL for email links
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
-    
+
     # CORS Configuration
     cors:
-      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
-  
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174}
+
   # Email configuration
   email:
     from: ${EMAIL_FROM:support@alwahacare.com}
@@ -217,16 +218,16 @@ file:
   storage:
     # Storage type: local, s3, minio
     type: ${FILE_STORAGE_TYPE:local}
-    
+
     # Local file storage settings
     local:
       base-path: ${FILE_STORAGE_PATH:./uploads}
-    
+
     # Maximum file sizes (in bytes)
     max-size:
-      document: ${MAX_DOCUMENT_SIZE:10485760}  # 10MB = 10 * 1024 * 1024
-      image: ${MAX_IMAGE_SIZE:52428800}        # 50MB = 50 * 1024 * 1024
-    
+      document: ${MAX_DOCUMENT_SIZE:10485760} # 10MB = 10 * 1024 * 1024
+      image: ${MAX_IMAGE_SIZE:52428800} # 50MB = 50 * 1024 * 1024
+
     # Allowed MIME types
     allowed-types:
       - application/pdf
@@ -249,7 +250,7 @@ logging:
 # 🚦 Rate Limiting (Bucket4j)
 # ==============================
 bucket4j:
-  enabled: false
+  enabled: true
   filters:
     - cache-name: rate-limit-bucket
       url: /api/auth/login
@@ -267,3 +268,21 @@ bucket4j:
             - capacity: 100
               time: 1
               unit: minutes
+
+# ==============================
+# 📊 Actuator & Monitoring
+# ==============================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

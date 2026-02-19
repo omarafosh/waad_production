@@ -27,6 +27,7 @@ import com.waad.tba.modules.claim.dto.ClaimUpdateDto;
 import com.waad.tba.modules.claim.dto.ClaimViewDto;
 import com.waad.tba.modules.claim.dto.CostBreakdownDto;
 import com.waad.tba.modules.claim.entity.ClaimStatus;
+import com.waad.tba.modules.claim.service.ClaimApprovalService;
 import com.waad.tba.modules.claim.service.ClaimService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,7 @@ import lombok.RequiredArgsConstructor;
 public class ClaimController {
 
     private final ClaimService claimService;
+    private final ClaimApprovalService claimApprovalService;
 
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAnyAuthority('CLAIM_MANAGE', 'CLAIM_CREATE')")
@@ -150,7 +152,7 @@ public class ClaimController {
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_APPROVE')")
     @Operation(summary = "Start review", description = "Take a submitted claim for review. Transitions to UNDER_REVIEW status.")
     public ResponseEntity<ApiResponse<ClaimViewDto>> startReview(@PathVariable Long id) {
-        ClaimViewDto claim = claimService.startReview(id);
+        ClaimViewDto claim = claimApprovalService.startReview(id);
         return ResponseEntity.ok(ApiResponse.success("تم استلام المطالبة للمراجعة", claim));
     }
 
@@ -176,7 +178,7 @@ public class ClaimController {
     public ResponseEntity<ApiResponse<ClaimViewDto>> approveClaim(
             @PathVariable Long id,
             @Valid @RequestBody ClaimApproveDto dto) {
-        ClaimViewDto claim = claimService.requestApproval(id, dto);
+        ClaimViewDto claim = claimApprovalService.requestApproval(id, dto);
         return ResponseEntity.ok(ApiResponse.success("جاري معالجة الموافقة...", claim));
     }
 
@@ -190,7 +192,7 @@ public class ClaimController {
     public ResponseEntity<ApiResponse<ClaimViewDto>> rejectClaim(
             @PathVariable Long id,
             @Valid @RequestBody ClaimRejectDto dto) {
-        ClaimViewDto claim = claimService.rejectClaim(id, dto);
+        ClaimViewDto claim = claimApprovalService.rejectClaim(id, dto);
         return ResponseEntity.ok(ApiResponse.success("تم رفض المطالبة", claim));
     }
 
@@ -223,7 +225,7 @@ public class ClaimController {
     public ResponseEntity<ApiResponse<ClaimViewDto>> returnForInfo(
             @PathVariable Long id,
             @Valid @RequestBody ClaimReturnForInfoDto dto) {
-        ClaimViewDto claim = claimService.returnForInfo(id, dto);
+        ClaimViewDto claim = claimApprovalService.returnForInfo(id, dto);
         return ResponseEntity.ok(ApiResponse.success("تم إعادة المطالبة لطلب معلومات إضافية", claim));
     }
 
@@ -256,7 +258,7 @@ public class ClaimController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        Page<ClaimViewDto> claimsPage = claimService.getPendingClaims(
+        Page<ClaimViewDto> claimsPage = claimApprovalService.getPendingClaims(
                 Math.max(0, page - 1), size, sortBy, sortDir);
 
         PaginationResponse<ClaimViewDto> response = PaginationResponse.<ClaimViewDto>builder()
@@ -281,7 +283,7 @@ public class ClaimController {
             @RequestParam(defaultValue = "reviewedAt") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        Page<ClaimViewDto> claimsPage = claimService.getApprovedClaims(
+        Page<ClaimViewDto> claimsPage = claimApprovalService.getApprovedClaims(
                 Math.max(0, page - 1), size, sortBy, sortDir);
 
         PaginationResponse<ClaimViewDto> response = PaginationResponse.<ClaimViewDto>builder()

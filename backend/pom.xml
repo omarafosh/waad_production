@@ -210,6 +210,24 @@
         <artifactId>pdfbox</artifactId>
         <version>2.0.31</version>
       </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.20.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.20.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
     <build>
@@ -247,6 +265,57 @@
                         <arg>-Xlint:deprecation,unchecked</arg>
                     </compilerArgs>
                     <release>${java.version}</release>
+                </configuration>
+            </plugin>
+
+            <!-- JaCoCo: Code Coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>com.waad.tba.modules.claim.*</include>
+                                        <include>com.waad.tba.modules.benefitpolicy.*</include>
+                                        <include>com.waad.tba.security.*</include>
+                                    </includes>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.30</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <haltOnFailure>false</haltOnFailure>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/enterprise/**</exclude>
+                        <exclude>**/PerformanceStressSimulator*</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

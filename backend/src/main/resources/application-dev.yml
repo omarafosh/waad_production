@@ -29,6 +29,13 @@ spring:
     validate-on-migrate: false
     clean-disabled: false
 
+  # ==============================
+  # 🧠 Caching (Development)
+  # ==============================
+  cache:
+    type: simple
+    cache-names: rate-limit-bucket,coverageResolution,medicalServices,systemSettings
+
 # ==============================
 # 🌐 Server (Development)
 # ==============================
@@ -38,6 +45,10 @@ server:
       cookie:
         secure: false  # HTTP allowed in dev
 
+  error:
+    include-message: always
+    include-stacktrace: on_param
+
 # ==============================
 # 🔐 JWT (Development)
 # ==============================
@@ -46,13 +57,20 @@ jwt:
   expiration: 86400000
 
 # ==============================
-# 🔒 Security (Development)
+# 🚦 Rate Limiting (Development - DISABLED)
 # ==============================
+bucket4j:
+  enabled: false
+
 app:
   security:
+    initial-admin-password: ${INITIAL_ADMIN_PASSWORD:Admin@123}
     require-email-verification: false
+    initial-admin-username: ${INITIAL_ADMIN_USERNAME:superadmin}
+    initial-admin-email: ${INITIAL_ADMIN_EMAIL:superadmin@tba.sa}
   
   frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
     cors:
       allowed-origins: http://localhost:3000,http://localhost:5174
 

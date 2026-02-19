@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-// material-ui
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -9,56 +8,73 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
 
-// project imports
 import MainCard from 'components/MainCard';
 import { openSnackbar } from 'api/snackbar';
+import { useSystemSettings } from 'contexts/SystemSettingsContext';
 
-// icons
-import { SaveOutlined, UploadOutlined, BankOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SaveOutlined, ReloadOutlined, BankOutlined } from '@ant-design/icons';
 
-// ==============================|| SYSTEM SETTINGS - COMPANY INFO ||============================== //
+const buildFormState = (settings) => ({
+  systemName: settings?.systemName || '',
+  systemCode: settings?.systemCode || '',
+  businessType: settings?.businessType || '',
+  taxNumber: settings?.taxNumber || '',
+  phone: settings?.phone || '',
+  email: settings?.email || '',
+  website: settings?.website || '',
+  address: settings?.address || '',
+  logoUrl: settings?.logoUrl || '',
+  primaryColor: settings?.primaryColor || '#1890ff',
+  fontFamily: settings?.fontFamily || 'Cairo',
+  fontSize: settings?.fontSize || 14
+});
 
 export default function TabCompanyInfo() {
-  const initialValues = {
-    companyName: 'إدارة التأمينات الصحية TBA WAAD',
-    registrationNumber: 'LY-REG-2024-001',
-    taxId: 'TAX-LY-123456789',
-    address: 'Tripoli, Libya\nMedical Insurance Building\n3rd Floor',
-    phone: '+218 21 123 4567',
-    email: 'info@tba-waad.ly',
-    website: 'https://www.tba-waad.ly',
-    brandPrimaryColor: '#1976d2',
-    brandSecondaryColor: '#dc004e'
-  };
+  const { settings, updateSettings, isUpdating } = useSystemSettings();
 
-  const [formData, setFormData] = useState(initialValues);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState(buildFormState(settings));
   const [errors, setErrors] = useState({});
 
+  const initialSnapshot = useMemo(() => buildFormState(settings), [settings]);
+
+  useEffect(() => {
+    setFormData(initialSnapshot);
+    setErrors({});
+  }, [initialSnapshot]);
+
   const handleChange = (field) => (event) => {
-    setFormData({ ...formData, [field]: event.target.value });
-    // Clear error for this field
+    const value = event.target.value;
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors({ ...errors, [field]: '' });
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+    if (!formData.systemName || !formData.systemName.trim()) {
+      newErrors.systemName = 'اسم النظام مطلوب';
     }
 
-    // Website validation
-    const urlRegex = /^https?:\/\/.+\..+/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+    }
+
+    const urlRegex = /^https?:\/\/.+/;
     if (formData.website && !urlRegex.test(formData.website)) {
-      newErrors.website = 'Invalid website URL (must start with http:// or https://)';
+      newErrors.website = 'صيغة الرابط غير صحيحة (يجب أن يبدأ بـ http:// أو https://)';
+    }
+
+    if (formData.logoUrl && !urlRegex.test(formData.logoUrl)) {
+      newErrors.logoUrl = 'صيغة رابط الشعار غير صحيحة';
+    }
+
+    const parsedFontSize = Number(formData.fontSize);
+    if (Number.isNaN(parsedFontSize) || parsedFontSize < 8 || parsedFontSize > 30) {
+      newErrors.fontSize = 'حجم الخط يجب أن يكون بين 8 و 30';
     }
 
     setErrors(newErrors);
@@ -66,287 +82,206 @@ export default function TabCompanyInfo() {
   };
 
   const handleReset = () => {
-    setFormData(initialValues);
-    setLogoPreview(null);
+    setFormData(initialSnapshot);
     setErrors({});
   };
 
-  const handleLogoUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-      if (!validTypes.includes(file.type)) {
-        openSnackbar({
-          open: true,
-          message: 'Invalid file type. Please upload JPG or PNG image',
-          variant: 'warning'
-        });
-        return;
-      }
-
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        openSnackbar({
-          open: true,
-          message: 'File size too large. Maximum size is 2MB',
-          variant: 'warning'
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveLogo = () => {
-    setLogoPreview(null);
-  };
-
   const handleSave = async () => {
-    // Validate form first
     if (!validateForm()) {
       openSnackbar({
         open: true,
-        message: 'Please fix validation errors before saving',
+        message: 'يرجى تصحيح أخطاء الإدخال قبل الحفظ',
         variant: 'warning'
       });
       return;
     }
 
-    setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Save to localStorage for demo
-      const dataToSave = { ...formData };
-      if (logoPreview) {
-        dataToSave.logo = logoPreview;
-      }
-      localStorage.setItem('system_company_info', JSON.stringify(dataToSave));
+      await updateSettings({
+        ...settings,
+        ...formData,
+        fontSize: Number(formData.fontSize)
+      });
 
       openSnackbar({
         open: true,
-        message: 'Company information saved successfully',
+        message: 'تم حفظ إعدادات النظام بنجاح',
         variant: 'success'
       });
-    } catch {
+    } catch (error) {
       openSnackbar({
         open: true,
-        message: 'Failed to save company information',
+        message: error?.response?.data?.message || 'فشل حفظ إعدادات النظام',
         variant: 'error'
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
-        <MainCard title="Company Information">
+        <MainCard title="إعدادات الشركة والنظام">
           <Grid container spacing={3}>
-            {/* Company Logo */}
             <Grid size={12}>
-              <Divider textAlign="left">Company Logo</Divider>
+              <Divider textAlign="left">الهوية البصرية</Divider>
             </Grid>
 
             <Grid size={12}>
               <Stack direction="row" spacing={3} alignItems="center">
-                <Avatar variant="rounded" sx={{ width: 120, height: 120, bgcolor: 'primary.lighter' }} src={logoPreview}>
+                <Avatar variant="rounded" sx={{ width: 120, height: 120, bgcolor: 'primary.lighter' }} src={formData.logoUrl || undefined}>
                   <BankOutlined style={{ fontSize: '3rem' }} />
                 </Avatar>
-                <Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <input
-                      accept="image/png,image/jpeg,image/jpg"
-                      style={{ display: 'none' }}
-                      id="logo-upload"
-                      type="file"
-                      onChange={handleLogoUpload}
-                    />
-                    <label htmlFor="logo-upload">
-                      <Button variant="outlined" component="span" startIcon={<UploadOutlined />}>
-                        Upload Logo
-                      </Button>
-                    </label>
-                    {logoPreview && (
-                      <IconButton color="error" onClick={handleRemoveLogo} size="small">
-                        <DeleteOutlined />
-                      </IconButton>
-                    )}
-                  </Stack>
-                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                    Recommended: 400x400px, PNG or JPG (Max 2MB)
-                  </Typography>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    fullWidth
+                    label="رابط الشعار (Logo URL)"
+                    value={formData.logoUrl}
+                    onChange={handleChange('logoUrl')}
+                    placeholder="https://example.com/logo.png"
+                    error={!!errors.logoUrl}
+                    helperText={errors.logoUrl || 'أدخل رابطًا مباشرًا لصورة الشعار'}
+                  />
                 </Box>
               </Stack>
             </Grid>
 
-            {/* Company Names */}
             <Grid size={12}>
-              <Divider textAlign="left" sx={{ mt: 2 }}>
-                Company Names
-              </Divider>
+              <Divider textAlign="left" sx={{ mt: 2 }}>المعلومات الأساسية</Divider>
             </Grid>
 
             <Grid size={12}>
               <TextField
                 fullWidth
-                label="اسم الشركة"
-                value={formData.companyName}
-                onChange={handleChange('companyName')}
-                placeholder="أدخل اسم الشركة"
+                label="اسم النظام"
+                value={formData.systemName}
+                onChange={handleChange('systemName')}
+                error={!!errors.systemName}
+                helperText={errors.systemName}
                 dir="rtl"
               />
             </Grid>
 
-            {/* Legal Information */}
-            <Grid size={12}>
-              <Divider textAlign="left" sx={{ mt: 2 }}>
-                Legal Information
-              </Divider>
-            </Grid>
-
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Registration Number"
-                value={formData.registrationNumber}
-                onChange={handleChange('registrationNumber')}
-                placeholder="Enter registration number"
+                label="رمز النظام"
+                value={formData.systemCode}
+                onChange={handleChange('systemCode')}
+                placeholder="TBA_WAAD"
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Tax ID"
-                value={formData.taxId}
-                onChange={handleChange('taxId')}
-                placeholder="Enter tax identification number"
+                label="نوع النشاط"
+                value={formData.businessType}
+                onChange={handleChange('businessType')}
+                placeholder="Healthcare TPA"
               />
             </Grid>
 
-            {/* Contact Information */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="الرقم الضريبي"
+                value={formData.taxNumber}
+                onChange={handleChange('taxNumber')}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="اللون الأساسي"
+                value={formData.primaryColor}
+                onChange={handleChange('primaryColor')}
+                placeholder="#1890ff"
+              />
+            </Grid>
+
             <Grid size={12}>
-              <Divider textAlign="left" sx={{ mt: 2 }}>
-                Contact Information
-              </Divider>
+              <Divider textAlign="left" sx={{ mt: 2 }}>معلومات التواصل</Divider>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="الهاتف"
+                value={formData.phone}
+                onChange={handleChange('phone')}
+                placeholder="+218 XX XXX XXXX"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="البريد الإلكتروني"
+                type="email"
+                value={formData.email}
+                onChange={handleChange('email')}
+                error={!!errors.email}
+                helperText={errors.email}
+              />
             </Grid>
 
             <Grid size={12}>
               <TextField
                 fullWidth
-                label="Address"
+                label="الموقع الإلكتروني"
+                value={formData.website}
+                onChange={handleChange('website')}
+                placeholder="https://www.example.com"
+                error={!!errors.website}
+                helperText={errors.website}
+              />
+            </Grid>
+
+            <Grid size={12}>
+              <TextField
+                fullWidth
+                label="العنوان"
                 value={formData.address}
                 onChange={handleChange('address')}
-                placeholder="Street address\nCity, Country\nPostal code"
                 multiline
                 rows={3}
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Phone"
-                value={formData.phone}
-                onChange={handleChange('phone')}
-                placeholder="+218 XX XXX XXXX"
-                helperText="Format: +218 XX XXX XXXX"
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange('email')}
-                placeholder="info@example.com"
-                error={!!errors.email}
-                helperText={errors.email || 'Company support email address'}
-              />
-            </Grid>
-
             <Grid size={12}>
+              <Divider textAlign="left" sx={{ mt: 2 }}>الخطوط</Divider>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Website"
-                value={formData.website}
-                onChange={handleChange('website')}
-                placeholder="https://www.example.com"
-                error={!!errors.website}
-                helperText={errors.website || 'Company website URL (e.g., https://example.com)'}
+                label="نوع الخط"
+                value={formData.fontFamily}
+                onChange={handleChange('fontFamily')}
+                placeholder="Cairo"
               />
             </Grid>
 
-            {/* Branding */}
-            <Grid size={12}>
-              <Divider textAlign="left" sx={{ mt: 2 }}>
-                Brand Colors
-              </Divider>
-            </Grid>
-
             <Grid size={{ xs: 12, md: 6 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <TextField
-                  fullWidth
-                  label="Primary Brand Color"
-                  value={formData.brandPrimaryColor}
-                  onChange={handleChange('brandPrimaryColor')}
-                  placeholder="#1976d2"
-                />
-                <Box
-                  sx={{
-                    width: 60,
-                    height: 40,
-                    bgcolor: formData.brandPrimaryColor,
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1
-                  }}
-                />
-              </Stack>
+              <TextField
+                fullWidth
+                type="number"
+                label="حجم الخط"
+                value={formData.fontSize}
+                onChange={handleChange('fontSize')}
+                error={!!errors.fontSize}
+                helperText={errors.fontSize || 'المدى المسموح: 8 - 30'}
+              />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <TextField
-                  fullWidth
-                  label="Secondary Brand Color"
-                  value={formData.brandSecondaryColor}
-                  onChange={handleChange('brandSecondaryColor')}
-                  placeholder="#dc004e"
-                />
-                <Box
-                  sx={{
-                    width: 60,
-                    height: 40,
-                    bgcolor: formData.brandSecondaryColor,
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1
-                  }}
-                />
-              </Stack>
-            </Grid>
-
-            {/* Save Button */}
             <Grid size={12}>
               <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
-                <Button variant="outlined" startIcon={<ReloadOutlined />} onClick={handleReset} disabled={loading}>
-                  Reset
+                <Button variant="outlined" startIcon={<ReloadOutlined />} onClick={handleReset} disabled={isUpdating}>
+                  إعادة تعيين
                 </Button>
-                <Button variant="contained" startIcon={<SaveOutlined />} onClick={handleSave} disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Changes'}
+                <Button variant="contained" startIcon={<SaveOutlined />} onClick={handleSave} disabled={isUpdating}>
+                  {isUpdating ? 'جاري الحفظ...' : 'حفظ التغييرات'}
                 </Button>
               </Stack>
             </Grid>

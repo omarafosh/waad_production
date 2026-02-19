@@ -1,4 +1,5 @@
 package com.waad.tba.security;
+
 import org.springframework.http.HttpMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder; // Injected from PasswordEncoderConfig
-    
+
     @Value("${app.frontend.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
@@ -63,6 +64,10 @@ public class SecurityConfig {
                         // Public endpoints - Authentication & Branding
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/settings").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // ✅ SECURITY FIX: Protect sensitive actuator endpoints (metrics, prometheus, beans, etc.)
+                        // Only ADMIN roles can access monitoring endpoints
+                        .requestMatchers("/actuator/**").hasAnyRole("SUPER_ADMIN", "INSURANCE_ADMIN")
                         // Diagnostic Endpoint REMOVED for Security
 
                         // Swagger / OpenAPI endpoints
@@ -92,14 +97,16 @@ public class SecurityConfig {
                 // 🛡️ SECURITY HEADERS & HTTPS
                 .headers(headers -> headers
                         .xssProtection(xss -> xss.disable()) // Modern browsers ignore this, CSP is better
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self';"))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self';"))
                         .frameOptions(frame -> frame.deny()) // Prevent Clickjacking
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000) // 1 year
                                 .preload(true)));
-                                
-        // Force HTTPS in Production (handled by Nginx/LoadBalancer usually, but good practice)
+
+        // Force HTTPS in Production (handled by Nginx/LoadBalancer usually, but good
+        // practice)
         // http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
 
         return http.build();
@@ -111,7 +118,15 @@ public class SecurityConfig {
         // Allow all common frontend development ports
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "Accept", 
+            "Origin", 
+            "X-Requested-With", 
+            "X-Employer-ID", 
+            "X-XSRF-TOKEN"
+        ));
         // AUDIT FIX: Expose CSRF token cookie to frontend
         configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Employer-ID", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);

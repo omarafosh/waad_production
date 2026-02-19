@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
     private String status;
+    private String errorCode;
     private String message;
     private String messageAr;
     private T data;
@@ -51,6 +52,25 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .status("error")
                 .message(message)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(String errorCode, String message) {
+        return ApiResponse.<T>builder()
+                .status("error")
+                .errorCode(errorCode)
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(String errorCode, String messageEn, String messageAr) {
+        return ApiResponse.<T>builder()
+                .status("error")
+                .errorCode(errorCode)
+                .message(messageEn)
+                .messageAr(messageAr)
                 .timestamp(LocalDateTime.now())
                 .build();
     }

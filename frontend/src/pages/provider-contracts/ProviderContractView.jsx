@@ -72,6 +72,7 @@ import GenericDataTable from 'components/GenericDataTable';
 import DataImportWizard from 'components/ExcelImport/DataImportWizard';
 import useFormatter from 'hooks/useFormatter';
 import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
+import { useImportProgress } from 'contexts/GlobalImportProgressContext';
 
 // API Service
 import {
@@ -267,6 +268,22 @@ const ProviderContractView = () => {
     },
     [id, queryClient, enqueueSnackbar]
   );
+
+  // Import Progress Context
+  const { activeImport } = useImportProgress();
+  const [currentImportBatchId, setCurrentImportBatchId] = useState(null);
+
+  // Auto-refresh when import completes
+  useEffect(() => {
+    if (activeImport &&
+      activeImport.batchId === currentImportBatchId &&
+      activeImport.status === 'COMPLETED') {
+
+      enqueueSnackbar('تم استيراد بنود التسعير بنجاح', { variant: 'success' });
+      queryClient.invalidateQueries(['provider-contract-pricing', id]);
+      setCurrentImportBatchId(null);
+    }
+  }, [activeImport, currentImportBatchId, queryClient, id, enqueueSnackbar]);
 
   const handleDownloadTemplate = useCallback(
     async () => {
@@ -1224,6 +1241,7 @@ const ProviderContractView = () => {
         baseApiUrl={`/api/provider-contracts/${id}/pricing/import`}
         entityName="بنود الأسعار"
         hideContextSelectors={true}
+        onImportStarted={(batchId) => setCurrentImportBatchId(batchId)}
       />
     </RBACGuard>
   );

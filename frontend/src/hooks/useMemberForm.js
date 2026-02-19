@@ -20,7 +20,7 @@ export const useMemberForm = (initialValues = {}, options = {}) => {
      * يدعم الربط الذكي بين الجنس وصلة القرابة
      */
     const handleChange = useCallback((field) => (eventOrValue) => {
-        // استخراج القيمة من الحدث أو استخدامها مباشرة
+        // ... (existing code for value extraction)
         let value;
         if (eventOrValue === null || eventOrValue === undefined) {
             value = null;
@@ -39,32 +39,55 @@ export const useMemberForm = (initialValues = {}, options = {}) => {
 
         const updates = { [field]: value };
 
-        // AUTO-GENDER: إذا تم تغيير صلة القرابة، حدّث الجنس تلقائياً
+        // AUTO-GENDER matching logic
         if (field === 'relationship' && RELATIONSHIP_GENDER_MAP[value]) {
             updates.gender = RELATIONSHIP_GENDER_MAP[value];
         }
 
-        // REVERSE: إذا تم تغيير الجنس وكانت الصلة غير متوافقة، امسح الصلة
         if (field === 'gender') {
             const currentRelGender = RELATIONSHIP_GENDER_MAP[form.relationship];
             if (currentRelGender && currentRelGender !== value) {
-                updates.relationship = ''; // مسح الصلة غير المتوافقة
+                updates.relationship = '';
             }
         }
 
         setForm((prev) => ({ ...prev, ...updates }));
 
-        // مسح الأخطاء للحقول المحدثة
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: null }));
+        // INSTANT VALIDATION: التحقق من الحقل بمجرد تغييره
+        if (options.instantValidate) {
+            validateField(field, value);
+        } else {
+            // مسح الأخطاء للحقول المحدثة
+            if (errors[field]) {
+                setErrors((prev) => ({ ...prev, [field]: null }));
+            }
         }
-        if (updates.gender && errors.gender) {
-            setErrors((prev) => ({ ...prev, gender: null }));
+    }, [form.relationship, errors, options.instantValidate]);
+
+    /**
+     * التحقق من صحة حقل واحد
+     */
+    const validateField = useCallback((field, value) => {
+        let error = null;
+        const { isFastTrack } = form;
+
+        if (field === 'fullName' && !value?.trim()) {
+            error = MEMBERS_AR.validation.required.fullName;
+        } else if (!isFastTrack) {
+            if (field === 'phone' && value && !/^09[1-6][0-9]{7}$/.test(value)) {
+                error = MEMBERS_AR.validation.format.phone;
+            }
+            if (field === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                error = MEMBERS_AR.validation.format.email;
+            }
+            if ((field === 'employerId' || field === 'benefitPolicyId' || field === 'policyNumber') && !value) {
+                error = MEMBERS_AR.validation.required[field] || 'هذا الحقل مطلوب';
+            }
         }
-        if (updates.relationship && errors.relationship) {
-            setErrors((prev) => ({ ...prev, relationship: null }));
-        }
-    }, [form.relationship, errors]);
+
+        setErrors((prev) => ({ ...prev, [field]: error }));
+        return !error;
+    }, [form]);
 
     /**
      * تعيين خطأ لحقل معين
@@ -176,7 +199,8 @@ export const useMemberForm = (initialValues = {}, options = {}) => {
         clearErrors,
         resetForm,
         updateForm,
-        validate
+        validate,
+        validateField
     };
 };
 

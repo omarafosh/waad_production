@@ -10,7 +10,12 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles", "roles.permissions"})
     Optional<User> findByUsername(String username);
+    
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles", "roles.permissions"})
+    Optional<User> findById(Long id);
+
     Optional<User> findByEmail(String email);
     Optional<User> findByCivilId(String civilId);
     Boolean existsByUsername(String username);

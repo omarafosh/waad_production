@@ -36,7 +36,7 @@ public class BenefitPolicyLifecycleAdapter implements LifecycleAdapter<BenefitPo
         List<LifecycleAction> actions = new ArrayList<>();
         BenefitPolicyStatus status = policy.getStatus();
         boolean isDeleted = !policy.isActive();
-        long claimsCount = claimRepository.countByMemberBenefitPolicyId(entityId); 
+        long claimsCount = claimRepository.countByMemberBenefitPolicyId(entityId);
 
         // If soft-deleted or cancelled (State 5), provide RESTORE
         if (isDeleted || status == BenefitPolicyStatus.CANCELLED) {
@@ -50,7 +50,7 @@ public class BenefitPolicyLifecycleAdapter implements LifecycleAdapter<BenefitPo
                 actions.add(LifecycleAction.SOFT_DELETE);
                 actions.add(LifecycleAction.HARD_DELETE);
                 break;
-                
+
             case ACTIVE:
             case SUSPENDED:
                 if (claimsCount == 0) {
@@ -58,22 +58,22 @@ public class BenefitPolicyLifecycleAdapter implements LifecycleAdapter<BenefitPo
                 }
                 actions.add(LifecycleAction.TERMINATE); // Always allowed to terminate active policy
                 break;
-                
+
             case EXPIRED:
             case TERMINATED:
             case CANCELLED:
                 actions.add(LifecycleAction.ARCHIVE);
                 actions.add(LifecycleAction.RESTORE);
                 break;
-                
+
             case ARCHIVED:
                 actions.add(LifecycleAction.RESTORE);
                 break;
-                
+
             default:
                 break;
         }
-        
+
         return actions;
     }
 
@@ -81,17 +81,18 @@ public class BenefitPolicyLifecycleAdapter implements LifecycleAdapter<BenefitPo
     public ValidationResult validate(Long entityId, LifecycleAction action) {
         BenefitPolicy policy = benefitPolicyRepository.findByIdIncludeDeleted(entityId)
                 .orElseThrow(() -> new IllegalArgumentException("Policy not found"));
-        
+
         long claimsCount = claimRepository.countByMemberBenefitPolicyId(entityId);
 
         if (action == LifecycleAction.CANCEL && policy.getStatus() != BenefitPolicyStatus.DRAFT && claimsCount > 0) {
-            return ValidationResult.invalid("لا يمكن إلغاء وثيقة تحتوي على مطالبات. يرجى استخدام خيار الإنهاء (Terminate).");
+            return ValidationResult
+                    .invalid("لا يمكن إلغاء وثيقة تحتوي على مطالبات. يرجى استخدام خيار الإنهاء (Terminate).");
         }
 
         if (action == LifecycleAction.HARD_DELETE && policy.getStatus() != BenefitPolicyStatus.DRAFT) {
             return ValidationResult.invalid("الحذف النهائي مسموح فقط للوثائق في حالة المسودة (Draft).");
         }
-        
+
         return ValidationResult.valid();
     }
 
@@ -131,10 +132,20 @@ public class BenefitPolicyLifecycleAdapter implements LifecycleAdapter<BenefitPo
                         .newStatus("DELETED")
                         .message("تم حذف الوثيقة نهائياً.")
                         .build();
+            case ACTIVATE:
+                if (policy.getStatus() == BenefitPolicyStatus.DRAFT
+                        || policy.getStatus() == BenefitPolicyStatus.SUSPENDED) {
+                    policy.setStatus(BenefitPolicyStatus.ACTIVE);
+                    policy.setActive(true);
+                    // Deactivate other active policies for same employer if needed (Business Rule)
+                    // existingService.deactivateOtherPolicies(policy.getEmployerId()); // This
+                    // might need service injection or event publishing
+                }
+                break;
             default:
                 throw new UnsupportedOperationException("Action not supported: " + action);
         }
-        
+
         if (action != LifecycleAction.HARD_DELETE) {
             benefitPolicyRepository.save(policy);
             newStatusStr = policy.getStatus().name();
@@ -151,7 +162,7 @@ public class BenefitPolicyLifecycleAdapter implements LifecycleAdapter<BenefitPo
 
     @Override
     public String getCurrentStatus(Long entityId) {
-         return benefitPolicyRepository.findByIdIncludeDeleted(entityId)
+        return benefitPolicyRepository.findByIdIncludeDeleted(entityId)
                 .map(p -> p.getStatus().name())
                 .orElse("UNKNOWN");
     }

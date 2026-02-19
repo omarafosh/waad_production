@@ -297,6 +297,7 @@ public class Claim extends com.waad.tba.common.entity.SoftDeleteEntity {
      * Validate architectural rules (CANONICAL REBUILD 2026-01-16)
      */
     private void validateArchitecturalRules() {
+        System.out.println("DEBUG: Validating Claim architectural rules. Lines count: " + (lines != null ? lines.size() : "null"));
         // RULE: Visit is MANDATORY
         if (visit == null) {
             throw new IllegalStateException("ARCHITECTURAL VIOLATION: Claim MUST reference a Visit");

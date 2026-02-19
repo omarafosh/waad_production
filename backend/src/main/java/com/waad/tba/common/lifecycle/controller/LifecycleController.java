@@ -21,7 +21,7 @@ public class LifecycleController {
     public ResponseEntity<LifecyclePreviewDto> preview(
             @PathVariable String entityType,
             @PathVariable Long entityId) {
-        
+
         return ResponseEntity.ok(lifecycleManagerService.preview(entityType, entityId));
     }
 
@@ -34,7 +34,8 @@ public class LifecycleController {
 
         LifecycleContext context = LifecycleContext.builder()
                 .currentUser(currentUser)
-                .reason(request.getReason() + (request.getNotes() != null ? " - " + request.getNotes() : ""))
+                .reasonCode(request.getReason())
+                .reason(request.getNotes())
                 .metadata(request.getMetadata())
                 .build();
 
@@ -42,8 +43,7 @@ public class LifecycleController {
                 entityType,
                 entityId,
                 request.getAction(),
-                context
-        );
+                context);
 
         return ResponseEntity.ok(result);
     }

@@ -58,12 +58,12 @@ public class AuthService {
         User user = userRepository.findByUsernameOrEmail(identifier, identifier)
                 .orElseThrow(() -> {
                     log.error("User not found with identifier: {}", identifier);
-                    return new RuntimeException("Invalid email or password");
+                    return new BusinessRuleException("اسم المستخدم أو كلمة المرور غير صحيحة / Invalid username or password");
                 });
 
         if (!user.getActive()) {
             log.error("Inactive user attempted login: {}", user.getEmail());
-            throw new RuntimeException("Account is not active");
+            throw new BusinessRuleException("الحساب غير نشط. يرجى التواصل مع الإدارة. / Account is not active.");
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
@@ -138,7 +138,7 @@ public class AuthService {
      */
     private void validateRoleBindingsBeforeLogin(User user) {
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
-            return;
+            throw new BusinessRuleException("لم يتم تعيين أدوار للمستخدم. يرجى مراجعة المسؤول. / User has no assigned roles.");
         }
 
         boolean isProvider = user.getRoles().stream()
@@ -301,8 +301,8 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        // 2) Generate 6-digit OTP
-        String otp = "%06d".formatted(new Random().nextInt(1_000_000));
+        // 2) Generate 6-digit OTP using SecureRandom for cryptographic safety
+        String otp = "%06d".formatted(new java.security.SecureRandom().nextInt(1_000_000));
 
         // 3) Compute expiry = now + 10 minutes
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);

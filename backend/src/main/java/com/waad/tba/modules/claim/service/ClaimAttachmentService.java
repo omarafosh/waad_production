@@ -13,9 +13,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Claim Attachment Service
@@ -26,50 +30,55 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ClaimAttachmentService {
-    
+
     private final ClaimAttachmentRepository attachmentRepository;
     private final ClaimRepository claimRepository;
     private final FileStorageService fileStorageService;
-    
+    private final TransactionTemplate transactionTemplate;
+
     /**
      * Upload an attachment for a claim
      * 
-     * @param claimId Claim ID
-     * @param file File to upload
+     * @param claimId        Claim ID
+     * @param file           File to upload
      * @param attachmentType Type of attachment
      * @return Created ClaimAttachment entity
      */
-    @Transactional
     public ClaimAttachment uploadAttachment(Long claimId, MultipartFile file, ClaimAttachmentType attachmentType) {
         log.info("Uploading attachment for claim ID: {}, type: {}", claimId, attachmentType);
-        
-        // Verify claim exists
-        Claim claim = claimRepository.findById(claimId)
-            .orElseThrow(() -> new RuntimeException("Claim not found with ID: " + claimId));
-        
-        // Upload file to storage
+
+        // Upload file to storage OUTSIDE transaction to avoid holding DB locks during
+        // I/O
         String folder = "claims/" + claimId;
         FileUploadResult uploadResult = fileStorageService.upload(file, folder);
-        
-        // Create attachment record
-        ClaimAttachment attachment = ClaimAttachment.builder()
-            .claim(claim)
-            .fileName(uploadResult.getFileName())
-            .fileUrl(uploadResult.getUrl())
-            .fileType(uploadResult.getContentType())
-            .fileKey(uploadResult.getFileKey())
-            .originalFileName(uploadResult.getFileName())
-            .fileSize(uploadResult.getSize())
-            .uploadedBy(getCurrentUsername())
-            .attachmentType(attachmentType)
-            .build();
-        
-        ClaimAttachment saved = attachmentRepository.save(attachment);
-        log.info("Attachment uploaded successfully: ID={}, fileKey={}", saved.getId(), saved.getFileKey());
-        
-        return saved;
+
+        try {
+            return executeInTransaction(() -> {
+                Claim claim = claimRepository.findById(claimId)
+                        .orElseThrow(() -> new RuntimeException("Claim not found with ID: " + claimId));
+
+                ClaimAttachment attachment = ClaimAttachment.builder()
+                        .claim(claim)
+                        .fileName(uploadResult.getFileName())
+                        .fileUrl(uploadResult.getUrl())
+                        .fileType(uploadResult.getContentType())
+                        .fileKey(uploadResult.getFileKey())
+                        .originalFileName(uploadResult.getFileName())
+                        .fileSize(uploadResult.getSize())
+                        .uploadedBy(getCurrentUsername())
+                        .attachmentType(attachmentType)
+                        .build();
+
+                ClaimAttachment saved = attachmentRepository.save(attachment);
+                log.info("Attachment uploaded successfully: ID={}, fileKey={}", saved.getId(), saved.getFileKey());
+                return saved;
+            });
+        } catch (RuntimeException ex) {
+            cleanupUploadedFile(uploadResult.getFileKey());
+            throw ex;
+        }
     }
-    
+
     /**
      * Download an attachment
      * 
@@ -78,13 +87,13 @@ public class ClaimAttachmentService {
      */
     public byte[] downloadAttachment(Long attachmentId) {
         log.info("Downloading attachment ID: {}", attachmentId);
-        
+
         ClaimAttachment attachment = attachmentRepository.findById(attachmentId)
-            .orElseThrow(() -> new RuntimeException("Attachment not found with ID: " + attachmentId));
-        
+                .orElseThrow(() -> new RuntimeException("Attachment not found with ID: " + attachmentId));
+
         return fileStorageService.download(attachment.getFileKey());
     }
-    
+
     /**
      * Delete an attachment
      * 
@@ -93,19 +102,27 @@ public class ClaimAttachmentService {
     @Transactional
     public void deleteAttachment(Long attachmentId) {
         log.info("Deleting attachment ID: {}", attachmentId);
-        
+
         ClaimAttachment attachment = attachmentRepository.findById(attachmentId)
-            .orElseThrow(() -> new RuntimeException("Attachment not found with ID: " + attachmentId));
-        
-        // Delete from storage
-        fileStorageService.delete(attachment.getFileKey());
-        
-        // Delete from database
+                .orElseThrow(() -> new RuntimeException("Attachment not found with ID: " + attachmentId));
+
+        String fileKey = attachment.getFileKey();
+
+        // Delete from database inside transaction
         attachmentRepository.delete(attachment);
-        
+
+        // Delete from storage only AFTER successful commit
+        runAfterCommitOrNow(() -> {
+            try {
+                fileStorageService.delete(fileKey);
+            } catch (Exception e) {
+                log.error("Failed to delete file from storage: {}", fileKey, e);
+            }
+        });
+
         log.info("Attachment deleted successfully: ID={}", attachmentId);
     }
-    
+
     /**
      * Get all attachments for a claim
      * 
@@ -116,7 +133,7 @@ public class ClaimAttachmentService {
         log.info("Fetching attachments for claim ID: {}", claimId);
         return attachmentRepository.findByClaimId(claimId);
     }
-    
+
     /**
      * Get a specific attachment by ID
      * 
@@ -125,9 +142,9 @@ public class ClaimAttachmentService {
      */
     public ClaimAttachment getAttachment(Long attachmentId) {
         return attachmentRepository.findById(attachmentId)
-            .orElseThrow(() -> new RuntimeException("Attachment not found with ID: " + attachmentId));
+                .orElseThrow(() -> new RuntimeException("Attachment not found with ID: " + attachmentId));
     }
-    
+
     /**
      * Count attachments for a claim
      * 
@@ -137,7 +154,7 @@ public class ClaimAttachmentService {
     public long countAttachments(Long claimId) {
         return attachmentRepository.countByClaimId(claimId);
     }
-    
+
     /**
      * Delete all attachments for a claim
      * 
@@ -146,24 +163,54 @@ public class ClaimAttachmentService {
     @Transactional
     public void deleteAllClaimAttachments(Long claimId) {
         log.info("Deleting all attachments for claim ID: {}", claimId);
-        
+
         List<ClaimAttachment> attachments = attachmentRepository.findByClaimId(claimId);
-        
-        // Delete files from storage
-        for (ClaimAttachment attachment : attachments) {
-            try {
-                fileStorageService.delete(attachment.getFileKey());
-            } catch (Exception e) {
-                log.error("Failed to delete file: {}", attachment.getFileKey(), e);
-            }
-        }
-        
+        List<String> fileKeys = attachments.stream()
+                .map(ClaimAttachment::getFileKey)
+                .toList();
+
         // Delete from database
         attachmentRepository.deleteByClaimId(claimId);
-        
+
+        // Delete files from storage only AFTER successful commit
+        runAfterCommitOrNow(() -> {
+            for (String fileKey : fileKeys) {
+                try {
+                    fileStorageService.delete(fileKey);
+                } catch (Exception e) {
+                    log.error("Failed to delete file: {}", fileKey, e);
+                }
+            }
+        });
+
         log.info("All attachments deleted for claim ID: {}", claimId);
     }
-    
+
+    private <T> T executeInTransaction(Supplier<T> action) {
+        return transactionTemplate.execute(status -> action.get());
+    }
+
+    private void cleanupUploadedFile(String fileKey) {
+        try {
+            fileStorageService.delete(fileKey);
+        } catch (Exception cleanupError) {
+            log.error("Failed to cleanup uploaded file after DB failure: {}", fileKey, cleanupError);
+        }
+    }
+
+    private void runAfterCommitOrNow(Runnable task) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+            return;
+        }
+        task.run();
+    }
+
     /**
      * Get current authenticated username
      * 

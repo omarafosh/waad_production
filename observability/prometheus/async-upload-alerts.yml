@@ -1,0 +1,46 @@
+groups:
+  - name: async-upload-alerts
+    rules:
+      - alert: AsyncUploadJobFailuresDetected
+        expr: increase(tba_claims_attachments_async_jobs_total{status="failed"}[10m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          service: tba-backend
+        annotations:
+          summary: "Async upload job failures detected"
+          description: "{{ $value }} async upload job failures occurred in the last 10 minutes."
+
+      - alert: AsyncUploadFileFailureRateHigh
+        expr: |
+          (
+            sum(rate(tba_claims_attachments_async_files_total{status="failed"}[10m]))
+            /
+            clamp_min(sum(rate(tba_claims_attachments_async_files_total{status=~"success|failed"}[10m])), 0.001)
+          ) > 0.10
+          and
+          sum(increase(tba_claims_attachments_async_files_total{status=~"success|failed"}[10m])) > 20
+        for: 5m
+        labels:
+          severity: critical
+          service: tba-backend
+        annotations:
+          summary: "High async upload file failure rate"
+          description: "Async upload file failure ratio is above 10% for 5 minutes."
+
+      - alert: AsyncUploadAverageLatencyHigh
+        expr: |
+          (
+            rate(tba_claims_attachments_async_job_duration_seconds_sum[10m])
+            /
+            clamp_min(rate(tba_claims_attachments_async_job_duration_seconds_count[10m]), 0.001)
+          ) > 15
+          and
+          sum(increase(tba_claims_attachments_async_jobs_total{status=~"success|partial|failed"}[10m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: tba-backend
+        annotations:
+          summary: "High async upload average latency"
+          description: "Average async upload job duration is above 15 seconds over the last 10 minutes."

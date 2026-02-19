@@ -28,6 +28,6 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":%PORT%" ^| findstr "LISTENI
 echo.
 echo [INFO] Starting Spring Boot Application...
 echo ====================================================
-call mvn spring-boot:run
+call mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 endlocal

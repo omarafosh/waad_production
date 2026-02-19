@@ -115,13 +115,13 @@ public class BenefitPolicyCoverageService {
         }
 
         if (policy.getStatus() != BenefitPolicyStatus.ACTIVE) {
-            throw new BusinessRuleException(
+            throw new BusinessRuleException(com.waad.tba.common.error.ErrorCode.POLICY_NOT_ACTIVE,
                 String.format("Member's Benefit Policy '%s' status is %s. Only ACTIVE policies can be used for claims.",
                     policy.getName(), policy.getStatus()));
         }
 
         if (!policy.isEffectiveOn(serviceDate)) {
-            throw new BusinessRuleException(
+            throw new BusinessRuleException(com.waad.tba.common.error.ErrorCode.POLICY_NOT_ACTIVE,
                 String.format("Member's Benefit Policy '%s' is not effective on %s. Policy period: %s to %s",
                     policy.getName(), serviceDate, policy.getStartDate(), policy.getEndDate()));
         }
@@ -244,6 +244,9 @@ public class BenefitPolicyCoverageService {
         validateMemberHasActivePolicy(member, serviceDate);
 
         BenefitPolicy policy = member.getBenefitPolicy();
+
+        // New in Phase 3: Validate Waiting Periods
+        validateWaitingPeriods(member, policy, null, serviceDate, encounterType);
         List<ServiceCoverageResult> serviceResults = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -269,14 +272,24 @@ public class BenefitPolicyCoverageService {
                 BigDecimal lineAmount = item.getAmount() != null ? item.getAmount() : BigDecimal.ZERO;
                 totalRequestedAmount = totalRequestedAmount.add(lineAmount);
 
-                BigDecimal covered = lineAmount
+                BigDecimal deductible = result.getDeductibleAmount() != null ? result.getDeductibleAmount() : BigDecimal.ZERO;
+                BigDecimal amountAfterDeductible = lineAmount.subtract(deductible).max(BigDecimal.ZERO);
+                
+                BigDecimal covered = amountAfterDeductible
                     .multiply(BigDecimal.valueOf(result.getCoveragePercent()))
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 
-
-
                 totalCoveredAmount = totalCoveredAmount.add(covered);
                 totalPatientAmount = totalPatientAmount.add(lineAmount.subtract(covered));
+            }
+        }
+
+        // New in Phase 3: Validate Amount Limits
+        if (errors.isEmpty() && totalRequestedAmount.compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                validateAmountLimits(member, policy, totalRequestedAmount, null, serviceDate);
+            } catch (BusinessRuleException e) {
+                errors.add(e.getMessage());
             }
         }
 
@@ -348,6 +361,7 @@ public class BenefitPolicyCoverageService {
             .category(category)
             .covered(true)
             .coveragePercent(rule.getEffectiveCoveragePercent())
+            .deductibleAmount(rule.getEffectiveDeductible())
 
             .timesLimit(rule.getTimesLimit())
             .requiresPreApproval(rule.isRequiresPreApproval())
@@ -428,7 +442,7 @@ public class BenefitPolicyCoverageService {
             if (totalRequestedAmount.compareTo(remainingLimit) > 0) {
                 log.warn("❌ Annual limit exceeded: requested={}, remaining={}, annual={}", 
                     totalRequestedAmount, remainingLimit, annualLimit);
-                throw new BusinessRuleException(
+                throw new BusinessRuleException(com.waad.tba.common.error.ErrorCode.COVERAGE_LIMIT_EXCEEDED,
                     String.format("المبلغ المطلوب (%.2f) يتجاوز الحد السنوي المتبقي (%.2f). الحد السنوي: %.2f، المستخدم: %.2f",
                         totalRequestedAmount, remainingLimit, annualLimit, usedAmount)
                 );
@@ -587,7 +601,7 @@ public class BenefitPolicyCoverageService {
         if (defaultWaiting != null && defaultWaiting > 0) {
             if (daysSinceEnrollment < defaultWaiting) {
                 LocalDate eligibleDate = memberStartDate.plusDays(defaultWaiting);
-                throw new BusinessRuleException(
+                throw new BusinessRuleException(com.waad.tba.common.error.ErrorCode.WAITING_PERIOD_NOT_MET,
                     String.format("فترة الانتظار العامة لم تكتمل. العضو سيكون مؤهلاً للتغطية من %s (مطلوب %d يوم، مضى %d يوم)",
                         eligibleDate, defaultWaiting, daysSinceEnrollment)
                 );
@@ -641,7 +655,7 @@ public class BenefitPolicyCoverageService {
             if (ruleWaitingDays != null && ruleWaitingDays > 0 && daysSinceEnrollment < ruleWaitingDays) {
                 LocalDate eligibleDate = memberStartDate.plusDays(ruleWaitingDays);
                 String serviceName = service.getName();
-                throw new BusinessRuleException(
+                throw new BusinessRuleException(com.waad.tba.common.error.ErrorCode.WAITING_PERIOD_NOT_MET,
                     String.format("فترة الانتظار للخدمة '%s' لم تكتمل. العضو سيكون مؤهلاً من %s (مطلوب %d يوم)",
                         serviceName, eligibleDate, ruleWaitingDays)
                 );
@@ -678,7 +692,7 @@ public class BenefitPolicyCoverageService {
             BenefitPolicyRule rule = ruleOpt.get();
             if (!rule.isActive()) {
                 String serviceName = service.getNameEn();
-                throw new BusinessRuleException(
+                throw new BusinessRuleException(com.waad.tba.common.error.ErrorCode.SERVICE_NOT_COVERED,
                     String.format("الخدمة '%s' مستثنية من التغطية (قاعدة نشطة=لا)", serviceName)
                 );
             }
@@ -1022,6 +1036,7 @@ public class BenefitPolicyCoverageService {
         private static final long serialVersionUID = 1L;
         private boolean covered;
         private int coveragePercent;
+        private BigDecimal deductibleAmount;
 
         private Integer timesLimit;
         private boolean requiresPreApproval;
@@ -1033,6 +1048,7 @@ public class BenefitPolicyCoverageService {
             return ResolvedCoverage.builder()
                 .covered(true)
                 .coveragePercent(rule.getEffectiveCoveragePercent())
+                .deductibleAmount(rule.getEffectiveDeductible())
 
                 .timesLimit(rule.getTimesLimit())
                 .requiresPreApproval(rule.isRequiresPreApproval())
@@ -1066,6 +1082,7 @@ public class BenefitPolicyCoverageService {
         private String category;
         private boolean covered;
         private int coveragePercent;
+        private BigDecimal deductibleAmount;
 
         private Integer timesLimit;
         private boolean requiresPreApproval;

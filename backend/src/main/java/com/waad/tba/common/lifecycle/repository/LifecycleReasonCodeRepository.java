@@ -13,11 +13,10 @@ public interface LifecycleReasonCodeRepository extends JpaRepository<LifecycleRe
 
     List<LifecycleReasonCode> findAllByActiveTrue();
 
-    @Query(value = "SELECT * FROM lifecycle_reason_codes " +
-                   "WHERE active = true " +
-                   "AND :entityType = ANY(applicable_entities) " +
-                   "AND :action = ANY(applicable_actions)", nativeQuery = true)
+    @Query("SELECT r FROM LifecycleReasonCode r " +
+            "WHERE r.active = true " +
+            "AND UPPER(r.category) = UPPER(:action)")
     List<LifecycleReasonCode> findApplicableReasons(
-            @Param("entityType") String entityType, 
+            @Param("entityType") String entityType,
             @Param("action") String action);
 }

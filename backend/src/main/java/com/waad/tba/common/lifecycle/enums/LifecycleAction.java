@@ -7,7 +7,8 @@ public enum LifecycleAction {
     SOFT_DELETE("حذف", "Soft Delete"),
     HARD_DELETE("حذف نهائي", "Hard Delete"),
     RESTORE("استعادة", "Restore"),
-    SUSPEND("تعليق", "Suspend");
+    SUSPEND("تعليق", "Suspend"),
+    ACTIVATE("تفعيل", "Activate");
 
     private final String labelAr;
     private final String labelEn;

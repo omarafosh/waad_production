@@ -3,7 +3,9 @@ package com.waad.tba.modules.claim.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,17 +22,17 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
- * ║           CLAIM FINANCIAL SUMMARY SERVICE - SINGLE SOURCE OF TRUTH        ║
+ * ║ CLAIM FINANCIAL SUMMARY SERVICE - SINGLE SOURCE OF TRUTH ║
  * ║───────────────────────────────────────────────────────────────────────────║
- * ║ This service provides ALL financial aggregations for claims.              ║
- * ║ Frontend MUST use these endpoints - NO client-side calculations allowed.  ║
- * ║                                                                           ║
- * ║ FINANCIAL LAW:                                                            ║
- * ║  1. All amounts come from database SUM() queries                          ║
- * ║  2. No JavaScript .reduce() on financial fields in frontend               ║
- * ║  3. Report totals MUST match exactly with individual claim sums           ║
- * ║  4. netProviderAmount is the authoritative field for provider payment     ║
- * ║  5. approvedAmount is fallback only when netProviderAmount is null        ║
+ * ║ This service provides ALL financial aggregations for claims. ║
+ * ║ Frontend MUST use these endpoints - NO client-side calculations allowed. ║
+ * ║ ║
+ * ║ FINANCIAL LAW: ║
+ * ║ 1. All amounts come from database SUM() queries ║
+ * ║ 2. No JavaScript .reduce() on financial fields in frontend ║
+ * ║ 3. Report totals MUST match exactly with individual claim sums ║
+ * ║ 4. netProviderAmount is the authoritative field for provider payment ║
+ * ║ 5. approvedAmount is fallback only when netProviderAmount is null ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 @Slf4j
@@ -45,8 +47,8 @@ public class ClaimFinancialSummaryService {
      * Get comprehensive financial summary - AUTHORITATIVE totals from database.
      * 
      * @param employerOrgId Optional employer organization filter (null = all)
-     * @param fromDate Optional start date filter (null = all time)
-     * @param toDate Optional end date filter (null = all time)
+     * @param fromDate      Optional start date filter (null = all time)
+     * @param toDate        Optional end date filter (null = all time)
      * @return Financial summary with all totals computed in database
      */
     public ClaimFinancialSummaryDto getFinancialSummary(Long employerOrgId, LocalDate fromDate, LocalDate toDate) {
@@ -62,16 +64,16 @@ public class ClaimFinancialSummaryService {
         // ═══════════════════════════════════════════════════════════════════════════
         if (employerOrgId != null) {
             builder.totalClaimsCount(claimRepository.countByMemberEmployerOrganizationId(employerOrgId));
-            builder.pendingClaimsCount(countByStatusAndEmployer(ClaimStatus.SUBMITTED, employerOrgId) + 
-                                       countByStatusAndEmployer(ClaimStatus.DRAFT, employerOrgId));
+            builder.pendingClaimsCount(countByStatusAndEmployer(ClaimStatus.SUBMITTED, employerOrgId) +
+                    countByStatusAndEmployer(ClaimStatus.DRAFT, employerOrgId));
             builder.underReviewClaimsCount(countByStatusAndEmployer(ClaimStatus.UNDER_REVIEW, employerOrgId));
             builder.approvedClaimsCount(countByStatusAndEmployer(ClaimStatus.APPROVED, employerOrgId));
             builder.rejectedClaimsCount(countByStatusAndEmployer(ClaimStatus.REJECTED, employerOrgId));
             builder.settledClaimsCount(countByStatusAndEmployer(ClaimStatus.SETTLED, employerOrgId));
         } else {
             builder.totalClaimsCount(claimRepository.countActive());
-            builder.pendingClaimsCount(claimRepository.countByStatus(ClaimStatus.SUBMITTED) + 
-                                       claimRepository.countByStatus(ClaimStatus.DRAFT));
+            builder.pendingClaimsCount(claimRepository.countByStatus(ClaimStatus.SUBMITTED) +
+                    claimRepository.countByStatus(ClaimStatus.DRAFT));
             builder.underReviewClaimsCount(claimRepository.countByStatus(ClaimStatus.UNDER_REVIEW));
             builder.approvedClaimsCount(claimRepository.countByStatus(ClaimStatus.APPROVED));
             builder.rejectedClaimsCount(claimRepository.countByStatus(ClaimStatus.REJECTED));
@@ -113,39 +115,48 @@ public class ClaimFinancialSummaryService {
         builder.totalPatientCoPay(totalPatientCoPay);
         builder.totalNetProviderAmount(totalNetProvider);
         builder.totalSettledAmount(totalSettled);
-        
+
         // Outstanding = Net Provider owed - Settled (what's still to be paid)
         BigDecimal outstanding = totalNetProvider.subtract(totalSettled);
         builder.outstandingAmount(outstanding.compareTo(BigDecimal.ZERO) > 0 ? outstanding : BigDecimal.ZERO);
-        
+
         // Difference = Requested - Approved (deductions)
         builder.totalDifferenceAmount(totalRequested.subtract(totalApproved));
 
         // ═══════════════════════════════════════════════════════════════════════════
         // PROVIDER BREAKDOWN
         // ═══════════════════════════════════════════════════════════════════════════
-        List<Object[]> providerData = employerOrgId != null 
-            ? claimRepository.getFinancialSummaryByProviderAndEmployer(employerOrgId)
-            : claimRepository.getFinancialSummaryByProvider();
-        
+        List<Object[]> providerData = employerOrgId != null
+                ? claimRepository.getFinancialSummaryByProviderAndEmployer(employerOrgId)
+                : claimRepository.getFinancialSummaryByProvider();
+
+        List<Object[]> providerSettledData = employerOrgId != null
+                ? claimRepository.getSettledAmountsByProviderAndEmployer(employerOrgId)
+                : claimRepository.getSettledAmountsByProvider();
+
+        Map<Long, BigDecimal> settledByProvider = new HashMap<>();
+        for (Object[] row : providerSettledData) {
+            settledByProvider.put((Long) row[0], (BigDecimal) row[1]);
+        }
+
         List<ProviderSummary> providerSummaries = new ArrayList<>();
         for (Object[] row : providerData) {
+            Long providerId = (Long) row[0];
             BigDecimal providerApproved = (BigDecimal) row[4];
             BigDecimal providerNet = (BigDecimal) row[6];
-            // For provider, settled would need separate query - estimate as 0 for now
-            BigDecimal providerSettled = BigDecimal.ZERO; // TODO: Add settled amount by provider query
-            
+            BigDecimal providerSettled = settledByProvider.getOrDefault(providerId, BigDecimal.ZERO);
+
             providerSummaries.add(ProviderSummary.builder()
-                .providerId((Long) row[0])
-                .providerName((String) row[1])
-                .claimsCount((Long) row[2])
-                .requestedAmount((BigDecimal) row[3])
-                .approvedAmount(providerApproved)
-                .patientCoPay((BigDecimal) row[5])
-                .netProviderAmount(providerNet)
-                .settledAmount(providerSettled)
-                .outstandingAmount(providerNet.subtract(providerSettled))
-                .build());
+                    .providerId(providerId)
+                    .providerName((String) row[1])
+                    .claimsCount((Long) row[2])
+                    .requestedAmount((BigDecimal) row[3])
+                    .approvedAmount(providerApproved)
+                    .patientCoPay((BigDecimal) row[5])
+                    .netProviderAmount(providerNet)
+                    .settledAmount(providerSettled)
+                    .outstandingAmount(providerNet.subtract(providerSettled))
+                    .build());
         }
         builder.providerSummaries(providerSummaries);
 
@@ -153,18 +164,18 @@ public class ClaimFinancialSummaryService {
         // STATUS BREAKDOWN
         // ═══════════════════════════════════════════════════════════════════════════
         List<Object[]> statusData = employerOrgId != null
-            ? claimRepository.getFinancialSummaryByStatusAndEmployer(employerOrgId)
-            : claimRepository.getFinancialSummaryByStatus();
-        
+                ? claimRepository.getFinancialSummaryByStatusAndEmployer(employerOrgId)
+                : claimRepository.getFinancialSummaryByStatus();
+
         List<StatusSummary> statusSummaries = new ArrayList<>();
         for (Object[] row : statusData) {
             ClaimStatus status = (ClaimStatus) row[0];
             statusSummaries.add(StatusSummary.builder()
-                .status(status.name())
-                .statusArabic(status.getArabicLabel())
-                .count((Long) row[1])
-                .totalAmount((BigDecimal) row[3]) // Use approved amount for status summary
-                .build());
+                    .status(status.name())
+                    .statusArabic(status.getArabicLabel())
+                    .count((Long) row[1])
+                    .totalAmount((BigDecimal) row[3]) // Use approved amount for status summary
+                    .build());
         }
         builder.statusSummaries(statusSummaries);
 
@@ -176,19 +187,19 @@ public class ClaimFinancialSummaryService {
             List<EmployerSummary> employerSummaries = new ArrayList<>();
             for (Object[] row : employerData) {
                 employerSummaries.add(EmployerSummary.builder()
-                    .employerId((Long) row[0])
-                    .employerName((String) row[1])
-                    .claimsCount((Long) row[2])
-                    .membersCount((Long) row[3])
-                    .requestedAmount((BigDecimal) row[4])
-                    .approvedAmount((BigDecimal) row[5])
-                    .build());
+                        .employerId((Long) row[0])
+                        .employerName((String) row[1])
+                        .claimsCount((Long) row[2])
+                        .membersCount((Long) row[3])
+                        .requestedAmount((BigDecimal) row[4])
+                        .approvedAmount((BigDecimal) row[5])
+                        .build());
             }
             builder.employerSummaries(employerSummaries);
         }
 
         ClaimFinancialSummaryDto result = builder.build();
-        
+
         // ══════════════════════════════════════════════════════════════════════════
         // FINANCIAL CLOSURE: REPORT CONSISTENCY GUARD (AUDIT LOCK)
         // ══════════════════════════════════════════════════════════════════════════
@@ -197,25 +208,26 @@ public class ClaimFinancialSummaryService {
         // - Data import errors
         // - Manual database modifications
         validateFinancialConsistency(result);
-        
-        log.info("📊 [FINANCIAL SUMMARY] Generated - Total Claims: {}, Total Requested: {}, Total Approved: {}, Outstanding: {}",
-                result.getTotalClaimsCount(), 
+
+        log.info(
+                "📊 [FINANCIAL SUMMARY] Generated - Total Claims: {}, Total Requested: {}, Total Approved: {}, Outstanding: {}",
+                result.getTotalClaimsCount(),
                 result.getTotalRequestedAmount(),
                 result.getTotalApprovedAmount(),
                 result.getOutstandingAmount());
-        
+
         return result;
     }
 
     /**
      * ╔═══════════════════════════════════════════════════════════════════════════╗
-     * ║           FINANCIAL CLOSURE: REPORT CONSISTENCY GUARD                    ║
+     * ║ FINANCIAL CLOSURE: REPORT CONSISTENCY GUARD ║
      * ║───────────────────────────────────────────────────────────────────────────║
-     * ║ Internal audit check that settlements cannot exceed claims.               ║
-     * ║ This protects against:                                                    ║
-     * ║  - Future bugs                                                            ║
-     * ║  - Unintended modifications                                               ║
-     * ║  - Bad data imports                                                       ║
+     * ║ Internal audit check that settlements cannot exceed claims. ║
+     * ║ This protects against: ║
+     * ║ - Future bugs ║
+     * ║ - Unintended modifications ║
+     * ║ - Bad data imports ║
      * ╚═══════════════════════════════════════════════════════════════════════════╝
      * 
      * @param summary The financial summary to validate
@@ -225,43 +237,43 @@ public class ClaimFinancialSummaryService {
         BigDecimal totalApproved = summary.getTotalApprovedAmount();
         BigDecimal totalSettled = summary.getTotalSettledAmount();
         BigDecimal totalNetProvider = summary.getTotalNetProviderAmount();
-        
+
         // Guard 1: Settlements cannot exceed approved amounts
-        if (totalSettled != null && totalApproved != null && 
-            totalSettled.compareTo(totalApproved) > 0) {
-            log.error("🚨 [FINANCIAL INCONSISTENCY] Settlements ({}) exceed approved amounts ({})", 
-                totalSettled, totalApproved);
+        if (totalSettled != null && totalApproved != null &&
+                totalSettled.compareTo(totalApproved) > 0) {
+            log.error("🚨 [FINANCIAL INCONSISTENCY] Settlements ({}) exceed approved amounts ({})",
+                    totalSettled, totalApproved);
             throw new IllegalStateException(
-                String.format("Financial inconsistency detected: Total settlements (%s) exceed total approved (%s). " +
-                             "This indicates a data integrity issue that must be investigated immediately.", 
-                    totalSettled, totalApproved)
-            );
+                    String.format(
+                            "Financial inconsistency detected: Total settlements (%s) exceed total approved (%s). " +
+                                    "This indicates a data integrity issue that must be investigated immediately.",
+                            totalSettled, totalApproved));
         }
-        
+
         // Guard 2: Settlements cannot exceed net provider amounts
-        if (totalSettled != null && totalNetProvider != null && 
-            totalSettled.compareTo(totalNetProvider) > 0) {
-            log.error("🚨 [FINANCIAL INCONSISTENCY] Settlements ({}) exceed net provider amounts ({})", 
-                totalSettled, totalNetProvider);
+        if (totalSettled != null && totalNetProvider != null &&
+                totalSettled.compareTo(totalNetProvider) > 0) {
+            log.error("🚨 [FINANCIAL INCONSISTENCY] Settlements ({}) exceed net provider amounts ({})",
+                    totalSettled, totalNetProvider);
             throw new IllegalStateException(
-                String.format("Financial inconsistency detected: Total settlements (%s) exceed total net provider amounts (%s). " +
-                             "This indicates a data integrity issue that must be investigated immediately.", 
-                    totalSettled, totalNetProvider)
-            );
+                    String.format(
+                            "Financial inconsistency detected: Total settlements (%s) exceed total net provider amounts (%s). "
+                                    +
+                                    "This indicates a data integrity issue that must be investigated immediately.",
+                            totalSettled, totalNetProvider));
         }
-        
+
         // Guard 3: Outstanding amount should never be negative
         BigDecimal outstanding = summary.getOutstandingAmount();
         if (outstanding != null && outstanding.compareTo(BigDecimal.ZERO) < 0) {
             log.error("🚨 [FINANCIAL INCONSISTENCY] Outstanding amount is negative: {}", outstanding);
             throw new IllegalStateException(
-                String.format("Financial inconsistency detected: Outstanding amount (%s) is negative. " +
-                             "This indicates over-settlement or data integrity issues.", outstanding)
-            );
+                    String.format("Financial inconsistency detected: Outstanding amount (%s) is negative. " +
+                            "This indicates over-settlement or data integrity issues.", outstanding));
         }
-        
+
         log.debug("✅ [FINANCIAL GUARD] Consistency check passed - approved: {}, settled: {}, outstanding: {}",
-            totalApproved, totalSettled, outstanding);
+                totalApproved, totalSettled, outstanding);
     }
 
     /**
@@ -273,29 +285,29 @@ public class ClaimFinancialSummaryService {
 
         // Get counts
         long approvedCount = employerOrgId != null
-            ? countByStatusAndEmployer(ClaimStatus.APPROVED, employerOrgId)
-            : claimRepository.countByStatus(ClaimStatus.APPROVED);
-        
+                ? countByStatusAndEmployer(ClaimStatus.APPROVED, employerOrgId)
+                : claimRepository.countByStatus(ClaimStatus.APPROVED);
+
         long settledCount = employerOrgId != null
-            ? countByStatusAndEmployer(ClaimStatus.SETTLED, employerOrgId)
-            : claimRepository.countByStatus(ClaimStatus.SETTLED);
+                ? countByStatusAndEmployer(ClaimStatus.SETTLED, employerOrgId)
+                : claimRepository.countByStatus(ClaimStatus.SETTLED);
 
         // Get amounts
         BigDecimal totalApproved = employerOrgId != null
-            ? claimRepository.sumApprovedAmountsForApprovedSettledByEmployer(employerOrgId)
-            : claimRepository.sumApprovedAmounts();
-        
+                ? claimRepository.sumApprovedAmountsForApprovedSettledByEmployer(employerOrgId)
+                : claimRepository.sumApprovedAmounts();
+
         BigDecimal totalSettled = employerOrgId != null
-            ? claimRepository.sumTotalSettledAmountsByEmployer(employerOrgId)
-            : claimRepository.sumTotalSettledAmounts();
-        
+                ? claimRepository.sumTotalSettledAmountsByEmployer(employerOrgId)
+                : claimRepository.sumTotalSettledAmounts();
+
         BigDecimal totalPatientCoPay = employerOrgId != null
-            ? claimRepository.sumTotalPatientCoPayByEmployer(employerOrgId)
-            : claimRepository.sumTotalPatientCoPay();
-        
+                ? claimRepository.sumTotalPatientCoPayByEmployer(employerOrgId)
+                : claimRepository.sumTotalPatientCoPay();
+
         BigDecimal totalNetProvider = employerOrgId != null
-            ? claimRepository.sumTotalNetProviderAmountsByEmployer(employerOrgId)
-            : claimRepository.sumTotalNetProviderAmounts();
+                ? claimRepository.sumTotalNetProviderAmountsByEmployer(employerOrgId)
+                : claimRepository.sumTotalNetProviderAmounts();
 
         // Null safety
         totalApproved = totalApproved != null ? totalApproved : BigDecimal.ZERO;
@@ -304,14 +316,14 @@ public class ClaimFinancialSummaryService {
         totalNetProvider = totalNetProvider != null ? totalNetProvider : BigDecimal.ZERO;
 
         return ClaimFinancialSummaryDto.builder()
-            .approvedClaimsCount(approvedCount)
-            .settledClaimsCount(settledCount)
-            .totalApprovedAmount(totalApproved)
-            .totalSettledAmount(totalSettled)
-            .totalPatientCoPay(totalPatientCoPay)
-            .totalNetProviderAmount(totalNetProvider)
-            .outstandingAmount(totalNetProvider.subtract(totalSettled))
-            .build();
+                .approvedClaimsCount(approvedCount)
+                .settledClaimsCount(settledCount)
+                .totalApprovedAmount(totalApproved)
+                .totalSettledAmount(totalSettled)
+                .totalPatientCoPay(totalPatientCoPay)
+                .totalNetProviderAmount(totalNetProvider)
+                .outstandingAmount(totalNetProvider.subtract(totalSettled))
+                .build();
     }
 
     /**
@@ -319,12 +331,6 @@ public class ClaimFinancialSummaryService {
      * Uses existing repository count method with filter.
      */
     private long countByStatusAndEmployer(ClaimStatus status, Long employerOrgId) {
-        // TODO: Add repository method for status + employer count
-        // For now, use existing methods where available
-        if (status == ClaimStatus.APPROVED) {
-            return claimRepository.countApprovedClaimsByEmployer(employerOrgId);
-        }
-        // Fallback - this should be improved with proper repository methods
-        return 0L;
+        return claimRepository.countByStatusAndEmployerOrganizationId(status, employerOrgId);
     }
 }

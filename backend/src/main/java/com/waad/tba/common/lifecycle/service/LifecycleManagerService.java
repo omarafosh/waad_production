@@ -32,20 +32,23 @@ public class LifecycleManagerService {
         return adapters.stream()
                 .filter(a -> a.supports(entityType))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No lifecycle adapter found for entity type: " + entityType));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No lifecycle adapter found for entity type: " + entityType));
     }
 
     @Transactional(readOnly = true)
     public LifecyclePreviewDto preview(String entityType, Long entityId) {
         LifecycleAdapter<?> adapter = getAdapter(entityType);
-        
+
         String currentStatus = adapter.getCurrentStatus(entityId);
         List<LifecycleAction> allowed = adapter.getAllowedActions(entityId);
-        
+
         List<LifecyclePreviewDto.LifecycleActionOption> options = allowed.stream()
                 .map(action -> {
-                    List<LifecycleReasonCode> reasons = reasonCodeRepository.findApplicableReasons(entityType.toUpperCase(), action.name());
-                    
+                    List<LifecycleReasonCode> reasons = reasonCodeRepository.findApplicableReasons(
+                            entityType.toUpperCase(),
+                            action.name());
+
                     return LifecyclePreviewDto.LifecycleActionOption.builder()
                             .action(action)
                             .label(action.getLabelAr())
@@ -54,10 +57,10 @@ public class LifecycleManagerService {
                             .impactSummary(getImpactSummary(action))
                             .reasonOptions(reasons.stream()
                                     .map(r -> ReasonCodeDto.builder()
-                                             .code(r.getCode())
-                                             .labelAr(r.getLabelAr())
-                                             .labelEn(r.getLabelEn())
-                                             .build())
+                                            .code(r.getCode())
+                                            .labelAr(r.getLabelAr())
+                                            .labelEn(r.getLabelEn())
+                                            .build())
                                     .collect(Collectors.toList()))
                             .build();
                 })
@@ -73,14 +76,21 @@ public class LifecycleManagerService {
 
     @Transactional
     public LifecycleResult execute(String entityType, Long entityId, LifecycleAction action, LifecycleContext context) {
-        log.info("Executing lifecycle action {} on {}/{} by {}", action, entityType, entityId, context.getCurrentUser().getUsername());
-        
+        log.info("Executing lifecycle action {} on {}/{} by {}", action, entityType, entityId,
+                context.getCurrentUser().getUsername());
+
         LifecycleAdapter<?> adapter = getAdapter(entityType);
         String oldStatus = adapter.getCurrentStatus(entityId);
         Object beforeState = adapter.getEntity(entityId);
 
         // 1. Structural Validation (State Machine)
-        
+        resolveTargetStatus(action).ifPresent(targetStatus -> {
+            if (!stateMachine.isTransitionAllowed(oldStatus, targetStatus)) {
+                throw new IllegalStateException(
+                        "Invalid transition from " + oldStatus + " to " + targetStatus + " for action " + action);
+            }
+        });
+
         // 2. Adapter Business Validation
         ValidationResult validation = adapter.validate(entityId, action);
         if (!validation.isValid()) {
@@ -98,9 +108,10 @@ public class LifecycleManagerService {
         // 5. Audit & History
         if (result.isSuccess()) {
             Object afterState = adapter.getEntity(entityId);
-            
+
             // Record in detailed entity_history with snapshots
-            auditService.recordHistory(entityType, entityId, action.name(), beforeState, afterState, context.getCurrentUser().getUsername());
+            auditService.recordHistory(entityType, entityId, action.name(), beforeState, afterState,
+                    context.getCurrentUser().getUsername());
 
             // Record in lifecycle_logs (Summary)
             LifecycleLog audit = LifecycleLog.builder()
@@ -114,12 +125,24 @@ public class LifecycleManagerService {
                     .performedBy(context.getCurrentUser().getUsername())
                     .metadata(context.getMetadata())
                     .build();
-            
+
             LifecycleLog savedAudit = auditRepository.save(audit);
             result.setAuditLogId(savedAudit.getId());
         }
 
         return result;
+    }
+
+    private Optional<String> resolveTargetStatus(LifecycleAction action) {
+        return switch (action) {
+            case ACTIVATE -> Optional.of("ACTIVE");
+            case SUSPEND -> Optional.of("SUSPENDED");
+            case TERMINATE -> Optional.of("TERMINATED");
+            case CANCEL, SOFT_DELETE -> Optional.of("CANCELLED");
+            case ARCHIVE -> Optional.of("ARCHIVED");
+            case RESTORE -> Optional.of("DRAFT");
+            case HARD_DELETE -> Optional.empty();
+        };
     }
 
     private String getSeverity(LifecycleAction action) {
@@ -129,7 +152,7 @@ public class LifecycleManagerService {
             default -> "INFO";
         };
     }
-    
+
     private String getImpactSummary(LifecycleAction action) {
         return switch (action) {
             case CANCEL -> "سيتم إلغاء السجل كأنه لم يكن. لا يمكن التراجع عن هذا الإجراء.";

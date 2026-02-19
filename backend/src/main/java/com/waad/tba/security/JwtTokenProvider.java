@@ -54,9 +54,6 @@ public class JwtTokenProvider {
      * CRITICAL: SUPER_ADMIN users get ALL permissions in the token.
      */
     public String generateToken(User user) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
-
         // Roles
         List<String> roles = user.getRoles().stream()
                 .map(Role::getName)
@@ -68,42 +65,22 @@ public class JwtTokenProvider {
         // Loading Permissions
         List<String> permissions;
         if (isSuperAdmin) {
-            // Super Admin gets all permissions
             permissions = permissionRepository.findAll().stream()
-                    .map(Permission::getName)
+                    .map(com.waad.tba.modules.rbac.entity.Permission::getName)
                     .collect(Collectors.toList());
         } else {
-            // Regular user gets permissions from roles
             permissions = user.getRoles().stream()
                     .flatMap(role -> role.getPermissions().stream())
-                    .map(Permission::getName)
+                    .map(com.waad.tba.modules.rbac.entity.Permission::getName)
                     .distinct()
                     .collect(Collectors.toList());
         }
 
-        return Jwts.builder()
-                .subject(user.getUsername())
-                .claim("userId", user.getId())
-                .claim("fullName", user.getFullName())
-                .claim("email", user.getEmail())
-                .claim("roles", roles)
-                .claim("permissions", permissions)
-                .claim("employerId", user.getEmployerId())
-                .claim("companyId", user.getCompanyId())
-                .claim("isSuperAdmin", isSuperAdmin)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+        return buildToken(user.getUsername(), user.getId(), user.getFullName(), user.getEmail(), 
+                roles, permissions, user.getEmployerId(), user.getCompanyId(), isSuperAdmin);
     }
 
-    /**
-     * Generate token from UserPrincipal (Security Layer friendly)
-     */
     public String generateToken(UserPrincipal userPrincipal) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
-
         List<String> roles = userPrincipal.getAuthorities().stream()
                 .map(org.springframework.security.core.GrantedAuthority::getAuthority)
                 .filter(a -> a.startsWith("ROLE_"))
@@ -117,14 +94,26 @@ public class JwtTokenProvider {
 
         boolean isSuperAdmin = roles.contains(SUPER_ADMIN_ROLE);
 
+        return buildToken(userPrincipal.getUsername(), userPrincipal.getId(), userPrincipal.getFullName(), 
+                userPrincipal.getEmail(), roles, permissions, userPrincipal.getEmployerId(), 
+                userPrincipal.getCompanyId(), isSuperAdmin);
+    }
+
+    private String buildToken(String username, Long userId, String fullName, String email, 
+                             List<String> roles, List<String> permissions, Long employerId, 
+                             Long companyId, boolean isSuperAdmin) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
-                .claim("userId", userPrincipal.getId())
-                .claim("email", userPrincipal.getEmail())
+                .subject(username)
+                .claim("userId", userId)
+                .claim("fullName", fullName)
+                .claim("email", email)
                 .claim("roles", roles)
                 .claim("permissions", permissions)
-                .claim("employerId", userPrincipal.getEmployerId())
-                .claim("companyId", userPrincipal.getCompanyId())
+                .claim("employerId", employerId)
+                .claim("companyId", companyId)
                 .claim("isSuperAdmin", isSuperAdmin)
                 .issuedAt(now)
                 .expiration(expiryDate)

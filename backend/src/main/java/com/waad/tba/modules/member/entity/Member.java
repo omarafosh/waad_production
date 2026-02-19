@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.waad.tba.common.entity.Organization;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.common.annotation.SecureField;
+import com.waad.tba.modules.member.enums.MemberLifecycleStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -51,7 +52,6 @@ import lombok.NoArgsConstructor;
 @EntityListeners(AuditingEntityListener.class)
 @lombok.EqualsAndHashCode(callSuper = true)
 @org.hibernate.annotations.SQLDelete(sql = "UPDATE members SET active = false, updated_at = NOW() WHERE id = ?")
-@org.hibernate.annotations.SQLRestriction("active = true")
 public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
@@ -164,6 +164,7 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
     @Builder.Default
     private Boolean isSmartCard = false;
 
+    @Deprecated(since = "2026-02", forRemoval = true)
     @Column(name = "secondary_status", length = 50)
     private String secondaryStatus;
 
@@ -324,7 +325,13 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
     // Membership Status
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    @Column(nullable = false, length = 20)
+    @Column(name = "lifecycle_status", nullable = false, length = 30)
+    private MemberLifecycleStatus lifecycleStatus = MemberLifecycleStatus.ACTIVE;
+
+    @Deprecated(since = "2026-02", forRemoval = true)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = true, length = 20)
     private MemberStatus status = MemberStatus.ACTIVE;
 
     @Column(name = "start_date")
@@ -333,17 +340,19 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @Deprecated(since = "2026-02", forRemoval = true)
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    @Column(nullable = false, length = 20, name = "card_status")
+    @Column(nullable = true, length = 20, name = "card_status")
     private CardStatus cardStatus = CardStatus.ACTIVE;
 
     @Column(length = 500, name = "blocked_reason")
     private String blockedReason;
 
     // Eligibility
+    @Deprecated(since = "2026-02", forRemoval = true)
     @Builder.Default
-    @Column(nullable = false, name = "eligibility_status")
+    @Column(nullable = true, name = "eligibility_status")
     private Boolean eligibilityStatus = true;
 
     @Column(name = "eligibility_updated_at")

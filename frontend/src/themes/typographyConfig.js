@@ -11,24 +11,24 @@
 export const typographyConfig = {
     // SYSTEM LEVEL 1 (L1) - Thick Titles
     h1: {
-        ratio: 1.4,
+        ratio: 1.5,
         fontWeight: 700,
-        lineHeight: 1.4
+        lineHeight: 1.2
     },
     h2: {
-        ratio: 1.3,
+        ratio: 1.35,
         fontWeight: 700,
-        lineHeight: 1.4
+        lineHeight: 1.3
     },
     h3: {
         ratio: 1.2,
         fontWeight: 600,
-        lineHeight: 1.5
+        lineHeight: 1.4
     },
     h4: {
         ratio: 1.1,
         fontWeight: 600,
-        lineHeight: 1.5
+        lineHeight: 1.4
     },
     h5: {
         ratio: 1.0,
@@ -36,43 +36,43 @@ export const typographyConfig = {
         lineHeight: 1.5
     },
     h6: {
-        ratio: 0.9,
+        ratio: 0.95,
+        fontWeight: 600,
+        lineHeight: 1.5
+    },
+
+    // SYSTEM LEVEL 2 (L2 & L2-b) - Base Content Size (1rem/16px base)
+    body1: {
+        ratio: 1.0,
+        fontWeight: 400,
+        lineHeight: 1.6
+    },
+    subtitle1: {
+        ratio: 1.0,
         fontWeight: 600,
         lineHeight: 1.6
     },
 
-    // SYSTEM LEVEL 2 (L2 & L2-b) - Base Content Size (1rem/14px)
-    body1: {
-        ratio: 1.0,
-        fontWeight: 500,
-        lineHeight: 1.7
-    },
-    subtitle1: {
-        ratio: 1.0,
-        fontWeight: 700,
-        lineHeight: 1.7
-    },
-
     // SYSTEM LEVEL 3 (L3) - Descriptions/Metadata
     body2: {
-        ratio: 0.9,
-        fontWeight: 500,
-        lineHeight: 1.7
+        ratio: 0.875,
+        fontWeight: 400,
+        lineHeight: 1.6
     },
     subtitle2: {
-        ratio: 0.85,
+        ratio: 0.875,
         fontWeight: 600,
-        lineHeight: 1.7
+        lineHeight: 1.6
     },
 
     caption: {
-        ratio: 0.85,
-        fontWeight: 500,
-        lineHeight: 1.7
+        ratio: 0.75,
+        fontWeight: 400,
+        lineHeight: 1.5
     },
 
     button: {
-        ratio: 1.0,
+        ratio: 0.875,
         fontWeight: 700,
         lineHeight: 1.7
     }

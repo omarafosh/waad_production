@@ -13,6 +13,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -20,28 +21,24 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "benefit_policy_rules", indexes = {
-    @Index(name = "idx_bpr_policy", columnList = "benefit_policy_id"),
-    @Index(name = "idx_bpr_category", columnList = "medical_category_id"),
-    @Index(name = "idx_bpr_service", columnList = "medical_service_id"),
-    @Index(name = "idx_bpr_active", columnList = "active"),
-    @Index(name = "idx_bpr_encounter_type", columnList = "encounter_type")
+        @Index(name = "idx_bpr_policy", columnList = "benefit_policy_id"),
+        @Index(name = "idx_bpr_category", columnList = "medical_category_id"),
+        @Index(name = "idx_bpr_service", columnList = "medical_service_id"),
+        @Index(name = "idx_bpr_active", columnList = "active"),
+        @Index(name = "idx_bpr_encounter_type", columnList = "encounter_type")
 }, uniqueConstraints = {
-    @UniqueConstraint(
-        name = "uk_bpr_policy_category_context",
-        columnNames = {"benefit_policy_id", "medical_category_id", "encounter_type"}
-    ),
-    @UniqueConstraint(
-        name = "uk_bpr_policy_service_context",
-        columnNames = {"benefit_policy_id", "medical_service_id", "encounter_type"}
-    )
+        @UniqueConstraint(name = "uk_bpr_policy_category_context", columnNames = { "benefit_policy_id",
+                "medical_category_id", "encounter_type" }),
+        @UniqueConstraint(name = "uk_bpr_policy_service_context", columnNames = { "benefit_policy_id",
+                "medical_service_id", "encounter_type" })
 })
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@lombok.ToString(exclude = {"benefitPolicy", "medicalCategoryRef"})
-@lombok.EqualsAndHashCode(exclude = {"benefitPolicy", "medicalCategoryRef"})
+@lombok.ToString(exclude = { "benefitPolicy", "medicalCategoryRef" })
+@lombok.EqualsAndHashCode(exclude = { "benefitPolicy", "medicalCategoryRef" })
 public class BenefitPolicyRule {
 
     @Id
@@ -94,8 +91,6 @@ public class BenefitPolicyRule {
     @Column(name = "apply_on", length = 20)
     private ApplyOnType applyOn;
 
-
-
     /**
      * Coverage percentage (0-100).
      * If null, inherits from parent BenefitPolicy.defaultCoveragePercent
@@ -106,8 +101,6 @@ public class BenefitPolicyRule {
     @Max(value = 100, message = "Coverage percent must be <= 100")
     @Column(name = "coverage_percent")
     private Integer coveragePercent;
-
-
 
     /**
      * Maximum number of times this benefit can be used per period
@@ -129,6 +122,14 @@ public class BenefitPolicyRule {
     private Integer waitingPeriodDays = 0;
 
     /**
+     * Fixed deductible amount for this specific rule.
+     * If null, inherits from BenefitPolicy.defaultDeductibleAmount.
+     */
+    @DecimalMin(value = "0.00", message = "Deductible must be >= 0")
+    @Column(name = "deductible_amount", precision = 15, scale = 2)
+    private BigDecimal deductibleAmount;
+
+    /**
      * Whether this benefit requires pre-approval before use
      */
     @Column(name = "requires_pre_approval", nullable = false)
@@ -145,7 +146,7 @@ public class BenefitPolicyRule {
     /**
      * MANDATORY: The coverage type this rule applies to.
      * Values: OUTPATIENT, INPATIENT, EMERGENCY, LABORATORY,
-     *         RADIOLOGY, PHARMACY, DENTAL, PHYSIOTHERAPY
+     * RADIOLOGY, PHARMACY, DENTAL, PHYSIOTHERAPY
      */
     @NotNull(message = "نوع التغطية إلزامي")
     @Enumerated(EnumType.STRING)
@@ -212,7 +213,8 @@ public class BenefitPolicyRule {
      * Check if this rule targets a medical package
      */
     public boolean isPackageRule() {
-        return medicalPackage != null && (medicalCategory == null || medicalCategory.isBlank()) && medicalService == null;
+        return medicalPackage != null && (medicalCategory == null || medicalCategory.isBlank())
+                && medicalService == null;
     }
 
     /**
@@ -223,7 +225,8 @@ public class BenefitPolicyRule {
     }
 
     public boolean appliesToPackage(com.waad.tba.modules.medicalpackage.MedicalPackage pkg) {
-        if (!active) return false;
+        if (!active)
+            return false;
         return medicalPackage != null && medicalPackage.getId().equals(pkg.getId());
     }
 
@@ -243,14 +246,14 @@ public class BenefitPolicyRule {
         if (medicalCategory != null && !medicalCategory.isBlank()) {
             return medicalCategory;
         }
-        
+
         // Final fallback for Global Rules (Encounter type only)
         if (encounterType != null) {
             String suffix = " (عام)";
             // Special case for outpatient/inpatient to make them sound more generic
             return "تغطية " + encounterType.getArabicLabel() + suffix;
         }
-        
+
         return "Rule #" + (id != null ? id : "NEW");
     }
 
@@ -261,7 +264,8 @@ public class BenefitPolicyRule {
     @PreUpdate
     public void validateTarget() {
         // Skip validation if we are soft-deleting the rule
-        if (deleted) return;
+        if (deleted)
+            return;
 
         // Validate encounterType is mandatory
         if (encounterType == null) {
@@ -275,19 +279,25 @@ public class BenefitPolicyRule {
         int count = (hasCategory ? 1 : 0) + (hasService ? 1 : 0) + (hasPackage ? 1 : 0);
 
         if (count > 1) {
-            throw new IllegalStateException("Rule must target exactly ONE of: category or service (or be a global encounter rule)");
+            throw new IllegalStateException(
+                    "Rule must target exactly ONE of: category or service (or be a global encounter rule)");
         }
 
         // Set the applyOn type automatically
-        if (hasService) this.applyOn = ApplyOnType.SERVICE;
-        else if (hasPackage) this.applyOn = ApplyOnType.PACKAGE;
-        else if (hasCategory) this.applyOn = ApplyOnType.CATEGORY;
-        else this.applyOn = ApplyOnType.GENERAL; // New: Global encounter rule
+        if (hasService)
+            this.applyOn = ApplyOnType.SERVICE;
+        else if (hasPackage)
+            this.applyOn = ApplyOnType.PACKAGE;
+        else if (hasCategory)
+            this.applyOn = ApplyOnType.CATEGORY;
+        else
+            this.applyOn = ApplyOnType.GENERAL; // New: Global encounter rule
     }
 
     /**
      * Get the effective coverage percentage.
-     * Logic: If specific rule percentage is set, use it. Otherwise, fallback to policy default.
+     * Logic: If specific rule percentage is set, use it. Otherwise, fallback to
+     * policy default.
      */
     public Integer getEffectiveCoveragePercent() {
         if (coveragePercent != null) {
@@ -297,5 +307,20 @@ public class BenefitPolicyRule {
             return benefitPolicy.getDefaultCoveragePercent();
         }
         return 0; // Default fallback if nothing is set
+    }
+
+    /**
+     * Get the effective deductible amount.
+     * Logic: If specific rule deductible is set (and not negative), use it.
+     * Otherwise, fallback to policy default.
+     */
+    public java.math.BigDecimal getEffectiveDeductible() {
+        if (deductibleAmount != null && deductibleAmount.compareTo(java.math.BigDecimal.ZERO) >= 0) {
+            return deductibleAmount;
+        }
+        if (benefitPolicy != null && benefitPolicy.getDefaultDeductibleAmount() != null) {
+            return benefitPolicy.getDefaultDeductibleAmount();
+        }
+        return java.math.BigDecimal.ZERO;
     }
 }

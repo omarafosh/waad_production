@@ -27,25 +27,14 @@ public class LifecycleReasonCode {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    @Column(name = "label_ar", nullable = false, length = 200)
+    @Column(name = "description_ar", nullable = false, length = 255)
     private String labelAr;
 
-    @Column(name = "label_en", length = 200)
+    @Column(name = "description_en", length = 255)
     private String labelEn;
 
-    /**
-     * Entities this reason applies to (e.g., POLICY, CLAIM, MEMBER)
-     * Stored as array in PostgreSQL
-     */
-    @Column(name = "applicable_entities", columnDefinition = "TEXT[]")
-    private String[] applicableEntities;
-
-    /**
-     * Actions this reason applies to (e.g., CANCEL, TERMINATE)
-     * Stored as array in PostgreSQL
-     */
-    @Column(name = "applicable_actions", columnDefinition = "TEXT[]")
-    private String[] applicableActions;
+    @Column(name = "category", nullable = false, length = 50)
+    private String category;
 
     @Column(nullable = false)
     @Builder.Default

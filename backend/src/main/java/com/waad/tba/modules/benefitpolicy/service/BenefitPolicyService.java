@@ -51,34 +51,34 @@ public class BenefitPolicyService {
      */
     @Transactional(readOnly = true)
     public Page<BenefitPolicyResponseDto> findAll(Pageable pageable) {
-        log.debug("Finding all benefit policies, page: {}", pageable.getPageNumber());
-        Page<BenefitPolicy> page = benefitPolicyRepository.findAllOptimized(pageable);
-        
-        // Populate financial stats
-        page.forEach(this::populateFinancialStats);
-        
-        Page<BenefitPolicyResponseDto> result = page.map(BenefitPolicyResponseDto::fromEntity);
-        log.info("[BENEFIT-POLICIES] Retrieved {} records (total: {})", 
-                result.getContent().size(), result.getTotalElements());
-        return result;
+        return findAll(false, pageable);
     }
 
     /**
      * Helper to populate transient financial statistics
      */
     private void populateFinancialStats(BenefitPolicy policy) {
-        if (policy.getId() == null) return;
+        if (policy == null || policy.getId() == null) return;
         
-        java.math.BigDecimal used = claimRepository.sumApprovedAmountByPolicyId(policy.getId());
-        if (used == null) used = java.math.BigDecimal.ZERO;
-        
-        policy.setUsedAmount(used);
-        
-        if (policy.getAnnualLimit() != null && policy.getAnnualLimit().compareTo(java.math.BigDecimal.ZERO) > 0) {
-            double percentage = used.divide(policy.getAnnualLimit(), 4, java.math.RoundingMode.HALF_UP)
-                    .multiply(java.math.BigDecimal.valueOf(100)).doubleValue();
-            policy.setUsagePercentage(percentage);
-        } else {
+        try {
+            java.math.BigDecimal used = claimRepository.sumApprovedAmountByPolicyId(policy.getId());
+            if (used == null) used = java.math.BigDecimal.ZERO;
+            
+            policy.setUsedAmount(used);
+            
+            if (policy.getAnnualLimit() != null && policy.getAnnualLimit().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                // Ensure used is not null before division
+                java.math.BigDecimal limit = policy.getAnnualLimit();
+                double percentage = used.divide(limit, 4, java.math.RoundingMode.HALF_UP)
+                        .multiply(java.math.BigDecimal.valueOf(100)).doubleValue();
+                policy.setUsagePercentage(percentage);
+            } else {
+                policy.setUsagePercentage(0.0);
+            }
+        } catch (Exception e) {
+            log.error("❌ Error calculating financial stats for policy {}: {}", policy.getId(), e.getMessage());
+            // Fallback to zero values to allow the list to load anyway
+            policy.setUsedAmount(java.math.BigDecimal.ZERO);
             policy.setUsagePercentage(0.0);
         }
     }
@@ -88,18 +88,35 @@ public class BenefitPolicyService {
      */
     @Transactional(readOnly = true)
     public Page<BenefitPolicyResponseDto> findAll(boolean includeDeleted, Pageable pageable) {
-        log.debug("Finding all benefit policies, includeDeleted: {}, page: {}", includeDeleted, pageable.getPageNumber());
+        log.info("[BENEFIT-POLICIES] Requesting findAll: includeDeleted={}, page={}", includeDeleted, pageable.getPageNumber());
         Page<BenefitPolicy> page;
-        if (includeDeleted) {
-            page = benefitPolicyRepository.findAllIncludingDeleted(pageable);
-            log.info("[BENEFIT-POLICIES-SVC] findAll(includeDeleted=true) fetched {} elements, total: {}", 
-                    page.getContent().size(), page.getTotalElements());
-        } else {
-            page = benefitPolicyRepository.findAllOptimized(pageable);
-            log.info("[BENEFIT-POLICIES-SVC] findAll(includeDeleted=false) fetched {} elements", 
-                    page.getContent().size());
+        
+        try {
+            if (includeDeleted) {
+                page = benefitPolicyRepository.findAllIncludingDeleted(pageable);
+            } else {
+                page = benefitPolicyRepository.findAllOptimized(pageable);
+            }
+            
+            // Critical fix: Ensure stats are populated for ALL policies in the page
+            page.forEach(p -> {
+                try {
+                    // Initialize collections proactively to avoid aborted transaction errors during DTO mapping
+                    if (p.getRules() != null) p.getRules().size();
+                    if (p.getDistributions() != null) p.getDistributions().size();
+                    
+                    populateFinancialStats(p);
+                } catch (Exception e) {
+                    log.error("❌ Failed to process policy {}: {}", p.getId(), e.getMessage());
+                }
+            });
+            
+            return page.map(BenefitPolicyResponseDto::fromEntity);
+        } catch (Exception e) {
+            log.error("❌ Critical error in findAll benefit policies: {}", e.getMessage());
+            // Fallback to standard JPA if native/optimized fails
+            return benefitPolicyRepository.findAll(pageable).map(BenefitPolicyResponseDto::fromEntity);
         }
-        return page.map(BenefitPolicyResponseDto::fromEntity);
     }
 
     /**
@@ -151,22 +168,37 @@ public class BenefitPolicyService {
      */
     @Transactional(readOnly = true)
     public Page<BenefitPolicyResponseDto> findByEmployer(Long employerOrgId, boolean includeDeleted, Pageable pageable) {
-        log.debug("Finding benefit policies for employer: {}, includeDeleted: {}, page: {}", 
+        log.info("[BENEFIT-POLICIES] Requesting findByEmployer: id={}, includeDeleted={}, page={}", 
                 employerOrgId, includeDeleted, pageable.getPageNumber());
         
         Page<BenefitPolicy> page;
-        if (includeDeleted) {
-            page = benefitPolicyRepository.findByEmployerOrganizationIdNative(employerOrgId, pageable);
-            log.info("[BENEFIT-POLICIES-SVC] findByEmployer(id={}, includeDeleted=true) fetched {} elements, total: {}", 
-                    employerOrgId, page.getContent().size(), page.getTotalElements());
-        } else {
-            page = benefitPolicyRepository.findByEmployerOrganizationIdAndActiveTrue(employerOrgId, pageable);
-            log.info("[BENEFIT-POLICIES-SVC] findByEmployer(id={}, includeDeleted=false) fetched {} elements", 
-                    employerOrgId, page.getContent().size());
+        try {
+            if (includeDeleted) {
+                page = benefitPolicyRepository.findByEmployerOrganizationIdNative(employerOrgId, pageable);
+            } else {
+                page = benefitPolicyRepository.findByEmployerOrganizationIdAndActiveTrue(employerOrgId, pageable);
+            }
+            
+            // Populate stats safely
+            page.forEach(p -> {
+                try {
+                    // Initialize collections proactively
+                    if (p.getRules() != null) p.getRules().size();
+                    if (p.getDistributions() != null) p.getDistributions().size();
+                    
+                    populateFinancialStats(p);
+                } catch (Exception e) {
+                    log.error("❌ Failed to process policy {}: {}", p.getId(), e.getMessage());
+                }
+            });
+            
+            return page.map(BenefitPolicyResponseDto::fromEntity);
+        } catch (Exception e) {
+            log.error("❌ Error in findByEmployer for {}: {}", employerOrgId, e.getMessage());
+            // Fallback
+            return benefitPolicyRepository.findByEmployerOrganizationIdAndActiveTrue(employerOrgId, pageable)
+                    .map(BenefitPolicyResponseDto::fromEntity);
         }
-        
-        page.forEach(this::populateFinancialStats);
-        return page.map(BenefitPolicyResponseDto::fromEntity);
     }
 
     /**

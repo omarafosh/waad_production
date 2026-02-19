@@ -16,6 +16,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 
 // MUI Components
 import { Box, Button, Grid, Stack, Skeleton, Typography, Divider, Chip } from '@mui/material';
@@ -45,7 +46,7 @@ const formatPrice = (value) => {
   if (value == null || value === '') return '-';
   const num = parseFloat(value);
   if (isNaN(num)) return '-';
-  return num.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
+  return num.toLocaleString(getAppLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
 };
 
 const formatDate = (value) => {
@@ -53,7 +54,7 @@ const formatDate = (value) => {
   try {
     const date = new Date(value);
     if (isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('ar-SA', {
+    return date.toLocaleDateString(getAppLocale(), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

@@ -1,5 +1,6 @@
-import { Card, CardContent, CardHeader, Typography, Box, Chip } from '@mui/material';
 import Chart from 'react-apexcharts';
+import { useTheme } from '@mui/material';
+import useConfig from 'hooks/useConfig';
 
 const STATUS_COLORS = {
   PENDING: '#FFA726',
@@ -19,6 +20,8 @@ const STATUS_LABELS = {
  * Status distribution pie chart
  */
 const StatusPieChart = ({ data, loading }) => {
+  const theme = useTheme();
+  const { state: { fontFamily } } = useConfig();
   if (loading || !data || data.length === 0) {
     return (
       <Card>
@@ -53,7 +56,8 @@ const StatusPieChart = ({ data, loading }) => {
     colors: colors,
     legend: {
       position: 'bottom',
-      fontFamily: 'Tajawal, sans-serif'
+      fontFamily: fontFamily,
+      fontSize: theme.typography.caption.fontSize
     },
     dataLabels: {
       enabled: true,
@@ -61,7 +65,8 @@ const StatusPieChart = ({ data, loading }) => {
         return val.toFixed(0) + "%";
       },
       style: {
-        fontFamily: 'Tajawal, sans-serif'
+        fontFamily: fontFamily,
+        fontSize: theme.typography.caption.fontSize
       }
     },
     tooltip: {
@@ -71,7 +76,8 @@ const StatusPieChart = ({ data, loading }) => {
         }
       },
       style: {
-        fontFamily: 'Tajawal, sans-serif'
+        fontFamily: fontFamily,
+        fontSize: theme.typography.caption.fontSize
       }
     },
     responsive: [{
@@ -89,7 +95,7 @@ const StatusPieChart = ({ data, loading }) => {
 
   return (
     <Card>
-      <CardHeader title="توزيع الحالات" subheader={`إجمالي: ${total.toLocaleString('ar-SA')}`} />
+      <CardHeader title="توزيع الحالات" subheader={`إجمالي: ${total.toLocaleString('ar-SA-u-nu-latn')}`} />
       <CardContent>
         <Box sx={{ height: 350, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Chart options={chartOptions} series={series} type="pie" width="100%" height={300} />

@@ -21,7 +21,8 @@ import {
   Stack,
   TextField,
   Tooltip,
-  Typography
+  Typography,
+  InputAdornment
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -30,7 +31,8 @@ import {
   Add as AddIcon,
   Refresh as RefreshIcon,
   Undo as UndoIcon,
-  FilterList as FilterListIcon
+  FilterList as FilterListIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 
 import MainCard from 'components/MainCard';
@@ -42,6 +44,12 @@ import { useTableRefresh } from 'contexts/TableRefreshContext';
 import { getProviderContracts, CONTRACT_STATUS, CONTRACT_STATUS_CONFIG, PRICING_MODEL_CONFIG } from 'services/api/provider-contracts.service';
 import { debounce } from 'lodash-es';
 import useFormatter from 'hooks/useFormatter';
+
+// Constants
+import { PERMISSIONS } from 'constants/permissions.constants';
+
+// Style Utils
+import { headerButtonStyle } from 'utils/styleUtils';
 
 const QUERY_KEY = 'provider-contracts';
 
@@ -58,7 +66,8 @@ const ProviderContractsList = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   const tableState = useTableState({
-    initialPageSize: 8,
+    initialPageSize: 10,
+    allowedPageSizes: [10, 25, 50, 100],
     defaultSort: { field: 'id', direction: 'desc' },
     initialFilters: {},
     storageKey: 'provider_contracts_pageSize'
@@ -120,27 +129,6 @@ const ProviderContractsList = () => {
     setStatusFilter('');
     tableState.setSearchTerm('');
     tableState.clearFilters();
-  };
-
-  const headerButtonStyle = (type, theme) => {
-    const isAdd = type === 'add';
-    const color = theme.palette.primary.main;
-
-    return {
-      minWidth: '140px',
-      color: isAdd ? '#fff' : color,
-      borderColor: color,
-      backgroundColor: isAdd ? color : 'transparent',
-      '&:hover': {
-        backgroundColor: isAdd ? theme.palette.primary.dark : `${color}10`,
-        borderColor: isAdd ? theme.palette.primary.dark : color,
-      },
-      fontWeight: theme.typography.button.fontWeight,
-      fontSize: theme.typography.button.fontSize,
-      whiteSpace: 'nowrap',
-      px: 2,
-      height: '38px'
-    };
   };
 
   const columns = useMemo(
@@ -278,7 +266,7 @@ const ProviderContractsList = () => {
                 <VisibilityIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <RBACGuard requiredPermissions={['provider_contracts.update']}>
+            <RBACGuard requiredPermissions={[PERMISSIONS.PROVIDER_CONTRACT_EDIT]}>
               <Tooltip title="تعديل">
                 <IconButton
                   size="small"
@@ -298,7 +286,7 @@ const ProviderContractsList = () => {
   );
 
   return (
-    <RBACGuard requiredPermissions={['provider_contracts.view']}>
+    <RBACGuard requiredPermissions={[PERMISSIONS.PROVIDER_CONTRACT_VIEW]}>
       <Box sx={{ height: 'calc(100vh - 130px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <ModernPageHeader
           title="عقود مقدمي الخدمة"
@@ -310,7 +298,7 @@ const ProviderContractsList = () => {
           ]}
           actions={
             <Stack direction="row" spacing={1} sx={{ '& .MuiButton-root': { transition: 'all 0.2s' } }}>
-              <RBACGuard requiredPermissions={['provider_contracts.create']}>
+              <RBACGuard requiredPermissions={[PERMISSIONS.PROVIDER_CONTRACT_CREATE]}>
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
@@ -322,22 +310,27 @@ const ProviderContractsList = () => {
               </RBACGuard>
             </Stack>
           }
-          sx={{ mb: 0.5 }}
+          sx={{ mb: 1.5 }}
         />
 
-        <Stack spacing={0.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        <Stack spacing={1.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
           {/* Filters Bar */}
-          <MainCard sx={{ p: 1, flexShrink: 0 }}>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <MainCard sx={{ p: 1.5, flexShrink: 0 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
               <TextField
                 size="small"
-                label="بحث السريع"
                 placeholder="رمز العقد، اسم مقدم الخدمة..."
                 value={localSearchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
-                sx={{ minWidth: 250, flexGrow: 1 }}
-                InputProps={{ sx: { fontSize: '1rem', height: 36 } }}
-                InputLabelProps={{ sx: { fontSize: '1rem' } }}
+                sx={{ minWidth: 300, flexGrow: 1 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                  sx: { height: 40, borderRadius: 1.5 }
+                }}
               />
 
               <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -372,27 +365,29 @@ const ProviderContractsList = () => {
           </MainCard>
 
           {/* Data Table */}
-          <MainCard content={false} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Box sx={{ flexGrow: 1, height: '100%', overflow: 'hidden' }}>
-              <TableErrorBoundary>
-                <GenericDataTable
-                  columns={columns}
-                  data={data?.content || []}
-                  totalCount={data?.totalElements || 0}
-                  isLoading={isLoading}
-                  tableState={tableState}
-                  enableFiltering={false}
-                  enableSorting={true}
-                  enablePagination={true}
-                  stickyHeader={true}
-                  onRowClick={(row) => handleNavigateView(row.id)}
-                  emptyMessage="لا توجد عقود"
-                  rowsPerPageOptions={[8, 16, 24, 32]}
-                  cellPadding="dense"
-                  fontSize={settings.fontSize}
-                />
-              </TableErrorBoundary>
-            </Box>
+          <MainCard content={false} sx={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            borderRadius: 2
+          }}>
+            <GenericDataTable
+              columns={columns}
+              data={data?.content || []}
+              totalCount={data?.totalElements || 0}
+              isLoading={isLoading}
+              tableState={tableState}
+              enableFiltering={false}
+              enableSorting={true}
+              enablePagination={true}
+              stickyHeader={true}
+              onRowClick={(row) => handleNavigateView(row.id)}
+              emptyMessage="لا توجد عقود"
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              cellPadding="dense"
+              fontSize={settings.fontSize}
+            />
           </MainCard>
         </Stack>
       </Box>

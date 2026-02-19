@@ -54,7 +54,7 @@ export const exportToExcel = (data, filename = 'export', options = {}) => {
     if (reportTitle) {
       csvContent += `"${reportTitle}"\n`;
     }
-    csvContent += `"تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}"\n`;
+    csvContent += `"تاريخ التصدير: ${new Date().toLocaleDateString(getAppLocale())}"\n`;
     csvContent += '\n'; // Empty row before data
   }
 
@@ -225,7 +225,7 @@ export const exportToPDF = (arg1, arg2, arg3, arg4, arg5) => {
         </tbody>
       </table>
       <div class="footer">
-        ${footerText || (companyName ? `${companyName} - ` : '')}تم الإنشاء: ${new Date().toLocaleDateString('ar-SA')} ${new Date().toLocaleTimeString('ar-SA')}
+        ${footerText || (companyName ? `${companyName} - ` : '')}تم الإنشاء: ${new Date().toLocaleDateString(getAppLocale())} ${new Date().toLocaleTimeString(getAppLocale())}
       </div>
     </body>
     </html>

@@ -29,10 +29,17 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import LinkIcon from '@mui/icons-material/Link';
 import DescriptionIcon from '@mui/icons-material/Description';
+import ConfirmDialog from 'components/common/ConfirmDialog';
+
+// Style Utils
+import { headerButtonStyle } from 'utils/styleUtils';
 
 // Project Components
 import MainCard from 'components/MainCard';
 import { GenericDataTable, ModernPageHeader, RBACGuard } from 'components/tba';
+
+// Constants
+import { PERMISSIONS } from 'constants/permissions.constants';
 
 // Hooks
 import useTableState from 'hooks/useTableState';
@@ -90,8 +97,24 @@ const ProvidersList = () => {
   const [dialogSearchTerm, setDialogSearchTerm] = useState('');
   const [localSearchTerm, setLocalSearchTerm] = useState('');
 
+  // Confirm Dialog State
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    content: '',
+    onConfirm: null,
+    confirmText: 'نعم',
+    cancelText: 'إلغاء',
+    severity: 'warning'
+  });
+
+  const closeDialog = () => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+  };
+
   const tableState = useTableState({
     initialPageSize: 10,
+    allowedPageSizes: [10, 25, 50, 100],
     defaultSort: DEFAULT_SORT
   });
 
@@ -119,15 +142,25 @@ const ProvidersList = () => {
   const handleNavigateEdit = useCallback((id) => navigate(`/providers/edit/${id}`), [navigate]);
 
   const handleDelete = useCallback(
-    async (id, name) => {
-      if (!window.confirm(`هل أنت متأكد من حذف مقدم الخدمة "${name}"؟`)) return;
-      try {
-        await providersService.remove(id);
-        openSnackbar({ message: 'تم حذف مقدم الخدمة بنجاح', variant: 'success' });
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      } catch (err) {
-        openSnackbar({ message: 'فشل حذف مقدم الخدمة', variant: 'error' });
-      }
+    (id, name) => {
+      setConfirmDialog({
+        open: true,
+        title: 'تأكيد الحذف',
+        content: `هل أنت متأكد من حذف مقدم الخدمة "${name}"؟`,
+        confirmText: 'نعم، احذف',
+        severity: 'error',
+        onConfirm: async () => {
+          try {
+            await providersService.remove(id);
+            openSnackbar({ message: 'تم حذف مقدم الخدمة بنجاح', variant: 'success' });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+            closeDialog();
+          } catch (err) {
+            openSnackbar({ message: 'فشل حذف مقدم الخدمة', variant: 'error' });
+            closeDialog();
+          }
+        }
+      });
     },
     [queryClient]
   );
@@ -329,7 +362,7 @@ const ProvidersList = () => {
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <RBACGuard requiredPermissions={['providers.delete']}>
+          <RBACGuard requiredPermissions={[PERMISSIONS.PROVIDER_DELETE]}>
             <Tooltip title="حذف">
               <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDelete(row.original.id, row.original.name); }}>
                 <DeleteIcon fontSize="small" />
@@ -357,27 +390,6 @@ const ProvidersList = () => {
   const providers = data?.content || [];
   const totalCount = data?.totalElements || 0;
 
-  const headerButtonStyle = (type, theme) => {
-    const isAdd = type === 'add';
-    const color = theme.palette.primary.main;
-
-    return {
-      minWidth: '140px',
-      color: isAdd ? '#fff' : color,
-      borderColor: color,
-      backgroundColor: isAdd ? color : 'transparent',
-      '&:hover': {
-        backgroundColor: isAdd ? theme.palette.primary.dark : `${color}10`,
-        borderColor: isAdd ? theme.palette.primary.dark : color
-      },
-      fontWeight: theme.typography.button.fontWeight,
-      fontSize: theme.typography.button.fontSize,
-      whiteSpace: 'nowrap',
-      px: 2,
-      height: '38px'
-    };
-  };
-
   return (
     <Box sx={{ height: 'calc(100vh - 130px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ModernPageHeader
@@ -389,7 +401,7 @@ const ProvidersList = () => {
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" startIcon={<FileDownloadIcon />} sx={(theme) => headerButtonStyle('export', theme)}>تصدير</Button>
             <Button variant="outlined" startIcon={<CloudUploadIcon />} sx={(theme) => headerButtonStyle('import', theme)}>استيراد</Button>
-            <RBACGuard requiredPermissions={['providers.create']}>
+            <RBACGuard requiredPermissions={[PERMISSIONS.PROVIDER_CREATE]}>
               <Button variant="contained" startIcon={<AddIcon />} onClick={handleNavigateAdd} sx={(theme) => headerButtonStyle('add', theme)}>إضافة مزود</Button>
             </RBACGuard>
           </Stack>
@@ -419,7 +431,13 @@ const ProvidersList = () => {
           </Stack>
         </MainCard>
 
-        <MainCard content={false} sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <MainCard content={false} sx={{
+          flexGrow: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 2
+        }}>
           <GenericDataTable
             columns={columns}
             data={providers}
@@ -429,6 +447,7 @@ const ProvidersList = () => {
             emptyMessage="لا يوجد مقدمي خدمات"
             onRowClick={(row) => handleNavigateView(row.id)}
             enableFiltering={false}
+            rowsPerPageOptions={[10, 25, 50, 100]}
           />
         </MainCard>
       </Stack>

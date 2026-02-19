@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo, useEffect } from 'react';
 import { useSettings } from 'hooks/useSettings';
 import PropTypes from 'prop-types';
 
@@ -28,8 +28,18 @@ export const SystemSettingsProvider = ({ children }) => {
         businessType: settings?.businessType,
         currency: settings?.currency || 'LYD',
         primaryColor: settings?.primaryColor || '#1890ff',
-        fontFamily: settings?.fontFamily || 'Cairo'
+        fontFamily: settings?.fontFamily || 'Cairo',
+        numberSystem: settings?.numberSystem || 'latn',
+        dateCalendar: settings?.dateCalendar || 'gregory'
     }), [settings, isLoading, error, updateSettings, isUpdating]);
+
+    // Persist key settings to localStorage for non-hook utilities (like date-formatter)
+    useEffect(() => {
+        if (settings) {
+            localStorage.setItem('app-number-system', settings.numberSystem || 'latn');
+            localStorage.setItem('app-date-calendar', settings.dateCalendar || 'gregory');
+        }
+    }, [settings]);
 
     return (
         <SystemSettingsContext.Provider value={value}>

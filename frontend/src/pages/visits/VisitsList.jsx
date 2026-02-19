@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Button,
   Chip,
@@ -221,7 +222,7 @@ const VisitsList = () => {
         return (
           <Stack spacing={0.5}>
             <Typography variant="body2" fontWeight="medium">
-              {visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString('ar-SA') : '—'}
+              {visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString(getAppLocale()) : '—'}
             </Typography>
             {visit?.visitType && (
               <Chip

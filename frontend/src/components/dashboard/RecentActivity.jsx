@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Card,
   CardContent,
@@ -97,7 +98,7 @@ const RecentActivity = ({ data, loading }) => {
       if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
       if (diffHours < 24) return `منذ ${diffHours} ساعة`;
       if (diffDays < 7) return `منذ ${diffDays} يوم`;
-      return date.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString(getAppLocale(), { month: 'short', day: 'numeric' });
     } catch {
       return '—';
     }

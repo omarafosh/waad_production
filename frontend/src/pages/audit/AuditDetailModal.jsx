@@ -61,7 +61,7 @@ const getActionLabel = (action) => {
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('ar-SA', {
+  return new Intl.DateTimeFormat(getAppLocale(), {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -70,6 +70,8 @@ const formatDate = (dateString) => {
   }).format(date);
 };
 
+import PropTypes from 'prop-types';
+import { getAppLocale } from 'utils/locale-helper';
 import JSONView from './JSONView';
 
 /**

@@ -42,30 +42,37 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert
+  Alert,
+  InputAdornment
 } from '@mui/material';
 
 // MUI Icons - Always as Component, NEVER as JSX
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
-import ToggleOnIcon from '@mui/icons-material/ToggleOn';
-import ToggleOffIcon from '@mui/icons-material/ToggleOff';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
+// MUI Icons
+import {
+  MedicalServices as MedicalServicesIcon,
+  Add as AddIcon,
+  DeleteSweep as DeleteSweepIcon,
+  ToggleOff as ToggleOffIcon,
+  ToggleOn as ToggleOnIcon,
+  Refresh as RefreshIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon
+} from '@mui/icons-material';
 
 // Project Components
 import MainCard from 'components/MainCard';
-import UnifiedPageHeader from 'components/UnifiedPageHeader';
-import GenericDataTable from 'components/GenericDataTable';
-import TableErrorBoundary from 'components/TableErrorBoundary';
-import PermissionGuard from 'components/PermissionGuard';
-import ExcelImportButton from 'components/ExcelImport/ExcelImportButton';
+import { GenericDataTable, ModernPageHeader, RBACGuard } from 'components/tba';
+import ConfirmDialog from 'components/common/ConfirmDialog';
+import ExcelImportButton from 'components/tba/ExcelUploadButton';
+
+// Utils
+import { headerButtonStyle } from 'utils/styleUtils';
 
 // Custom Hooks
 import useTableState from 'hooks/useTableState';
@@ -91,6 +98,9 @@ import { exportMedicalServicesToExcel } from 'utils/excelExport';
 
 // Snackbar
 import { openSnackbar } from 'api/snackbar';
+
+// Constants & Styles
+import { PERMISSIONS } from 'constants/permissions.constants';
 
 // ============================================================================
 // CONSTANTS
@@ -133,6 +143,21 @@ const MedicalServicesList = () => {
   const [deactivateAllDialogOpen, setDeactivateAllDialogOpen] = useState(false);
   const [activateAllDialogOpen, setActivateAllDialogOpen] = useState(false);
 
+  // Generic Confirm Dialog
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: '',
+    content: '',
+    onConfirm: null,
+    confirmText: 'نعم',
+    cancelText: 'إلغاء',
+    severity: 'warning'
+  });
+
+  const closeDialog = () => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+  };
+
   // ========================================
   // CATEGORIES DATA (for inline edit dropdown)
   // ========================================
@@ -171,12 +196,22 @@ const MedicalServicesList = () => {
   // ========================================
   // TABLE STATE MANAGEMENT
   // ========================================
-
   const tableState = useTableState({
     initialPageSize: 10,
-    defaultSort: { field: 'code', direction: 'asc' },
-    initialFilters: {}
+    storageKey: 'medical_services_pageSize',
+    allowedPageSizes: [10, 25, 50, 100],
+    defaultSort: { field: 'id', direction: 'desc' }
   });
+
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      tableState.setSearchTerm(localSearchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [localSearchTerm, tableState]);
 
   // ========================================
   // NAVIGATION HANDLERS
@@ -201,25 +236,32 @@ const MedicalServicesList = () => {
   );
 
   const handleDelete = useCallback(
-    async (id, name) => {
-      const confirmMessage = `هل أنت متأكد من حذف الخدمة "${name}"؟`;
-      if (!window.confirm(confirmMessage)) return;
-
-      try {
-        await deleteMedicalService(id);
-        openSnackbar({
-          message: 'تم حذف الخدمة بنجاح',
-          variant: 'success'
-        });
-        // Refresh table data
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      } catch (err) {
-        console.error('[MedicalServices] Delete failed:', err);
-        openSnackbar({
-          message: 'فشل حذف الخدمة. يرجى المحاولة لاحقاً',
-          variant: 'error'
-        });
-      }
+    (id, name) => {
+      setConfirmDialog({
+        open: true,
+        title: 'تأكيد الحذف',
+        content: `هل أنت متأكد من حذف الخدمة "${name}"؟`,
+        confirmText: 'نعم، احذف',
+        severity: 'error',
+        onConfirm: async () => {
+          try {
+            await deleteMedicalService(id);
+            openSnackbar({
+              message: 'تم حذف الخدمة بنجاح',
+              variant: 'success'
+            });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+            closeDialog();
+          } catch (err) {
+            console.error('[MedicalServices] Delete failed:', err);
+            openSnackbar({
+              message: 'فشل حذف الخدمة. يرجى المحاولة لاحقاً',
+              variant: 'error'
+            });
+            closeDialog();
+          }
+        }
+      });
     },
     [queryClient]
   );
@@ -326,8 +368,8 @@ const MedicalServicesList = () => {
     staleTime: 30000 // Cache for 30 seconds
   });
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: [QUERY_KEY, tableState.page, tableState.pageSize, tableState.sorting, tableState.columnFilters, statusFilter, refreshKey],
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: [QUERY_KEY, tableState.page, tableState.pageSize, tableState.sorting, tableState.columnFilters, statusFilter, refreshKey, tableState.searchTerm],
     queryFn: async () => {
       // Build query parameters from table state
       const params = {
@@ -354,11 +396,19 @@ const MedicalServicesList = () => {
         }
       });
 
+      // Add search term
+      if (tableState.searchTerm) {
+        params.search = tableState.searchTerm;
+      }
+
       const response = await getMedicalServices(params);
       return response;
     },
     keepPreviousData: true
   });
+
+  const services = data?.items || [];
+  const totalCount = data?.total || 0;
 
   // ========================================
   // COLUMN DEFINITIONS
@@ -533,281 +583,248 @@ const MedicalServicesList = () => {
   }, []);
 
   return (
-    <Box>
-      {/* ====== UNIFIED PAGE HEADER ====== */}
-      <UnifiedPageHeader
+    <Box sx={{ height: 'calc(100vh - 130px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* ====== MODERN PAGE HEADER ====== */}
+      <ModernPageHeader
         title="الخدمات الطبية"
-        subtitle="إدارة الخدمات الطبية في النظام"
-        icon={MedicalServicesIcon}
-        breadcrumbs={[{ label: 'الرئيسية', path: '/' }, { label: 'الخدمات الطبية' }]}
-        // Add Button
-        showAddButton={false} // We will render our own button with specific style
-        additionalActions={
+        subtitle="إدارة الخدمات الطبية وتسعيرها في النظام"
+        icon={<MedicalServicesIcon />}
+        breadcrumbs={[
+          { label: 'الرئيسية', path: '/' },
+          { label: 'الخدمات الطبية' }
+        ]}
+        actions={
           <Stack direction="row" spacing={1} alignItems="center">
-            <PermissionGuard requires="medical-services.add">
+            <RBACGuard requiredPermissions={[PERMISSIONS.MEDICAL_SERVICE_CREATE]}>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleNavigateAdd}
-                sx={{
-                  bgcolor: '#1976d2',
-                  '&:hover': { bgcolor: '#1565c0' },
-                  fontWeight: 'bold',
-                  px: 2
-                }}
+                sx={(theme) => ({
+                  ...headerButtonStyle('add', theme),
+                  fontWeight: 'bold'
+                })}
               >
-                إضافة خدمة جديدة
+                إضافة خدمة
               </Button>
-            </PermissionGuard>
+            </RBACGuard>
 
-            {/* Bulk Permanent Delete Button */}
-            <PermissionGuard requires={['SUPER_ADMIN', 'INSURANCE_ADMIN']}>
+            <RBACGuard requiredPermissions={['SUPER_ADMIN']}>
               <Button
                 variant="contained"
                 color="error"
                 startIcon={<DeleteSweepIcon />}
                 onClick={handleDeleteAll}
                 disabled={!stats?.total || stats.total === 0}
-                sx={{ fontWeight: 'bold' }}
+                sx={(theme) => ({
+                  ...headerButtonStyle('delete', theme),
+                  fontWeight: 'bold'
+                })}
               >
-                حذف الكل ({stats?.total || 0})
+                حذف الكل
               </Button>
-            </PermissionGuard>
+            </RBACGuard>
 
-            {/* Bulk Deactivate Button */}
-            <PermissionGuard requires={['SUPER_ADMIN', 'INSURANCE_ADMIN']}>
+            <RBACGuard requiredPermissions={[PERMISSIONS.MEDICAL_SERVICE_UPDATE]}>
               <Button
                 variant="contained"
-                sx={{
+                sx={(theme) => ({
+                  ...headerButtonStyle('warning', theme),
                   bgcolor: '#ed6c02',
                   color: '#fff',
                   '&:hover': { bgcolor: '#e65100' },
                   fontWeight: 'bold'
-                }}
+                })}
                 startIcon={<ToggleOffIcon />}
                 onClick={handleDeactivateAll}
                 disabled={!stats?.active || stats.active === 0}
               >
-                إلغاء تنشيط الكل ({stats?.active || 0})
+                إلغاء تنشيط
               </Button>
-            </PermissionGuard>
+            </RBACGuard>
 
-            {/* Bulk Activate Button */}
-            <PermissionGuard requires={['SUPER_ADMIN', 'INSURANCE_ADMIN']}>
-              <Button
-                variant="outlined"
-                color="inherit"
-                startIcon={<ToggleOnIcon />}
-                onClick={handleActivateAll}
-                disabled={!stats?.inactive || stats.inactive === 0}
-                sx={{
-                  borderColor: 'divider',
-                  bgcolor: 'action.hover',
-                  '&:hover': { bgcolor: 'action.selected' }
-                }}
-              >
-                تنشيط الكل ({stats?.inactive || 0})
-              </Button>
-            </PermissionGuard>
-
-            <PermissionGuard requires="medical-services.add">
+            <RBACGuard requiredPermissions={[PERMISSIONS.MEDICAL_SERVICE_CREATE]}>
               <ExcelImportButton
                 module="medical-services"
                 onImportComplete={triggerRefresh}
                 variant="outlined"
                 color="primary"
-                label="استيراد من Excel"
+                label="استيراد"
                 sx={{ fontWeight: 'medium' }}
               />
-            </PermissionGuard>
+            </RBACGuard>
 
-            {/* Excel Export Button */}
             <Button
               variant="outlined"
-              color="primary"
-              startIcon={isExporting ? <CircularProgress size={16} /> : <FileDownloadIcon />}
-              onClick={handleExcelExport}
-              disabled={isExporting || !data?.items?.length}
+              color="success"
+              startIcon={<RefreshIcon />}
+              onClick={triggerRefresh}
+              sx={(theme) => headerButtonStyle('excel', theme)}
             >
-              {isExporting ? 'جاري التصدير...' : 'تصدير Excel'}
+              تحديث
             </Button>
           </Stack>
         }
       />
 
-      {/* ====== FILTER BAR ====== */}
-      <MainCard sx={{ mb: 2, py: 0.5 }}>
-        <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
-          {/* Status Filter */}
-          <FormControl size="small" sx={{ minWidth: 250 }}>
-            <InputLabel id="status-filter-label">فلترة حسب الحالة</InputLabel>
-            <Select
-              labelId="status-filter-label"
-              id="status-filter"
-              value={statusFilter === null ? 'all' : statusFilter ? 'active' : 'inactive'}
-              label="فلترة حسب الحالة"
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === 'all') setStatusFilter(null);
-                else if (val === 'active') setStatusFilter(true);
-                else setStatusFilter(false);
-                tableState.setPage(0);
+      <Stack spacing={1.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        {/* Search & Quick Filters */}
+        <MainCard sx={{ p: 1.5, flexShrink: 0 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              size="small"
+              placeholder="بحث باسم الخدمة، الرمز، أو النوع..."
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
+              sx={{ flexGrow: 1, maxWidth: 500 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+                sx: { height: 40, borderRadius: 1.5 }
               }}
-            >
-              <MenuItem value="all">الكل {stats?.total ? `(${stats.total})` : ''}</MenuItem>
-              <MenuItem value="active">
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CheckCircleIcon fontSize="small" color="success" />
-                  <span>نشط {stats?.active ? `(${stats.active})` : ''}</span>
-                </Stack>
-              </MenuItem>
-              <MenuItem value="inactive">
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CancelIcon fontSize="small" color="disabled" />
-                  <span>غير نشط {stats?.inactive ? `(${stats.inactive})` : ''}</span>
-                </Stack>
-              </MenuItem>
-            </Select>
-          </FormControl>
+            />
 
-          {/* Status Summary Chips - Matching Screenshot */}
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Chip
-              label={`الإجمالي (${stats?.total || 0})`}
-              size="medium"
-              variant="outlined"
-              sx={{ fontWeight: 'bold' }}
-            />
-            <Chip
-              label={`نشط (${stats?.active || 0})`}
-              size="medium"
-              color="success"
-              variant="filled"
-              sx={{ bgcolor: '#c8e6c9', color: '#2e7d32', fontWeight: 'bold' }}
-            />
-            <Chip
-              label={`غير نشط (${stats?.inactive || 0})`}
-              size="medium"
-              variant="filled"
-              sx={{ bgcolor: '#eeeeee', color: '#757575', fontWeight: 'bold' }}
-            />
+            {/* Status Filter Dropdown */}
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="status-filter-label">الحالة</InputLabel>
+              <Select
+                labelId="status-filter-label"
+                id="status-filter"
+                value={statusFilter === null ? 'all' : statusFilter ? 'active' : 'inactive'}
+                label="الحالة"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'all') setStatusFilter(null);
+                  else if (val === 'active') setStatusFilter(true);
+                  else setStatusFilter(false);
+                  tableState.setPage(0);
+                }}
+              >
+                <MenuItem value="all">الكل {stats?.total ? `(${stats.total})` : ''}</MenuItem>
+                <MenuItem value="active">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CheckCircleIcon fontSize="small" color="success" />
+                    <span>نشط {stats?.active ? `(${stats.active})` : ''}</span>
+                  </Stack>
+                </MenuItem>
+                <MenuItem value="inactive">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CancelIcon fontSize="small" color="disabled" />
+                    <span>غير نشط {stats?.inactive ? `(${stats.inactive})` : ''}</span>
+                  </Stack>
+                </MenuItem>
+              </Select>
+            </FormControl>
+
+            <Box sx={{ flexGrow: 1 }} />
+
+            {/* Quick Stats Summary */}
+            <Stack direction="row" spacing={1}>
+              <Chip
+                label={`الإجمالي: ${stats?.total || 0}`}
+                variant="outlined"
+                size="small"
+                color="primary"
+                sx={{ fontWeight: 600 }}
+              />
+              <Chip
+                label={`نشط: ${stats?.active || 0}`}
+                variant="light"
+                size="small"
+                color="success"
+                sx={{ fontWeight: 600 }}
+              />
+            </Stack>
           </Stack>
-        </Stack>
-      </MainCard>
+        </MainCard>
 
-      {/* ====== MAIN CARD WITH TABLE ====== */}
-      <MainCard>
-        <TableErrorBoundary>
+        {/* Data Table */}
+        <MainCard content={false} sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 2
+        }}>
           <GenericDataTable
             columns={columns}
-            data={data?.items || []}
-            totalCount={data?.total || 0}
+            data={services}
+            totalCount={totalCount}
             isLoading={isLoading}
             tableState={tableState}
-            enableFiltering={true}
-            enableSorting={true}
-            enablePagination={true}
-            stickyHeader={true}
-            minHeight={400}
-            maxHeight="calc(100vh - 400px)"
             onRowClick={(row) => handleNavigateView(row.id)}
-            emptyMessage="لا توجد خدمات طبية"
-            rowsPerPageOptions={[5, 10, 25, 50, 100]}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            stickyHeader
           />
-        </TableErrorBoundary>
-      </MainCard>
+        </MainCard>
+      </Stack>
 
-      {/* ====== DELETE ALL CONFIRMATION DIALOG ====== */}
+      {/* ====== DIALOGS ====== */}
+
+      {/* Delete All Dialog */}
       <Dialog open={deleteAllDialogOpen} onClose={() => setDeleteAllDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'error.main' }}>🚨 تأكيد الحذف النهائي لجميع الخدمات الطبية</DialogTitle>
+        <DialogTitle sx={{ color: 'error.main' }}>🚨 تأكيد الحذف النهائي</DialogTitle>
         <DialogContent>
           <Alert severity="error" sx={{ mb: 2 }}>
-            <strong>تحذير!</strong> هذا الإجراء لا يمكن التراجع عنه!
-            <br />
             سيتم حذف ({stats?.total || 0}) خدمة طبية نهائياً من قاعدة البيانات.
           </Alert>
           <DialogContentText>
-            سيتم حذف جميع الخدمات الطبية بشكل دائم ولا يمكن استرجاعها.
-            <br />
-            <br />
-            <strong style={{ color: 'red' }}>⚠️ هل أنت متأكد تماماً من المتابعة؟</strong>
+            هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد تماماً؟
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteAllDialogOpen(false)} color="inherit" disabled={deleteAllMutation.isPending}>
-            إلغاء
-          </Button>
-          <Button
-            onClick={handleConfirmDeleteAll}
-            color="error"
-            variant="contained"
-            disabled={deleteAllMutation.isPending}
-            startIcon={<DeleteSweepIcon />}
-          >
-            {deleteAllMutation.isPending ? 'جاري الحذف...' : '🗑️ تأكيد الحذف النهائي'}
+          <Button onClick={() => setDeleteAllDialogOpen(false)} color="inherit">إلغاء</Button>
+          <Button onClick={handleConfirmDeleteAll} color="error" variant="contained" disabled={deleteAllMutation.isPending}>
+            {deleteAllMutation.isPending ? 'جاري الحذف...' : 'تأكيد الحذف النهائي'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* ====== DEACTIVATE ALL CONFIRMATION DIALOG ====== */}
+      {/* Deactivate All Dialog */}
       <Dialog open={deactivateAllDialogOpen} onClose={() => setDeactivateAllDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'warning.main' }}>تأكيد إلغاء تنشيط جميع الخدمات الطبية</DialogTitle>
+        <DialogTitle>تأكيد إلغاء التنشيط</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
             سيتم إلغاء تنشيط ({stats?.active || 0}) خدمة طبية نشطة.
           </Alert>
-          <DialogContentText>
-            سيتم وضع علامة "غير نشط" على جميع الخدمات الطبية النشطة. يمكنك إعادة تنشيطها لاحقاً باستخدام زر "تنشيط الكل".
-            <br />
-            <br />
-            <strong>هل أنت متأكد من المتابعة؟</strong>
-          </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeactivateAllDialogOpen(false)} color="inherit" disabled={deactivateAllMutation.isPending}>
-            إلغاء
-          </Button>
-          <Button
-            onClick={handleConfirmDeactivateAll}
-            color="warning"
-            variant="contained"
-            disabled={deactivateAllMutation.isPending}
-            startIcon={<ToggleOffIcon />}
-          >
-            {deactivateAllMutation.isPending ? 'جاري الإلغاء...' : 'تأكيد إلغاء التنشيط'}
+          <Button onClick={() => setDeactivateAllDialogOpen(false)} color="inherit">إلغاء</Button>
+          <Button onClick={handleConfirmDeactivateAll} color="warning" variant="contained" disabled={deactivateAllMutation.isPending}>
+            تأكيد الإلغاء
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* ====== ACTIVATE ALL CONFIRMATION DIALOG ====== */}
+      {/* Activate All Dialog */}
       <Dialog open={activateAllDialogOpen} onClose={() => setActivateAllDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'success.main' }}>تأكيد تنشيط جميع الخدمات الطبية</DialogTitle>
+        <DialogTitle>تأكيد التنشيط</DialogTitle>
         <DialogContent>
           <Alert severity="success" sx={{ mb: 2 }}>
             سيتم تنشيط ({stats?.inactive || 0}) خدمة طبية غير نشطة.
           </Alert>
-          <DialogContentText>
-            سيتم وضع علامة "نشط" على جميع الخدمات الطبية غير النشطة.
-            <br />
-            <br />
-            <strong>هل أنت متأكد من المتابعة؟</strong>
-          </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setActivateAllDialogOpen(false)} color="inherit" disabled={activateAllMutation.isPending}>
-            إلغاء
-          </Button>
-          <Button
-            onClick={handleConfirmActivateAll}
-            color="success"
-            variant="contained"
-            disabled={activateAllMutation.isPending}
-            startIcon={<ToggleOnIcon />}
-          >
-            {activateAllMutation.isPending ? 'جاري التنشيط...' : 'تأكيد التنشيط'}
+          <Button onClick={() => setActivateAllDialogOpen(false)} color="inherit">إلغاء</Button>
+          <Button onClick={handleConfirmActivateAll} color="success" variant="contained" disabled={activateAllMutation.isPending}>
+            تأكيد التنشيط
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onClose={closeDialog}
+        title={confirmDialog.title}
+        content={confirmDialog.content}
+        onConfirm={confirmDialog.onConfirm}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        severity={confirmDialog.severity}
+      />
     </Box>
   );
 };

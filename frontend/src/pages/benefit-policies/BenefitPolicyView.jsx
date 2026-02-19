@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Alert,
   Box,
@@ -674,12 +675,12 @@ const BenefitPolicyView = () => {
               <Divider sx={{ my: 2 }} />
               <DetailRow
                 label="تاريخ البدء"
-                value={policy?.startDate ? new Date(policy.startDate).toLocaleDateString('ar-SA') : null}
+                value={policy?.startDate ? new Date(policy.startDate).toLocaleDateString(getAppLocale()) : null}
                 icon={CalendarIcon}
               />
               <DetailRow
                 label="تاريخ الانتهاء"
-                value={policy?.endDate ? new Date(policy.endDate).toLocaleDateString('ar-SA') : null}
+                value={policy?.endDate ? new Date(policy.endDate).toLocaleDateString(getAppLocale()) : null}
                 icon={CalendarIcon}
               />
             </MainCard>
@@ -690,7 +691,7 @@ const BenefitPolicyView = () => {
             <MainCard title="معلومات التغطية">
               <DetailRow
                 label="الحد السنوي"
-                value={policy?.annualLimit ? `${Number(policy.annualLimit).toLocaleString('ar-SA')} د.ل` : 'غير محدد'}
+                value={policy?.annualLimit ? `${Number(policy.annualLimit).toLocaleString(getAppLocale())} د.ل` : 'غير محدد'}
                 icon={MoneyIcon}
               />
               <DetailRow
@@ -726,14 +727,14 @@ const BenefitPolicyView = () => {
                 <Grid item xs={12} sm={6}>
                   <DetailRow
                     label="تاريخ الإنشاء"
-                    value={policy?.createdAt ? new Date(policy.createdAt).toLocaleString('ar-SA') : null}
+                    value={policy?.createdAt ? new Date(policy.createdAt).toLocaleString(getAppLocale()) : null}
                     icon={CalendarIcon}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <DetailRow
                     label="آخر تحديث"
-                    value={policy?.updatedAt ? new Date(policy.updatedAt).toLocaleString('ar-SA') : null}
+                    value={policy?.updatedAt ? new Date(policy.updatedAt).toLocaleString(getAppLocale()) : null}
                     icon={CalendarIcon}
                   />
                 </Grid>

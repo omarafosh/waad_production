@@ -47,7 +47,8 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  Switch
+  Switch,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -64,7 +65,8 @@ import {
   Bolt as FlashIcon,
   Star as VIPIcon,
   MedicalServices as MedicalIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 
@@ -95,6 +97,9 @@ import { useAuth } from 'contexts/AuthContext';
 import { useTableRefresh } from 'contexts/TableRefreshContext';
 import { PERMISSIONS } from 'constants/permissions.constants';
 
+// Style Utils
+import { headerButtonStyle } from 'utils/styleUtils';
+
 const DEFAULT_SORT = { field: 'createdAt', direction: 'desc' };
 
 /**
@@ -109,8 +114,8 @@ const UnifiedMembersList = () => {
 
   // Table State Management
   const tableState = useTableState({
-    initialPageSize: 8, // Default to 8 records as requested
-    allowedPageSizes: [8, 16, 24, 32],
+    initialPageSize: 10,
+    allowedPageSizes: [10, 25, 50, 100],
     defaultSort: DEFAULT_SORT,
     storageKey: 'members_table_page_size' // Per-table persistence to avoid conflicts
   });
@@ -159,41 +164,7 @@ const UnifiedMembersList = () => {
   // Lookup Data
   const [employers, setEmployers] = useState([]);
 
-  // Common Header Button Style
-  const headerButtonStyle = (type, theme) => {
-    const isExcel = type === 'excel';
-    const isDelete = type === 'delete';
-    const isAdd = type === 'add';
 
-    // Link colors to theme palette instead of hardcoded hex
-    const color = isExcel
-      ? theme.palette.success.main
-      : (isDelete ? theme.palette.error.main : theme.palette.primary.main);
-
-    return {
-      minWidth: '140px',
-      color: color,
-      borderColor: color,
-      '&:hover': {
-        backgroundColor: `${color}10`,
-        borderColor: color,
-        color: color
-      },
-      '&.MuiButton-contained': {
-        color: '#fff',
-        backgroundColor: color,
-        '&:hover': {
-          backgroundColor: isAdd ? theme.palette.primary.dark : theme.palette.success.dark
-        }
-      },
-      // Inherit weight and size from theme
-      fontWeight: theme.typography.button.fontWeight,
-      fontSize: theme.typography.button.fontSize,
-      whiteSpace: 'nowrap',
-      px: 2,
-      height: '38px'
-    };
-  };
 
   // EXPORT HANDLERS
   // ========================================
@@ -809,7 +780,8 @@ const UnifiedMembersList = () => {
                 cellPadding="dense"
                 enableFiltering={false} // Disable internal column filters
                 onRowClick={(row) => navigate(`/members/${row.id}`)}
-                rowsPerPageOptions={[8, 16, 24, 32]}
+                emptyMessage="لا يوجد مستفيدين"
+                rowsPerPageOptions={[10, 25, 50, 100]}
                 fontSize={settings.fontSize}
               />
             </Box>

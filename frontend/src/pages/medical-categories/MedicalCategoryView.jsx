@@ -14,6 +14,7 @@
 
 import { useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 
 // MUI Components
 import { Box, Button, Grid, Paper, Stack, Typography, Chip, Divider, Skeleton } from '@mui/material';
@@ -84,7 +85,7 @@ const getErrorInfo = (error) => {
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   try {
-    return new Date(dateString).toLocaleString('ar-SA');
+    return new Date(dateString).toLocaleString(getAppLocale());
   } catch {
     return '-';
   }

@@ -11,7 +11,8 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 
 // MUI Components
 import {
@@ -552,7 +553,7 @@ const UserDetails = () => {
               آخر دخول
             </Typography>
             <Typography variant="body2">
-              {user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ar-SA') : 'لم يسجل الدخول'}
+              {user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString(getAppLocale()) : 'لم يسجل الدخول'}
             </Typography>
           </Box>
         </Stack>

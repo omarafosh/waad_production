@@ -1,4 +1,5 @@
 ﻿import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -452,7 +453,8 @@ const ClaimView = () => {
         console.warn('Missing claim ID or document ID for preview');
         return null;
       }
-      try {const blob = await downloadClaimAttachment(claim.id, document.id);
+      try {
+        const blob = await downloadClaimAttachment(claim.id, document.id);
         return URL.createObjectURL(blob);
       } catch (err) {
         console.error('Error building preview URL:', err);
@@ -712,7 +714,7 @@ const ClaimView = () => {
                       <InfoRow label="التشخيص" value={claim?.diagnosis} />
                       <InfoRow
                         label="تاريخ الزيارة"
-                        value={claim?.visitDate ? new Date(claim.visitDate).toLocaleDateString('ar-SA') : '-'}
+                        value={claim?.visitDate ? new Date(claim.visitDate).toLocaleDateString(getAppLocale()) : '-'}
                       />
                     </CardContent>
                   </Card>
@@ -776,7 +778,7 @@ const ClaimView = () => {
                         <Grid container spacing={2}>
                           <Grid item xs={12} md={6}>
                             <InfoRow label="رقم الدفعة" value={claim.settlementBatchId ? `#${claim.settlementBatchId}` : '-'} />
-                            <InfoRow label="تاريخ التسوية" value={claim.settlementDate ? new Date(claim.settlementDate).toLocaleDateString('ar-SA') : '-'} />
+                            <InfoRow label="تاريخ التسوية" value={claim.settlementDate ? new Date(claim.settlementDate).toLocaleDateString(getAppLocale()) : '-'} />
                           </Grid>
                           <Grid item xs={12} md={6}>
                             <InfoRow label="مرجع الدفع" value={claim.paymentReference || '-'} />

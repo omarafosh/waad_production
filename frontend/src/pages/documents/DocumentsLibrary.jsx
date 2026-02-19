@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSnackbar } from 'notistack';
+import { getAppLocale } from 'utils/locale-helper';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -766,7 +768,7 @@ const DocumentsLibrary = () => {
                     {selectedDocument.amount && (
                       <TableRow>
                         <TableCell><strong>المبلغ</strong></TableCell>
-                        <TableCell>{selectedDocument.amount.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} د.ل</TableCell>
+                        <TableCell>{selectedDocument.amount.toLocaleString(getAppLocale(), { minimumFractionDigits: 2 })} د.ل</TableCell>
                       </TableRow>
                     )}
                   </TableBody>

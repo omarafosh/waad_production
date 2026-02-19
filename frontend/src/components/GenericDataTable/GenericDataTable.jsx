@@ -149,7 +149,7 @@ const GenericDataTable = memo(({
   // Custom Styles Props
   headerVariant = 'light', // 'light' | 'primary'
   cellPadding = 'normal',   // 'normal' | 'dense'
-  fontSize // New prop for custom font size
+  fontSize // Optional custom font size (should be rem or theme variant)
 }) => {
   // ========================================
   // TABLE CONFIGURATION
@@ -246,12 +246,12 @@ const GenericDataTable = memo(({
                   maxWidth: header.column.columnDef.maxWidth,
                   verticalAlign: 'middle', // User request: Center elements vertically
                   borderBottom: headerVariant === 'primary' ? 'none' : undefined,
-                  fontSize: fontSize || '1rem', // Match body font size or custom
+                  fontSize: fontSize || 'inherit', // Match parent or custom rem
                   // SORT ICON COLOR OVERRIDE
                   '& .MuiTableSortLabel-icon': {
                     color: headerVariant === 'primary' ? 'common.white !important' : 'inherit',
                     opacity: headerVariant === 'primary' ? 0.7 : 1,
-                    fontSize: '1.2rem' // Scalable unit
+                    fontSize: '1.15rem' // Scalable unit
                   },
                   '& .MuiTableSortLabel-root:hover .MuiTableSortLabel-icon': {
                     opacity: 1
@@ -420,7 +420,7 @@ const GenericDataTable = memo(({
                 sx={{
                   py: cellPadding === 'dense' ? 1 : 2,
                   verticalAlign: 'middle',
-                  fontSize: fontSize || undefined
+                  fontSize: fontSize || 'inherit'
                 }}
               >
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

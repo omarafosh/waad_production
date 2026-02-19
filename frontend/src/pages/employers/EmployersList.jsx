@@ -54,13 +54,16 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PeopleIcon from '@mui/icons-material/People';
+import SearchIcon from '@mui/icons-material/Search';
 
 // Project Components
 import MainCard from 'components/MainCard';
-import { ModernPageHeader } from 'components/tba';
-import GenericDataTable from 'components/GenericDataTable';
-import RBACGuard from 'components/tba/RBACGuard';
+import { GenericDataTable, ModernPageHeader, RBACGuard } from 'components/tba';
+import TableErrorBoundary from 'components/TableErrorBoundary';
 import useTableState from 'hooks/useTableState';
+
+// Style Utils
+import { headerButtonStyle } from 'utils/styleUtils';
 
 // Components
 import PolicySelectionModal from './components/PolicySelectionModal';
@@ -128,35 +131,6 @@ const EmployersList = () => {
     currentPolicyId: null
   });
 
-  // Common Header Button Style matching UnifiedMembersList
-  const headerButtonStyle = (type, theme) => {
-    const isExcel = type === 'excel';
-    const isAdd = type === 'add';
-    const color = isExcel ? theme.palette.success.main : theme.palette.primary.main;
-
-    return {
-      minWidth: '140px',
-      color: color,
-      borderColor: color,
-      '&:hover': {
-        backgroundColor: `${color}10`,
-        borderColor: color
-      },
-      '&.MuiButton-contained': {
-        color: '#fff',
-        backgroundColor: color,
-        '&:hover': {
-          backgroundColor: isAdd ? theme.palette.primary.dark : theme.palette.success.dark
-        }
-      },
-      fontWeight: theme.typography.button.fontWeight,
-      fontSize: theme.typography.button.fontSize,
-      whiteSpace: 'nowrap',
-      px: 2,
-      height: '38px'
-    };
-  };
-
   /**
    * Handle Export to Excel
    */
@@ -180,14 +154,14 @@ const EmployersList = () => {
 
 
   // Pagination Settings
-  const PAGE_SIZE_OPTIONS = [8, 16, 24, 32];
+  const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
   const storageKey = 'employers_pageSize';
 
   // Sync with UnifiedMembersList logic: Validate saved size against options
   const initialSize = useMemo(() => {
     const saved = localStorage.getItem(storageKey);
-    const parsed = saved ? parseInt(saved, 10) : 8;
-    return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : 8;
+    const parsed = saved ? parseInt(saved, 10) : 10;
+    return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : 10;
   }, [storageKey]);
 
   const tableState = useTableState({
@@ -210,23 +184,6 @@ const EmployersList = () => {
     return () => clearTimeout(timer);
   }, [localSearchTerm, searchTerm, tableState]);
 
-
-  // Debounced Search Handler (kept for compatibility)
-  const handleSearchChange = useMemo(
-    () =>
-      debounce((value) => {
-        setSearchTerm(value);
-        tableState.setPage(0); // Reset to first page on search
-      }, 500),
-    [tableState]
-  );
-
-  // Clean up debounce
-  useEffect(() => {
-    return () => {
-      handleSearchChange.cancel();
-    }
-  }, [handleSearchChange]);
 
   const closeDialog = () => {
     setConfirmDialog(prev => ({ ...prev, open: false }));
@@ -677,18 +634,16 @@ const EmployersList = () => {
   ], [handleEditClick, handleDelete, handleRestore, showArchived, navigate]);
 
   return (
-    <Box>
+    <Box sx={{ height: 'calc(100vh - 130px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ModernPageHeader
         title="إدارة جهات العمل"
         icon={<BusinessCenterIcon />}
         breadcrumbs={[
-          { label: 'الرئيسية', href: '/' },
+          { label: 'الرئيسية', path: '/' },
           { label: 'جهات العمل' }
         ]}
         actions={
           <Stack direction="row" spacing={1} sx={{ '& .MuiButton-root': { transition: 'all 0.2s' } }}>
-
-            {/* View/Action Group */}
             <RBACGuard requiredPermissions={[PERMISSIONS.EMPLOYER_DELETE]}>
               <Button
                 variant={showArchived ? "contained" : "outlined"}
@@ -700,7 +655,6 @@ const EmployersList = () => {
                   color: showArchived ? theme.palette.error.contrastText : theme.palette.error.main,
                   '&:hover': {
                     backgroundColor: showArchived ? theme.palette.error.dark : `${theme.palette.error.main}10`,
-                    color: showArchived ? theme.palette.error.contrastText : theme.palette.error.main,
                   }
                 })}
               >
@@ -708,46 +662,54 @@ const EmployersList = () => {
               </Button>
             </RBACGuard>
 
-            <RBACGuard requiredPermissions={[PERMISSIONS.EMPLOYER_EXPORT]}>
-              <Button
-                variant="outlined"
-                startIcon={<FileDownloadIcon />}
-                onClick={handleExport}
-                sx={(theme) => headerButtonStyle('excel', theme)}
-              >
-                تصدير لإكسل
-              </Button>
-            </RBACGuard>
-
             <RBACGuard requiredPermissions={[PERMISSIONS.EMPLOYER_CREATE]}>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => handleOpenForm()}
-                sx={(theme) => headerButtonStyle('add', theme)}
+                onClick={handleOpenForm}
+                sx={(theme) => ({
+                  ...headerButtonStyle('add', theme),
+                  fontWeight: 600
+                })}
               >
-                إضافة جهة عمل
+                جهة عمل جديدة
+              </Button>
+            </RBACGuard>
+
+            <RBACGuard requiredPermissions={[PERMISSIONS.EMPLOYER_EXPORT]}>
+              <Button
+                variant="outlined"
+                color="success"
+                startIcon={<FileDownloadIcon />}
+                onClick={handleExport}
+                sx={(theme) => headerButtonStyle('excel', theme)}
+              >
+                تصدير إكسل
               </Button>
             </RBACGuard>
           </Stack>
         }
-        sx={{ mb: 0.5 }}
+        sx={{ mb: 1.5 }}
       />
 
-      {/* Main Container with Fixed Height Calculation */}
-      <Stack spacing={0.5} sx={{ height: 'calc(100vh - 180px)', overflow: 'hidden' }}>
+      <Stack spacing={1.5} sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {/* Filters - Top Bar */}
-        <MainCard sx={{ p: 1, flexShrink: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+        <MainCard sx={{ p: 1.5, flexShrink: 0 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <TextField
               size="small"
-              label="البحث"
               placeholder="البحث بالاسم أو الكود..."
               value={localSearchTerm}
               onChange={(e) => setLocalSearchTerm(e.target.value)}
-              sx={{ minWidth: 200, flexGrow: 1 }}
-              InputProps={{ sx: { height: 36, fontSize: '1rem' } }}
-              InputLabelProps={{ sx: { fontSize: '1rem' } }}
+              sx={{ minWidth: 300, flexGrow: 1 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+                sx: { height: 40, borderRadius: 1.5 }
+              }}
             />
 
             <FormControl size="small" sx={{ minWidth: 130 }}>
@@ -801,31 +763,29 @@ const EmployersList = () => {
         </MainCard>
 
         {/* Data Table with Flexible Height */}
-        <MainCard content={false} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Box
-            sx={{
-              flexGrow: 1,
-              height: '100%',
-              overflow: 'hidden'
-            }}
-          >
-            {isError && (
-              <Alert severity="error" sx={{ m: 2 }}>
-                {error?.response?.data?.message || 'فشل تحميل البيانات'}
-              </Alert>
-            )}
+        <MainCard content={false} sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 2
+        }}>
+          {isError && (
+            <Alert severity="error" sx={{ m: 2 }}>
+              {error?.response?.data?.message || 'فشل تحميل البيانات'}
+            </Alert>
+          )}
 
-            <GenericDataTable
-              columns={columns}
-              data={tableData}
-              totalCount={totalCount}
-              isLoading={isLoading}
-              tableState={tableState}
-              cellPadding="dense"
-              enableFiltering={false}
-              rowsPerPageOptions={[8, 16, 24, 32]}
-            />
-          </Box>
+          <GenericDataTable
+            columns={columns}
+            data={tableData}
+            totalCount={totalCount}
+            isLoading={isLoading}
+            tableState={tableState}
+            cellPadding="dense"
+            enableFiltering={false}
+            rowsPerPageOptions={PAGE_SIZE_OPTIONS}
+          />
         </MainCard>
       </Stack>
 

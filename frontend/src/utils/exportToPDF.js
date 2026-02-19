@@ -7,6 +7,8 @@
  * @param {string} filename - Filename without extension (unused in this print-based impl but kept for API)
  * @param {Object} options - Export options
  */
+// project imports
+import { getAppLocale } from './locale-helper';
 export const exportToPDF = (columns, rows, title = 'Export', filename = 'export', options = {}) => {
   if (!rows || rows.length === 0) {
     console.warn('No data to export');
@@ -81,7 +83,7 @@ export const exportToPDF = (columns, rows, title = 'Export', filename = 'export'
         </tbody>
       </table>
       <div class="footer">
-        ${safeCompanyName ? `${safeCompanyName} | ` : ''}تم الإنشاء: ${new Date().toLocaleDateString('ar-SA')} ${new Date().toLocaleTimeString('ar-SA')}
+        ${safeCompanyName ? `${safeCompanyName} | ` : ''}تم الإنشاء: ${new Date().toLocaleDateString(getAppLocale())} ${new Date().toLocaleTimeString(getAppLocale())}
       </div>
     </body>
     </html>

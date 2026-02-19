@@ -235,7 +235,7 @@ const ProfessionalSettingsPage = () => {
             borderRadius: '8px 8px 0 0',
             '& .MuiTab-root': {
               minHeight: 40,
-              fontSize: '0.8125rem',
+              fontSize: '0.85rem', // Consistent with L3/body2
               fontWeight: 600,
               textTransform: 'none',
               py: 0
@@ -439,7 +439,7 @@ const ProfessionalSettingsPage = () => {
                                   { tag: '[REL_SUFFIX]', label: 'لاحقة التابع' },
                                   { tag: '[COMP]', label: 'رمز الشركة' }
                                 ].map(t => (
-                                  <Chip key={t.tag} label={`${t.tag}: ${t.label}`} size="tiny" sx={{ fontSize: '0.65rem', height: 20, bgcolor: 'background.paper' }} />
+                                  <Chip key={t.tag} label={`${t.tag}: ${t.label}`} size="tiny" sx={{ fontSize: '0.7rem', height: '1.25rem', bgcolor: 'background.paper' }} />
                                 ))}
                               </Box>
                             </Box>

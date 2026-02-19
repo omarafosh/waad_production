@@ -80,6 +80,8 @@ export const DEFAULT_THEME_MODE = ThemeMode.SYSTEM;
 const config = {
   fontFamily: `'Tajwal', 'Cairo', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif`,
   i18n: 'ar', // Phase D1.5: Arabic as default language
+  numberSystem: 'latn', // Default to Western digits
+  dateCalendar: 'gregory', // Default to Gregorian
   menuOrientation: MenuOrientation.VERTICAL,
   container: true,
   presetColor: 'default',

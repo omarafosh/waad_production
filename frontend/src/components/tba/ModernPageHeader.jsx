@@ -109,7 +109,7 @@ const ModernPageHeader = ({ title, subtitle, breadcrumbs = [], actions, statusCh
               <Typography variant="h3" component="h1" sx={{ fontWeight: 600 }}>
                 {title}
               </Typography>
-              {statusChip && <Chip label={statusChip.label} color={statusChip.color || 'primary'} size="small" sx={{ height: 24 }} />}
+              {statusChip && <Chip label={statusChip.label} color={statusChip.color || 'primary'} size="small" sx={{ height: '1.5rem', fontSize: '0.75rem' }} />}
             </Stack>
             {subtitle && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

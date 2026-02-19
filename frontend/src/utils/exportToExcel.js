@@ -1,3 +1,4 @@
+import { getAppLocale } from './locale-helper';
 /**
  * Export data to Excel file
  * @param {Array<Object>} data - Array of objects to export
@@ -23,7 +24,7 @@ export const exportToExcel = (data, filename = 'export', options = {}) => {
   // Add company name header if provided
   if (companyName) {
     csvContent += `"${companyName}"\n`;
-    csvContent += `"تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}"\n`;
+    csvContent += `"تاريخ التصدير: ${new Date().toLocaleDateString(getAppLocale())}"\n`;
     csvContent += '\n'; // Empty row for spacing
   }
 

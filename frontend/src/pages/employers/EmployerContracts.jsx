@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getNumberLocale, getAppLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -277,7 +279,7 @@ const EmployerContracts = () => {
       'الشريك': contract.employerName || '-',
       'تاريخ البدء': dayjs(contract.startDate).format('YYYY-MM-DD'),
       'تاريخ الانتهاء': dayjs(contract.endDate).format('YYYY-MM-DD'),
-      'الحد السنوي': contract.annualLimit?.toLocaleString('ar-SA') || '-',
+      'الحد السنوي': contract.annualLimit?.toLocaleString(getNumberLocale()) || '-',
       'نسبة التغطية': `${contract.defaultCoveragePercent}%`,
       'عدد المنتفعين': contract.coveredMembersCount || 0,
       'الحالة': getStatusLabel(contract.status)
@@ -294,7 +296,7 @@ const EmployerContracts = () => {
       contract.name,
       contract.employerName || '-',
       `${dayjs(contract.startDate).format('YYYY-MM-DD')} - ${dayjs(contract.endDate).format('YYYY-MM-DD')}`,
-      contract.annualLimit?.toLocaleString('ar-SA') || '-',
+      contract.annualLimit?.toLocaleString(getNumberLocale()) || '-',
       getStatusLabel(contract.status)
     ]);
 
@@ -364,7 +366,7 @@ const EmployerContracts = () => {
       accessorKey: 'annualLimit',
       header: 'الحد السنوي',
       size: 150,
-      cell: ({ row }) => row.original.annualLimit ? `${row.original.annualLimit.toLocaleString('ar-SA')} ر.س` : '-'
+      cell: ({ row }) => row.original.annualLimit ? `${row.original.annualLimit.toLocaleString(getNumberLocale())} ر.س` : '-'
     },
     {
       accessorKey: 'defaultCoveragePercent',

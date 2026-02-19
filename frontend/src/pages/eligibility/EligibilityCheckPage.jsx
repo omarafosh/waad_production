@@ -15,6 +15,8 @@
  * @since 2026-01-10
  */
 
+import { useQuery } from '@tanstack/react-query';
+import { getAppLocale, getNumberLocale } from 'utils/locale-helper';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Box,
@@ -58,7 +60,7 @@ const EligibilityCheckPage = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [errorCode, setErrorCode] = useState(null);
-  
+
   // QR Scanner State
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -92,7 +94,7 @@ const EligibilityCheckPage = () => {
       });
 
       const data = response.data?.data;
-      
+
       if (data) {
         setResult(data);
         setError(null);
@@ -100,13 +102,13 @@ const EligibilityCheckPage = () => {
       }
     } catch (err) {
       console.error('[Eligibility] Check failed:', err);
-      
+
       // Handle specific error codes
       const code = err.response?.data?.errorCode || err.response?.data?.code;
       const message = err.response?.data?.message;
-      
+
       setErrorCode(code);
-      
+
       switch (code) {
         case 'INVALID_ELIGIBILITY_INPUT':
           setError('تنسيق غير صحيح. الرجاء إدخال رقم بطاقة صحيح أو مسح باركود صحيح');
@@ -117,7 +119,7 @@ const EligibilityCheckPage = () => {
         default:
           setError(message || 'حدث خطأ أثناء فحص الأهلية. الرجاء المحاولة مرة أخرى');
       }
-      
+
       setResult(null);
     } finally {
       setLoading(false);
@@ -208,7 +210,7 @@ const EligibilityCheckPage = () => {
   useEffect(() => {
     return () => {
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(() => {});
+        html5QrCodeRef.current.stop().catch(() => { });
       }
     };
   }, []);
@@ -229,14 +231,14 @@ const EligibilityCheckPage = () => {
       // If scanner mode is active (input is focused and scanning)
       if (document.activeElement?.id === 'scanner-input') {
         clearTimeout(timeout);
-        
+
         if (e.key === 'Enter' && buffer.trim()) {
           e.preventDefault();
           checkEligibility(buffer.trim());
           buffer = '';
         } else if (e.key.length === 1) {
           buffer += e.key;
-          
+
           // Auto-submit after 100ms of no input (scanner typically very fast)
           timeout = setTimeout(() => {
             if (buffer.trim()) {
@@ -300,7 +302,7 @@ const EligibilityCheckPage = () => {
                 <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
                   1. مسح الباركود / QR Code
                 </Typography>
-                
+
                 <Stack spacing={2}>
                   {/* Camera Scanner */}
                   <Button
@@ -342,7 +344,7 @@ const EligibilityCheckPage = () => {
                 <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
                   2. إدخال رقم البطاقة يدوياً
                 </Typography>
-                
+
                 <Stack spacing={2}>
                   <TextField
                     fullWidth
@@ -383,8 +385,8 @@ const EligibilityCheckPage = () => {
 
               {/* Error Display */}
               {error && (
-                <Alert 
-                  severity="error" 
+                <Alert
+                  severity="error"
                   onClose={() => setError(null)}
                   sx={{ mt: 2 }}
                 >
@@ -398,7 +400,7 @@ const EligibilityCheckPage = () => {
         {/* Result Section */}
         <Grid item xs={12} lg={6}>
           {result ? (
-            <MainCard 
+            <MainCard
               title="نتيجة الفحص"
               secondary={
                 <IconButton onClick={handleReset} size="small">
@@ -479,19 +481,19 @@ const EligibilityCheckPage = () => {
                         الحد السنوي
                       </Typography>
                       <Typography variant="h6" color="primary">
-                        {result.coverageLimit.toLocaleString('ar-SA')} د.ل
+                        {result.coverageLimit.toLocaleString(getNumberLocale())} د.ل
                       </Typography>
                     </Box>
                   )}
 
                   {/* Status Details */}
                   <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 2 }}>
-                    <Chip 
+                    <Chip
                       label={`حالة العضو: ${result.memberStatus}`}
                       size="small"
                       color={result.memberStatus === 'ACTIVE' ? 'success' : 'default'}
                     />
-                    <Chip 
+                    <Chip
                       label={`حالة البطاقة: ${result.cardStatus}`}
                       size="small"
                       color={result.cardStatus === 'ACTIVE' ? 'success' : 'default'}

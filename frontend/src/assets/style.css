@@ -3,6 +3,8 @@
 * {
   /* Font Family is managed by Theme Engine (themes/index.jsx) */
   -webkit-tap-highlight-color: transparent;
+  /* Standard monospace variable for the system */
+  --app-font-monospace: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   /* Force English/Western digits globally */
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum", "lnum";

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
     Box,
     Stack,
@@ -161,7 +163,7 @@ const EntityHistoryDashboard = () => {
                                     <Grid item xs={12} md={3}>
                                         <Stack spacing={0.5}>
                                             <Typography variant="caption" color="text.secondary">التوقيت</Typography>
-                                            <Typography variant="body2">{new Date(item.createdAt).toLocaleString('ar-SA')}</Typography>
+                                            <Typography variant="body2">{new Date(item.createdAt).toLocaleString(getAppLocale())}</Typography>
                                         </Stack>
                                     </Grid>
                                     <Grid item xs={12} md={3}>

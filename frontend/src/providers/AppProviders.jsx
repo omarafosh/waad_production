@@ -1,6 +1,6 @@
 
 import PropTypes from 'prop-types';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 // MUI X Date Pickers
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -12,6 +12,7 @@ import 'dayjs/locale/en-gb'; // English locale for Gregorian calendar
 dayjs.locale('en-gb');
 
 // project imports
+import { getAppLocale } from 'utils/locale-helper';
 import ThemeCustomization from 'themes';
 import Locales from 'components/Locales';
 import RTLLayout from 'components/RTLLayout';
@@ -23,9 +24,23 @@ import { SystemErrorBoundary } from 'components/ErrorBoundary';
 // auth-provider
 import { AuthProvider } from 'contexts/AuthContext';
 import { EmployerFilterProvider } from 'contexts/EmployerFilterContext';
-import { SystemSettingsProvider } from 'contexts/SystemSettingsContext'; // Changed from CompanySettingsProvider
+import { SystemSettingsProvider, useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed from CompanySettingsProvider
 import { GlobalImportProgressProvider } from 'contexts/GlobalImportProgressContext';
 import { TableRefreshProvider } from 'contexts/TableRefreshContext';
+
+/**
+ * LocalizationWrapper - Reactive wrapper for MUI X Date Pickers
+ */
+const LocalizationWrapper = ({ children }) => {
+    const { settings } = useSystemSettings();
+    const locale = useMemo(() => getAppLocale(), [settings?.numberSystem, settings?.dateCalendar]);
+
+    return (
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={locale}>
+            {children}
+        </LocalizationProvider>
+    );
+};
 
 /**
  * AppProviders - Centralized Context Providers
@@ -39,7 +54,7 @@ const AppProviders = ({ children }) => {
                     <ThemeCustomization>
                         <RTLLayout>
                             <Locales>
-                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
+                                <LocalizationWrapper>
                                     <ScrollTop>
                                         <AuthProvider>
                                             <EmployerFilterProvider>
@@ -51,7 +66,7 @@ const AppProviders = ({ children }) => {
                                             </EmployerFilterProvider>
                                         </AuthProvider>
                                     </ScrollTop>
-                                </LocalizationProvider>
+                                </LocalizationWrapper>
                             </Locales>
                         </RTLLayout>
                     </ThemeCustomization>
@@ -60,6 +75,8 @@ const AppProviders = ({ children }) => {
         </SystemErrorBoundary>
     );
 };
+
+LocalizationWrapper.propTypes = { children: PropTypes.node };
 
 AppProviders.propTypes = {
     children: PropTypes.node

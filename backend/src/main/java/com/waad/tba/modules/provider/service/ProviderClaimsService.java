@@ -236,13 +236,7 @@ public class ProviderClaimsService {
         String serviceName = "Service #" + serviceCategoryId;
         
         // Check amount limit
-        if (rule.getAmountLimit() != null && claimedAmount.compareTo(rule.getAmountLimit()) > 0) {
-            warnings.add(String.format(
-                "⚠️ المبلغ المطلوب (%.2f د.ل) يتجاوز حد الخدمة (%.2f د.ل) لـ %s",
-                claimedAmount, rule.getAmountLimit(), serviceName
-            ));
-            exceeded = true;
-        }
+
         
         // ✅ PHASE 1: Check times limit (count actual usage)
         int timesUsed = 0;
@@ -273,15 +267,15 @@ public class ProviderClaimsService {
         // Build limit info with actual usage
         ProviderClaimResponse.ServiceLimitInfo limitInfo = ProviderClaimResponse.ServiceLimitInfo.builder()
             .serviceName(serviceName)
-            .amountLimit(rule.getAmountLimit())
+
             .timesLimit(rule.getTimesLimit())
             .timesUsed(timesUsed)
             .timesRemaining(timesRemaining)
             .exceedsLimit(exceeded)
             .build();
         
-        log.info("🔍 Service limit check: service={}, amountLimit={}, exceeded={}", 
-                 serviceName, rule.getAmountLimit(), exceeded);
+        log.info("🔍 Service limit check: service={}, exceeded={}", 
+                 serviceName, exceeded);
         
         return new ServiceLimitCheck(exceeded, limitInfo, warnings);
     }

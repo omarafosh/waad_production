@@ -40,6 +40,6 @@ public class BenefitRuleTemplateController {
                 templateId, policyId, replaceExisting);
         
         templateService.applyTemplateToPolicy(templateId, policyId, replaceExisting);
-        return ResponseEntity.ok(ApiResponse.success(null, "تم تطبيق القالب بنجاح"));
+        return ResponseEntity.ok(ApiResponse.<Void>success("تم تطبيق القالب بنجاح", null));
     }
 }

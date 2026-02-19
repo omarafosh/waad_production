@@ -41,7 +41,13 @@ import MainCard from '../../components/MainCard';
 import ModernPageHeader from '../../components/tba/ModernPageHeader';
 import ContractStatusChip from '../../components/employers/ContractStatusChip';
 import ContractFormDialog from '../../components/employers/ContractFormDialog';
-import benefitPolicyService from '../../services/benefitPolicyService';
+import {
+  getBenefitPolicies,
+  activateBenefitPolicy,
+  suspendBenefitPolicy,
+  cancelBenefitPolicy,
+  deleteBenefitPolicy
+} from '../../services/api/benefit-policies.service';
 import { getEmployers } from '../../services/api/employers.service';
 import { exportToExcel } from '../../utils/exportToExcel';
 import { exportToPDF } from '../../utils/exportToPDF';
@@ -123,7 +129,7 @@ const EmployerContracts = () => {
         params.employerId = filters.employerId;
       }
 
-      const response = await benefitPolicyService.list(params);
+      const response = await getBenefitPolicies(params);
 
       let data = response.data?.content || [];
 
@@ -234,19 +240,19 @@ const EmployerContracts = () => {
     try {
       switch (confirmAction) {
         case 'activate':
-          await benefitPolicyService.activate(selectedContract.id);
+          await activateBenefitPolicy(selectedContract.id);
           showSnackbar('تم تفعيل العقد بنجاح', 'success');
           break;
         case 'suspend':
-          await benefitPolicyService.suspend(selectedContract.id);
+          await suspendBenefitPolicy(selectedContract.id);
           showSnackbar('تم تعليق العقد بنجاح', 'success');
           break;
         case 'cancel':
-          await benefitPolicyService.cancel(selectedContract.id);
+          await cancelBenefitPolicy(selectedContract.id);
           showSnackbar('تم إلغاء العقد بنجاح', 'success');
           break;
         case 'delete':
-          await benefitPolicyService.delete(selectedContract.id);
+          await deleteBenefitPolicy(selectedContract.id);
           showSnackbar('تم حذف العقد بنجاح', 'success');
           break;
         default:

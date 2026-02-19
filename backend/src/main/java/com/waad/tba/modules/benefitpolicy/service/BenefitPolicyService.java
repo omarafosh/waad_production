@@ -636,7 +636,7 @@ public class BenefitPolicyService {
                         .medicalCategory(sourceRule.getMedicalCategory())
                         .medicalService(sourceRule.getMedicalService())
                         .coveragePercent(sourceRule.getCoveragePercent())
-                        .amountLimit(sourceRule.getAmountLimit())
+
                         .timesLimit(sourceRule.getTimesLimit())
                         .waitingPeriodDays(sourceRule.getWaitingPeriodDays())
                         .requiresPreApproval(sourceRule.isRequiresPreApproval())

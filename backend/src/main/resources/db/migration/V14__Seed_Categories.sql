@@ -1,3 +1,7 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- V14: Seed Additional Categories (Unified from V39)
+-- ═══════════════════════════════════════════════════════════════════════════
+
 INSERT INTO medical_categories (code, name) VALUES 
 ('CAT-PHARM', 'صيدلية'),
 ('CAT-OPT', 'بصريات')

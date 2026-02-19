@@ -26,7 +26,7 @@ import {
 } from '@mui/icons-material';
 
 // Services
-import { medicalCatalogService } from 'services/medicalCatalog.service';
+import { medicalCatalogService } from 'services/api/medical-catalog.service';
 
 const UnmappedServicesTable = ({ onMap }) => {
     const [searchTerm, setSearchTerm] = useState('');

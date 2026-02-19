@@ -47,7 +47,7 @@ import {
 } from '@mui/icons-material';
 
 // Services
-import { medicalCatalogService } from 'services/medicalCatalog.service';
+import { medicalCatalogService } from 'services/api/medical-catalog.service';
 import { providersService } from 'services/api/providers.service';
 import employersService from 'services/api/employers.service';
 import { getAllMedicalCategories } from 'services/api/medical-categories.service';

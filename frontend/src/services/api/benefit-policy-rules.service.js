@@ -160,7 +160,6 @@ export const checkServiceCoverage = async (policyId, serviceId) => {
  * @param {number} payload.medicalCategoryId - Category ID (XOR with serviceId)
  * @param {number} payload.medicalServiceId - Service ID (XOR with categoryId)
  * @param {number} payload.coveragePercent - Coverage % (0-100)
- * @param {number} payload.amountLimit - Amount limit
  * @param {number} payload.timesLimit - Times limit
  * @param {number} payload.waitingPeriodDays - Waiting period in days
  * @param {boolean} payload.requiresPreApproval - Requires pre-approval

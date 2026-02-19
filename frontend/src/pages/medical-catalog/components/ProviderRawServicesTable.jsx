@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Chip, Typography } from '@mui/material';
 import GenericDataTable from 'components/GenericDataTable/GenericDataTable';
-import { medicalCatalogService } from 'services/medicalCatalog.service';
+import { medicalCatalogService } from 'services/api/medical-catalog.service';
 
 const ProviderRawServicesTable = () => {
     const [tableState, setTableState] = useState({

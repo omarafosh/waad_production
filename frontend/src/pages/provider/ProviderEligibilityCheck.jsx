@@ -54,7 +54,7 @@ import {
 import Tooltip from '@mui/material/Tooltip';
 import { Html5Qrcode } from 'html5-qrcode';
 import MainCard from 'components/MainCard';
-import { providerApi } from 'services/providerService';
+import { providersService } from 'services/api/providers.service';
 import useAuth from 'hooks/useAuth';
 
 export default function ProviderEligibilityCheck() {

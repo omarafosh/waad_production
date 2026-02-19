@@ -37,7 +37,7 @@ import ModernPageHeader from 'components/tba/ModernPageHeader';
 import GenericDataTable from 'components/GenericDataTable';
 import TableErrorBoundary from 'components/TableErrorBoundary';
 import RBACGuard from 'components/tba/RBACGuard';
-import useTableState from 'hooks/useTableState';
+import { useTableState } from 'hooks/useTableState';
 import { getBenefitPolicies, deleteBenefitPolicy, restoreBenefitPolicy, activateBenefitPolicy } from 'services/api/benefit-policies.service';
 
 const QUERY_KEY = 'benefit-policies';
@@ -327,7 +327,7 @@ const BenefitPoliciesList = () => {
         );
       }
     }
-  ], [handleNavigateView, handleNavigateEdit, handleDelete, handleRestore]);
+  ], [handleNavigateView, handleNavigateEdit, handleDelete, handleRestore, handleActivate, handleOpenLifecycle]);
 
   return (
     <RBACGuard requiredPermissions={['benefit_policies.view']}>

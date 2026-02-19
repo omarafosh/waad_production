@@ -318,24 +318,31 @@ public class BenefitPolicyRuleService {
      */
     public List<BenefitPolicyRuleResponseDto> createBulk(Long policyId, List<BenefitPolicyRuleCreateDto> dtos) {
         log.info("Bulk upserting {} rules for policy {}", dtos.size(), policyId);
-        
-        return dtos.stream()
-                .map(dto -> {
-                    try {
-                        return createOrUpdate(policyId, dto);
-                    } catch (Exception e) {
-                        log.error("Failed to process rule (upsert) for policy {}: {}", policyId, e.getMessage());
-                        return null; 
-                    }
-                })
-                .filter(java.util.Objects::nonNull)
-                .toList();
+
+        List<BenefitPolicyRuleResponseDto> results = new java.util.ArrayList<>();
+        for (BenefitPolicyRuleCreateDto dto : dtos) {
+            try {
+                BenefitPolicyRuleResponseDto result = createOrUpdate(policyId, dto);
+                if (result != null) results.add(result);
+            } catch (BusinessRuleException e) {
+                // Skip duplicate rules gracefully (idempotent bulk-create)
+                log.warn("Skipping duplicate/invalid rule for policy {} [{}]: {}",
+                        policyId, dto.getEncounterType(), e.getMessage());
+            } catch (Exception e) {
+                // Log with full detail so we can debug, but bubble up so the transaction rolls back
+                log.error("Fatal error while upserting rule for policy {}: {}", policyId, e.getMessage(), e);
+                throw new BusinessRuleException("خطأ في إنشاء القاعدة: " + e.getMessage());
+            }
+        }
+        log.info("✅ Bulk upsert complete: {}/{} rules saved for policy {}",
+                results.size(), dtos.size(), policyId);
+        return results;
     }
 
     private BenefitPolicyRuleResponseDto createOrUpdate(Long policyId, BenefitPolicyRuleCreateDto dto) {
         Optional<BenefitPolicyRule> existing = Optional.empty();
 
-        // 1. Try to find existing active rule
+        // 1. Try to find existing active rule for deduplication
         if (dto.getMedicalServiceId() != null) {
             if (dto.getEncounterType() != null) {
                 existing = ruleRepository.findActiveByServiceAndEncounter(policyId, dto.getMedicalServiceId(), dto.getEncounterType());
@@ -345,7 +352,7 @@ public class BenefitPolicyRuleService {
         } else if (dto.getMedicalCategoryId() != null) {
             // Preferred: lookup by category ID
             com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory catRef = categoryRepository.findById(dto.getMedicalCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "id", dto.getMedicalCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "id", dto.getMedicalCategoryId()));
             if (dto.getEncounterType() != null) {
                 existing = ruleRepository.findActiveByCategoryAndEncounter(policyId, catRef.getCode(), dto.getEncounterType());
             } else {
@@ -358,6 +365,9 @@ public class BenefitPolicyRuleService {
             } else {
                 existing = ruleRepository.findActiveByCategoryGeneral(policyId, dto.getMedicalCategory());
             }
+        } else if (dto.getEncounterType() != null) {
+            // NEW: Global rule (encounterType only — no category, no service)
+            existing = ruleRepository.findActiveGlobalByEncounter(policyId, dto.getEncounterType());
         }
 
         if (existing.isPresent()) {
@@ -378,6 +388,8 @@ public class BenefitPolicyRuleService {
             return create(policyId, dto);
         }
     }
+
+
 
     // ═══════════════════════════════════════════════════════════════════════════
     // UPDATE OPERATIONS
@@ -526,9 +538,10 @@ public class BenefitPolicyRuleService {
     private void validateTargetAtLeastOne(BenefitPolicyRuleCreateDto dto) {
         boolean hasCategory = dto.getMedicalCategory() != null || dto.getMedicalCategoryId() != null;
         boolean hasService = dto.getMedicalServiceId() != null;
+        boolean hasEncounter = dto.getEncounterType() != null;
 
-        if (!hasCategory && !hasService) {
-            throw new BusinessRuleException("Rule must target at least a category or service.");
+        if (!hasCategory && !hasService && !hasEncounter) {
+            throw new BusinessRuleException("Rule must target at least a category, service, or encounter type.");
         }
     }
 

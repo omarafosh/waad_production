@@ -61,7 +61,7 @@ public class CoverageSimulationService {
         if (ruleOpt.isPresent()) {
             BenefitPolicyRule rule = ruleOpt.get();
             builder.coveragePercent(rule.getEffectiveCoveragePercent())
-                    .amountLimit(rule.getAmountLimit())
+
                     .timesLimit(rule.getTimesLimit())
                     .waitingPeriodDays(rule.getWaitingPeriodDays())
                     .requiresPreApproval(rule.isRequiresPreApproval())

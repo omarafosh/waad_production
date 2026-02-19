@@ -45,7 +45,8 @@ import {
   DeleteForever as DeleteForeverIcon,
   History as HistoryIcon,
   ArrowBack as BackIcon,
-  Inventory as PackageIcon
+  Inventory as PackageIcon,
+  Language as GlobalIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -255,7 +256,7 @@ const RuleFormModal = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box sx={{
-        bgcolor: 'primary.main',
+        bgcolor: isEdit ? 'secondary.main' : 'primary.main',
         color: 'primary.contrastText',
         px: 2,
         py: 1.5,
@@ -263,7 +264,7 @@ const RuleFormModal = ({
         alignItems: 'center',
         gap: 1.5,
         borderBottom: '1px solid',
-        borderColor: 'primary.dark'
+        borderColor: isEdit ? 'secondary.dark' : 'primary.dark'
       }}>
         <ListIcon />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -272,8 +273,12 @@ const RuleFormModal = ({
       </Box>
       <DialogContent sx={{ p: 2 }}>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {/* Target Type Selection */}
+
+          {/* Step 1: Target Type */}
+          <Box>
+            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+              خطوة ١ — ما نوع العنصر المصمّم له هذه القاعدة؟
+            </Typography>
             <FormControl fullWidth error={!!errors.targetType} disabled={isEdit} size="small">
               <InputLabel>نوع العنصر المغطى *</InputLabel>
               <Select value={formData.targetType} onChange={handleChange('targetType')} label="نوع العنصر المغطى *">
@@ -286,88 +291,105 @@ const RuleFormModal = ({
                 <MenuItem value="SERVICE">
                   <Stack direction="row" spacing={1} alignItems="center">
                     <ServiceIcon fontSize="small" />
-                    <span>خدمة طبية</span>
+                    <span>خدمة طبية محددة</span>
                   </Stack>
                 </MenuItem>
               </Select>
+              {errors.targetType && <FormHelperText>{errors.targetType}</FormHelperText>}
             </FormControl>
           </Box>
 
 
-          {/* Combined Selectors Row */}
+          {/* Step 2: Category or Service Selector */}
           <Box>
             {formData.targetType === 'CATEGORY' && (
-              <FormControl fullWidth error={!!errors.medicalCategoryId} disabled={isEdit} size="small">
-                <InputLabel>التصنيف الطبي *</InputLabel>
-                <Select
-                  value={(!loadingCategories && availableCategories.some(c => c.id === formData.medicalCategoryId)) ? formData.medicalCategoryId : ''}
-                  onChange={handleChange('medicalCategoryId')}
-                  label="التصنيف الطبي *"
-                  disabled={loadingCategories}
-                >
-                  {loadingCategories ? (
-                    <MenuItem disabled value="">جاري التحميل...</MenuItem>
-                  ) : (
-                    availableCategories.map((cat) => (
-                      <MenuItem key={cat.id} value={cat.id}>
-                        {cat.name} ({cat.code})
-                      </MenuItem>
-                    ))
-                  )}
-                  {availableCategories.length === 0 && !loadingCategories && (
-                    <MenuItem disabled value="">لا توجد تصنيفات متبقية (تمت تغطية الجميع)</MenuItem>
-                  )}
-                </Select>
-              </FormControl>
+              <>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+                  خطوة ٢ — اختر التصنيف الطبي
+                </Typography>
+                <FormControl fullWidth error={!!errors.medicalCategoryId} disabled={isEdit} size="small">
+                  <InputLabel>التصنيف الطبي *</InputLabel>
+                  <Select
+                    value={(!loadingCategories && availableCategories.some(c => c.id === formData.medicalCategoryId)) ? formData.medicalCategoryId : ''}
+                    onChange={handleChange('medicalCategoryId')}
+                    label="التصنيف الطبي *"
+                    disabled={loadingCategories}
+                  >
+                    {loadingCategories ? (
+                      <MenuItem disabled value="">جاري التحميل...</MenuItem>
+                    ) : (
+                      availableCategories.map((cat) => (
+                        <MenuItem key={cat.id} value={cat.id}>
+                          {cat.name} ({cat.code})
+                        </MenuItem>
+                      ))
+                    )}
+                    {availableCategories.length === 0 && !loadingCategories && (
+                      <MenuItem disabled value="">لا توجد تصنيفات متبقية (تمت تغطية الجميع)</MenuItem>
+                    )}
+                  </Select>
+                  {errors.medicalCategoryId && <FormHelperText>{errors.medicalCategoryId}</FormHelperText>}
+                </FormControl>
+              </>
             )}
 
             {formData.targetType === 'SERVICE' && (
-              <MedicalServiceSelector
-                value={formData.medicalServiceId || null}
-                onChange={(s) => setFormData((prev) => ({ ...prev, medicalServiceId: s?.id || '' }))}
-                error={!!errors.medicalServiceId}
-                helperText={errors.medicalServiceId}
-                label="الخدمة الطبية *"
-                fullWidth
-                size="small"
-              />
+              <>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+                  خطوة ٢ — ابحث عن الخدمة الطبية
+                </Typography>
+                <MedicalServiceSelector
+                  value={formData.medicalServiceId || null}
+                  onChange={(s) => setFormData((prev) => ({ ...prev, medicalServiceId: s?.id || '' }))}
+                  error={!!errors.medicalServiceId}
+                  helperText={errors.medicalServiceId}
+                  label="الخدمة الطبية *"
+                  fullWidth
+                  size="small"
+                />
+              </>
             )}
           </Box>
 
-          {/* Coverage Percent + Coverage Type (mandatory) */}
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              label="نسبة التغطية %"
-              type="number"
-              size="small"
-              value={formData.coveragePercent}
-              onChange={handleChange('coveragePercent')}
-              error={!!errors.coveragePercent}
-              helperText={errors.coveragePercent || 'اتركه فارغاً للافتراضي'}
-              InputProps={{
-                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                inputProps: { min: 0, max: 100 }
-              }}
-              fullWidth
-            />
-            <FormControl size="small" fullWidth required error={!!errors.encounterType}>
-              <InputLabel>نوع التغطية *</InputLabel>
-              <Select
-                value={formData.encounterType}
-                label="نوع التغطية *"
-                onChange={handleChange('encounterType')}
-              >
-                <MenuItem value="OUTPATIENT">عيادات خارجية (OPD)</MenuItem>
-                <MenuItem value="INPATIENT">إيواء (IPD)</MenuItem>
-                <MenuItem value="EMERGENCY">طوارئ (ER)</MenuItem>
-                <MenuItem value="LABORATORY">مختبر (Lab)</MenuItem>
-                <MenuItem value="RADIOLOGY">أشعة (Rad)</MenuItem>
-                <MenuItem value="PHARMACY">صيدلية (Pharm)</MenuItem>
-                <MenuItem value="DENTAL">أسنان (Dental)</MenuItem>
-                <MenuItem value="PHYSIOTHERAPY">علاج طبيعي (Physio)</MenuItem>
-              </Select>
-              {errors.encounterType && <FormHelperText>{errors.encounterType}</FormHelperText>}
-            </FormControl>
+          {/* Step 3: Coverage Percent + Coverage Type (mandatory) */}
+          <Box>
+            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+              خطوة ٣ — نسبة التغطية وسياق التغطية
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="نسبة التغطية %"
+                type="number"
+                size="small"
+                value={formData.coveragePercent}
+                onChange={handleChange('coveragePercent')}
+                error={!!errors.coveragePercent}
+                helperText={errors.coveragePercent || 'اتركه فارغاً للافتراضي'}
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                  inputProps: { min: 0, max: 100 }
+                }}
+                fullWidth
+              />
+              <FormControl size="small" fullWidth required error={!!errors.encounterType}>
+                <InputLabel>سياق التغطية *</InputLabel>
+                <Select
+                  value={formData.encounterType}
+                  label="سياق التغطية *"
+                  onChange={handleChange('encounterType')}
+                >
+                  <MenuItem value="OUTPATIENT">عيادات خارجية (OPD)</MenuItem>
+                  <MenuItem value="INPATIENT">إيواء (IPD)</MenuItem>
+                  <MenuItem value="EMERGENCY">طوارئ (ER)</MenuItem>
+                  <MenuItem value="LABORATORY">مختبر (Lab)</MenuItem>
+                  <MenuItem value="RADIOLOGY">أشعة (Rad)</MenuItem>
+                  <MenuItem value="PHARMACY">صيدلية (Pharm)</MenuItem>
+                  <MenuItem value="DENTAL">أسنان (Dental)</MenuItem>
+                  <MenuItem value="PHYSIOTHERAPY">علاج طبيعي (Physio)</MenuItem>
+                </Select>
+                {errors.encounterType && <FormHelperText>{errors.encounterType}</FormHelperText>}
+              </FormControl>
+            </Box>
           </Box>
 
 
@@ -1025,7 +1047,7 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
       minWidth: 90,
       cell: ({ row }) => {
         const rule = row.original;
-        const Icon = rule.ruleType === 'CATEGORY' ? CategoryIcon : ServiceIcon;
+        const Icon = rule.ruleType === 'CATEGORY' ? CategoryIcon : rule.ruleType === 'GENERAL' ? GlobalIcon : ServiceIcon;
         const code = rule.ruleType === 'CATEGORY' ? rule.medicalCategoryCode : rule.medicalServiceCode;
 
         return (
@@ -1033,8 +1055,8 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
             <Box sx={{
               p: 0.75,
               borderRadius: 1,
-              bgcolor: rule.ruleType === 'CATEGORY' ? 'primary.lighter' : 'secondary.lighter',
-              color: rule.ruleType === 'CATEGORY' ? 'primary.main' : 'secondary.main',
+              bgcolor: rule.ruleType === 'CATEGORY' ? 'primary.lighter' : rule.ruleType === 'GENERAL' ? 'warning.lighter' : 'secondary.lighter',
+              color: rule.ruleType === 'CATEGORY' ? 'primary.main' : rule.ruleType === 'GENERAL' ? 'warning.main' : 'secondary.main',
               display: 'flex'
             }}>
               <Icon fontSize="small" />
@@ -1044,11 +1066,15 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
                 {rule.label}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {rule.ruleType === 'CATEGORY' ? 'تصنيف' : 'خدمة'}
-                <Box component="span" sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'text.disabled' }} />
-                <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                  {code || '-'}
-                </Typography>
+                {rule.ruleType === 'CATEGORY' ? 'تصنيف' : rule.ruleType === 'GENERAL' ? 'تغطية شاملة' : 'خدمة'}
+                {rule.ruleType !== 'GENERAL' && (
+                  <>
+                    <Box component="span" sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'text.disabled' }} />
+                    <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                      {code || '-'}
+                    </Typography>
+                  </>
+                )}
               </Typography>
             </Box>
           </Stack>
@@ -1146,18 +1172,22 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
       id: 'status',
       header: 'الحالة',
       accessorKey: 'active',
-      width: 80,
+      width: 100,
       enableSorting: false, // Disable sorting to prevent row jumps on toggle
       cell: ({ row }) => {
         const rule = row.original;
         if (showDeleted) return null;
         return (
-          <Switch
-            size="small"
-            checked={rule.active}
-            onChange={() => handleToggleActive(rule)}
-            disabled={!canEdit || toggleMutation.isPending}
-          />
+          <Tooltip title={rule.active ? 'نشطة — انقر لتعطيل' : 'معطّلة — انقر لتفعيل'}>
+            <span>
+              <Switch
+                size="small"
+                checked={rule.active}
+                onChange={() => handleToggleActive(rule)}
+                disabled={!canEdit || toggleMutation.isPending}
+              />
+            </span>
+          </Tooltip>
         );
       }
     },
@@ -1171,12 +1201,14 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         if (showDeleted) {
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center">
-              <Tooltip title="استعادة">
-                <IconButton size="small" color="success" onClick={() => handleRestoreRule(rule)} disabled={restoreMutation.isPending}>
-                  <RestoreIcon fontSize="small" />
-                </IconButton>
+              <Tooltip title="استعادة القاعدة">
+                <span>
+                  <IconButton size="small" color="success" onClick={() => handleRestoreRule(rule)} disabled={restoreMutation.isPending}>
+                    <RestoreIcon fontSize="small" />
+                  </IconButton>
+                </span>
               </Tooltip>
-              <Tooltip title="حذف نهائي">
+              <Tooltip title="حذف نهائياً (لا يمكن التراجع)">
                 <IconButton size="small" color="error" onClick={() => handleDeleteForever(rule)}>
                   <DeleteForeverIcon fontSize="small" />
                 </IconButton>
@@ -1186,12 +1218,24 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         }
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center">
-            <IconButton size="small" onClick={() => handleEditRule(rule)} disabled={!canEdit}>
-              <EditIcon sx={{ fontSize: '1.1rem' }} />
-            </IconButton>
-            <IconButton size="small" color="error" onClick={() => handleDeleteRule(rule)} disabled={!canEdit}>
-              <DeleteIcon sx={{ fontSize: '1.1rem' }} />
-            </IconButton>
+            <Tooltip title={!canEdit ? 'لا يمكن التعديل على وثيقة ملغاة' : 'تعديل القاعدة'}>
+              <span>
+                <IconButton size="small" onClick={() => handleEditRule(rule)} disabled={!canEdit}
+                  sx={{ '&:hover': { bgcolor: 'primary.lighter', color: 'primary.main' } }}
+                >
+                  <EditIcon sx={{ fontSize: '1.1rem' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={!canEdit ? 'لا يمكن الحذف على وثيقة ملغاة' : 'نقل القاعدة للسلة'}>
+              <span>
+                <IconButton size="small" color="error" onClick={() => handleDeleteRule(rule)} disabled={!canEdit}
+                  sx={{ '&:hover': { bgcolor: 'error.lighter' } }}
+                >
+                  <DeleteIcon sx={{ fontSize: '1.1rem' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Stack>
         );
       }
@@ -1300,26 +1344,30 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
             {!showDeleted && canEdit && (
               <RBACGuard requiredPermissions={['benefit_policies.update']}>
                 <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<PackageIcon />}
-                    onClick={() => setTemplateDialogOpen(true)}
-                    size="small"
-                    sx={{ height: 40 }}
-                  >
-                    تطبيق باقة
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    startIcon={<ListIcon />}
-                    onClick={handleQuickWizardOpen}
-                    size="small"
-                    sx={{ height: 40 }}
-                  >
-                    معالج القواعد
-                  </Button>
+                  <Tooltip title="تطبيق قالب قواعد جاهز (Standard / VIP / Pharmacy)">
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<PackageIcon />}
+                      onClick={() => setTemplateDialogOpen(true)}
+                      size="small"
+                      sx={{ height: 40 }}
+                    >
+                      تطبيق باقة
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="إنشاء قواعد للتصنيفات الرئيسية دفعة واحدة">
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      startIcon={<ListIcon />}
+                      onClick={handleQuickWizardOpen}
+                      size="small"
+                      sx={{ height: 40 }}
+                    >
+                      معالج القواعد
+                    </Button>
+                  </Tooltip>
                   <Button
                     variant="contained"
                     startIcon={<AddIcon />}
@@ -1335,18 +1383,31 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
           </Stack>
         }
         contentSX={{ p: 0 }}
+        sx={{
+          '& .MuiTableRow-root': {
+            transition: 'opacity 0.2s ease, background-color 0.2s ease'
+          },
+          // Dim inactive rows visually
+          '& tr[data-inactive="true"]': {
+            opacity: 0.55,
+            bgcolor: 'action.hover'
+          }
+        }}
       >
 
         <GenericDataTable
           columns={columns}
           data={rules}
-          totalElements={totalElements}
-          loading={loadingRules || fetchingRules}
-          state={tableState}
+          totalCount={totalElements}
+          isLoading={loadingRules || fetchingRules}
+          tableState={tableState}
           emptyMessage={showDeleted ? 'سلة المهملات فارغة' : 'لا توجد قواعد تغطية محددة'}
           enableFiltering={false}
           maxHeight="none"
           cellPadding="dense"
+          getRowProps={(row) => ({
+            'data-inactive': row.original.active === false ? 'true' : 'false'
+          })}
         />
       </MainCard>
 

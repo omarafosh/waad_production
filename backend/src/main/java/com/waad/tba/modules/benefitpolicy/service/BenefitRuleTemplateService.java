@@ -62,11 +62,11 @@ public class BenefitRuleTemplateService {
                     }
 
                     return BenefitPolicyRuleCreateDto.builder()
-                            .benefitPolicyId(policyId)
+
                             .encounterType(item.getEncounterType())
                             .medicalCategoryId(categoryId)
                             .medicalCategory(item.getMedicalCategoryCode())
-                            .coveragePercent(item.getCoveragePercent())
+                            .coveragePercent(item.getCoveragePercent() != null ? item.getCoveragePercent().intValue() : null)
                             .timesLimit(item.getTimesLimit())
                             .waitingPeriodDays(item.getWaitingPeriodDays())
                             .requiresPreApproval(item.isRequiresPreApproval())
@@ -75,7 +75,7 @@ public class BenefitRuleTemplateService {
                 })
                 .collect(Collectors.toList());
 
-        ruleService.createBulk(ruleDtos);
+        ruleService.createBulk(policyId, ruleDtos);
         log.info("✅ Applied template '{}' ({} rules) to policy {}", template.getName(), ruleDtos.size(), policyId);
     }
 

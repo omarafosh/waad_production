@@ -188,7 +188,7 @@ public class BenefitPolicyCoverageService {
             return Optional.of(CoverageInfo.builder()
                 .covered(true)
                 .coveragePercent(rule.getCoveragePercent() != null ? rule.getCoveragePercent() : policy.getDefaultCoveragePercent())
-                .amountLimit(rule.getAmountLimit())
+
                 .timesLimit(rule.getTimesLimit())
                 .requiresPreApproval(rule.isRequiresPreApproval())
                 .waitingPeriodDays(rule.getWaitingPeriodDays())
@@ -273,12 +273,7 @@ public class BenefitPolicyCoverageService {
                     .multiply(BigDecimal.valueOf(result.getCoveragePercent()))
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 
-                // Apply amount limit if exists
-                if (result.getAmountLimit() != null && covered.compareTo(result.getAmountLimit()) > 0) {
-                    covered = result.getAmountLimit();
-                    warnings.add(String.format("Service '%s' amount limited to %.2f",
-                        result.getServiceName(), result.getAmountLimit()));
-                }
+
 
                 totalCoveredAmount = totalCoveredAmount.add(covered);
                 totalPatientAmount = totalPatientAmount.add(lineAmount.subtract(covered));
@@ -353,7 +348,7 @@ public class BenefitPolicyCoverageService {
             .category(category)
             .covered(true)
             .coveragePercent(rule.getEffectiveCoveragePercent())
-            .amountLimit(rule.getAmountLimit())
+
             .timesLimit(rule.getTimesLimit())
             .requiresPreApproval(rule.isRequiresPreApproval())
             .ruleId(rule.getId())
@@ -839,7 +834,7 @@ public class BenefitPolicyCoverageService {
         private static final long serialVersionUID = 1L;
         private boolean covered;
         private int coveragePercent;
-        private BigDecimal amountLimit;
+
         private Integer timesLimit;
         private boolean requiresPreApproval;
         private Integer waitingPeriodDays;
@@ -1027,7 +1022,7 @@ public class BenefitPolicyCoverageService {
         private static final long serialVersionUID = 1L;
         private boolean covered;
         private int coveragePercent;
-        private BigDecimal amountLimit;
+
         private Integer timesLimit;
         private boolean requiresPreApproval;
         private Integer waitingPeriodDays;
@@ -1038,7 +1033,7 @@ public class BenefitPolicyCoverageService {
             return ResolvedCoverage.builder()
                 .covered(true)
                 .coveragePercent(rule.getEffectiveCoveragePercent())
-                .amountLimit(rule.getAmountLimit())
+
                 .timesLimit(rule.getTimesLimit())
                 .requiresPreApproval(rule.isRequiresPreApproval())
                 .waitingPeriodDays(rule.getWaitingPeriodDays())
@@ -1071,7 +1066,7 @@ public class BenefitPolicyCoverageService {
         private String category;
         private boolean covered;
         private int coveragePercent;
-        private BigDecimal amountLimit;
+
         private Integer timesLimit;
         private boolean requiresPreApproval;
         private Long ruleId;

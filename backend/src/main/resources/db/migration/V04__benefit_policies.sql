@@ -60,14 +60,14 @@ CREATE TABLE IF NOT EXISTS benefit_policy_rules (
     medical_category_id BIGINT,
     medical_service_id BIGINT,
     medical_package_id BIGINT,
+    apply_on VARCHAR(20),
     
     coverage_percent INTEGER,
-    amount_limit DECIMAL(15, 2),
     times_limit INTEGER,
     
     waiting_period_days INTEGER DEFAULT 0,
     requires_pre_approval BOOLEAN NOT NULL DEFAULT FALSE,
-    encounter_type VARCHAR(30), -- OUTPATIENT, INPATIENT, EMERGENCY, etc.
+    encounter_type VARCHAR(30) NOT NULL, -- OUTPATIENT, INPATIENT, EMERGENCY, etc.
     
     notes VARCHAR(1000),
     active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -88,7 +88,11 @@ CREATE TABLE IF NOT EXISTS benefit_policy_rules (
         (medical_service_id IS NOT NULL AND medical_category_id IS NULL AND medical_package_id IS NULL) OR
         (medical_package_id IS NOT NULL AND medical_category_id IS NULL AND medical_service_id IS NULL)
     ),
-    CONSTRAINT chk_bpr_encounter_type CHECK (encounter_type IN ('OUTPATIENT', 'INPATIENT', 'EMERGENCY', 'DENTAL', 'OPTICAL', 'PHARMACY'))
+    CONSTRAINT chk_bpr_encounter_type CHECK (encounter_type IN (
+        'OUTPATIENT', 'INPATIENT', 'EMERGENCY', 'DENTAL', 'OPTICAL', 'PHARMACY', 
+        'LABORATORY', 'RADIOLOGY', 'PHYSIOTHERAPY', 'ROUTINE', 'FOLLOW_UP', 
+        'PREVENTIVE', 'SPECIALIZED', 'HOME_CARE', 'TELECONSULTATION', 'DAY_SURGERY', 'OPERATIONS'
+    ))
 );
 
 CREATE INDEX IF NOT EXISTS idx_bpr_policy ON benefit_policy_rules(benefit_policy_id);

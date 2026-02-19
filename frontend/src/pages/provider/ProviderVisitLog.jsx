@@ -51,7 +51,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import EventIcon from '@mui/icons-material/Event';
 
 // Services
-import { providerApi } from 'services/providerService';
+import { providersService } from 'services/api/providers.service';
 import { visitsService } from 'services/api/visits.service';
 
 // Components

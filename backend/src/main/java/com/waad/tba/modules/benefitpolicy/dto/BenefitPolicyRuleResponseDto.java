@@ -109,6 +109,8 @@ public class BenefitPolicyRuleResponseDto {
                            .medicalCategoryName(rule.getMedicalService().getCategory().getName());
                 }
             }
+        } else if (rule.isGeneralRule()) {
+            builder.ruleType("GENERAL");
         }
 
         return builder.build();

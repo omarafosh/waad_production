@@ -21,14 +21,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "benefit_policy_rules", indexes = {
     @Index(name = "idx_bpr_policy", columnList = "benefit_policy_id"),
-    @Index(name = "idx_bpr_category", columnList = "medical_category"),
+    @Index(name = "idx_bpr_category", columnList = "medical_category_id"),
     @Index(name = "idx_bpr_service", columnList = "medical_service_id"),
     @Index(name = "idx_bpr_active", columnList = "active"),
     @Index(name = "idx_bpr_encounter_type", columnList = "encounter_type")
 }, uniqueConstraints = {
     @UniqueConstraint(
         name = "uk_bpr_policy_category_context",
-        columnNames = {"benefit_policy_id", "medical_category", "encounter_type"}
+        columnNames = {"benefit_policy_id", "medical_category_id", "encounter_type"}
     ),
     @UniqueConstraint(
         name = "uk_bpr_policy_service_context",
@@ -94,9 +94,7 @@ public class BenefitPolicyRule {
     @Column(name = "apply_on", length = 20)
     private ApplyOnType applyOn;
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // COVERAGE SETTINGS
-    // ═══════════════════════════════════════════════════════════════════════════
+
 
     /**
      * Coverage percentage (0-100).
@@ -217,6 +215,13 @@ public class BenefitPolicyRule {
         return medicalPackage != null && (medicalCategory == null || medicalCategory.isBlank()) && medicalService == null;
     }
 
+    /**
+     * Check if this rule is a general/global rule (targets only encounter type)
+     */
+    public boolean isGeneralRule() {
+        return !isCategoryRule() && !isServiceRule() && !isPackageRule();
+    }
+
     public boolean appliesToPackage(com.waad.tba.modules.medicalpackage.MedicalPackage pkg) {
         if (!active) return false;
         return medicalPackage != null && medicalPackage.getId().equals(pkg.getId());
@@ -238,6 +243,14 @@ public class BenefitPolicyRule {
         if (medicalCategory != null && !medicalCategory.isBlank()) {
             return medicalCategory;
         }
+        
+        // Final fallback for Global Rules (Encounter type only)
+        if (encounterType != null) {
+            String suffix = " (عام)";
+            // Special case for outpatient/inpatient to make them sound more generic
+            return "تغطية " + encounterType.getArabicLabel() + suffix;
+        }
+        
         return "Rule #" + (id != null ? id : "NEW");
     }
 
@@ -261,14 +274,15 @@ public class BenefitPolicyRule {
 
         int count = (hasCategory ? 1 : 0) + (hasService ? 1 : 0) + (hasPackage ? 1 : 0);
 
-        if (count != 1) {
-            throw new IllegalStateException("Rule must target exactly ONE of: category or service");
+        if (count > 1) {
+            throw new IllegalStateException("Rule must target exactly ONE of: category or service (or be a global encounter rule)");
         }
 
         // Set the applyOn type automatically
         if (hasService) this.applyOn = ApplyOnType.SERVICE;
         else if (hasPackage) this.applyOn = ApplyOnType.PACKAGE;
         else if (hasCategory) this.applyOn = ApplyOnType.CATEGORY;
+        else this.applyOn = ApplyOnType.GENERAL; // New: Global encounter rule
     }
 
     /**

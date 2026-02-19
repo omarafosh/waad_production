@@ -11,6 +11,8 @@ import preApprovalsService from './pre-approvals.service';
 import providersService from './providers.service';
 import settlementService from './settlement.service';
 import rbacService from './rbac.service';
+import lifecycleService from './lifecycle.service';
+
 
 export {
     axiosClient,
@@ -23,7 +25,8 @@ export {
     preApprovalsService,
     providersService,
     settlementService,
-    rbacService
+    rbacService,
+    lifecycleService
 };
 
 export * as medicalServicesService from './medical-services.service';

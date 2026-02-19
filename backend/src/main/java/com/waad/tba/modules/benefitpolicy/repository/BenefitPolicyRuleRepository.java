@@ -111,6 +111,7 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
               r.medicalService.id = :serviceId
               OR (r.medicalPackage.id IN :packageIds AND r.medicalService IS NULL)
               OR (r.medicalCategoryRef.code = :category AND r.medicalService IS NULL AND r.medicalPackage IS NULL)
+              OR (r.medicalService IS NULL AND r.medicalPackage IS NULL AND r.medicalCategoryRef IS NULL)
           )
           AND (r.encounterType = :encounterType OR r.encounterType IS NULL)
         ORDER BY 
@@ -121,7 +122,8 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
                 WHEN r.medicalPackage.id IN :packageIds AND r.encounterType IS NULL THEN 3
                 WHEN r.medicalCategoryRef.code = :category AND r.encounterType = :encounterType THEN 4
                 WHEN r.medicalCategoryRef.code = :category AND r.encounterType IS NULL THEN 5
-                ELSE 6 
+                WHEN r.medicalService IS NULL AND r.medicalPackage IS NULL AND r.medicalCategoryRef IS NULL AND r.encounterType = :encounterType THEN 6
+                ELSE 7 
             END ASC
         """)
     List<BenefitPolicyRule> findApplicableRulesForService(
@@ -177,4 +179,22 @@ public interface BenefitPolicyRuleRepository extends JpaRepository<BenefitPolicy
             @Param("serviceId") Long serviceId,
             @Param("encounterType") com.waad.tba.modules.visit.entity.VisitType encounterType,
             @Param("excludeId") Long excludeId);
+
+    /**
+     * Find an active Global rule (encounterType only, no category, no service).
+     * Used for deduplication during bulk upsert.
+     */
+    @Query("""
+        SELECT r FROM BenefitPolicyRule r
+        WHERE r.benefitPolicy.id = :policyId
+          AND r.encounterType = :encounterType
+          AND r.medicalService IS NULL
+          AND r.medicalPackage IS NULL
+          AND r.medicalCategoryRef IS NULL
+          AND r.active = true
+          AND r.deleted = false
+        """)
+    Optional<BenefitPolicyRule> findActiveGlobalByEncounter(
+            @Param("policyId") Long policyId,
+            @Param("encounterType") com.waad.tba.modules.visit.entity.VisitType encounterType);
 }

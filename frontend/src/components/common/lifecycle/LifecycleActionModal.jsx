@@ -10,11 +10,10 @@ import {
     CircularProgress,
     TextField,
     Alert,
-    Stack,
-    Chip
+    Stack
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
-import { getLifecyclePreview, executeLifecycleAction } from '../../../services/lifecycle.service';
+import { getLifecyclePreview, executeLifecycleAction } from '../../../services/api/lifecycle.service';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -150,7 +149,7 @@ const LifecycleActionModal = ({ open, onClose, entityType, entityId, onSuccess }
                     </Alert>
 
                     <TextField
-                        label="سبب الإجراء Code"
+                        label="سبب الإجراء"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         required={selectedAction.requiresReason}
@@ -158,12 +157,12 @@ const LifecycleActionModal = ({ open, onClose, entityType, entityId, onSuccess }
                         select
                         SelectProps={{ native: true }}
                     >
-                        <option value=""></option>
-                        <option value="CLIENT_REQUEST">طلب العميل</option>
-                        <option value="DATA_ENTRY_ERROR">خطأ في الإدخال</option>
-                        <option value="EXPIRED_CONTRACT">انتهاء العقد</option>
-                        <option value="NON_PAYMENT">عدم السداد</option>
-                        <option value="OTHER">أخرى</option>
+                        <option value="">اختر...</option>
+                        {selectedAction.reasonOptions?.map((reasonOption) => (
+                            <option key={reasonOption.code} value={reasonOption.code}>
+                                {reasonOption.labelAr} ({reasonOption.code})
+                            </option>
+                        ))}
                     </TextField>
 
                     <TextField

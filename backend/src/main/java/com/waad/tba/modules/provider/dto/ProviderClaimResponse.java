@@ -165,8 +165,7 @@ public class ProviderClaimResponse {
         @Schema(description = "Service category name", example = "Consultation")
         private String serviceName;
         
-        @Schema(description = "Service amount limit (LYD)", example = "100.00")
-        private BigDecimal amountLimit;
+
         
         @Schema(description = "Times limit (per year)", example = "12")
         private Integer timesLimit;

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 
  * Usage:
  * Extend this class and add @SQLDelete(sql = "UPDATE table_name SET active = false WHERE id = ?") 
- * and @Where(clause = "active = true") to the subclass.
+ * and @SQLRestriction("active = true") to the subclass.
  */
 @MappedSuperclass
 @Getter
@@ -27,9 +27,11 @@ public abstract class SoftDeleteEntity {
 
     @Version
     @Column(name = "version")
+    @lombok.Builder.Default
     protected Long version = 0L;
 
     @Column(nullable = false)
+    @lombok.Builder.Default
     protected boolean active = true;
 
     @Column(name = "valid_from")

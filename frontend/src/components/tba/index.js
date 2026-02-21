@@ -12,5 +12,5 @@ export { default as ModernEmptyState } from './ModernEmptyState';
 export { default as ModernStatCard } from './ModernStatCard';
 export { default as ModernQuickActions } from './ModernQuickActions';
 
-// Document Preview Components (Phase - Document Side Preview)
+export { default as UnifiedTableLayout } from './UnifiedTableLayout';
 export { DocumentPreview, DocumentSidePanel } from './documents';

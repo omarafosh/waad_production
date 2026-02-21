@@ -183,7 +183,7 @@ public class BenefitPolicyRuleController {
             @Valid @RequestBody BenefitPolicyRuleCreateDto dto) {
         
         log.info("Creating rule for policy {} - category: {}, service: {}", 
-                policyId, dto.getMedicalCategoryId(), dto.getMedicalServiceId());
+                policyId, dto.getMedicalCategory(), dto.getMedicalServiceId());
         
         BenefitPolicyRuleResponseDto result = ruleService.create(policyId, dto);
         return ResponseEntity.status(HttpStatus.CREATED)

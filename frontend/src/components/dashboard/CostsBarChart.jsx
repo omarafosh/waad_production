@@ -5,6 +5,7 @@ import ReactApexChart from 'react-apexcharts';
 import { useColorScheme } from '@mui/material/styles';
 import { ThemeMode } from 'config';
 import useConfig from 'hooks/useConfig';
+import { getAppLocale } from 'utils/locale-helper';
 
 /**
  * Bar Chart: التكاليف حسب مقدم الخدمة
@@ -38,7 +39,8 @@ const CostsBarChart = ({ data, loading }) => {
       formatter: (val) => val.toLocaleString('ar-SA'),
       style: {
         colors: [theme.palette.text.primary],
-        fontFamily: fontFamily
+        fontFamily: fontFamily,
+        fontSize: theme.typography.caption.fontSize // Scalable unit
       }
     },
     grid: {
@@ -50,16 +52,18 @@ const CostsBarChart = ({ data, loading }) => {
       labels: {
         style: {
           colors: theme.palette.text.secondary,
-          fontFamily: fontFamily
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize // Scalable unit
         },
-        formatter: (val) => val.toLocaleString('ar-SA')
+        formatter: (val) => val.toLocaleString(getAppLocale())
       }
     },
     yaxis: {
       labels: {
         style: {
           colors: theme.palette.text.secondary,
-          fontFamily: fontFamily
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize // Scalable unit
         }
       }
     },
@@ -67,7 +71,7 @@ const CostsBarChart = ({ data, loading }) => {
     tooltip: {
       theme: colorScheme === ThemeMode.DARK ? 'dark' : 'light',
       y: {
-        formatter: (val) => val.toLocaleString('ar-SA') + ' ر.س'
+        formatter: (val) => val.toLocaleString(getAppLocale()) + ' ر.س'
       }
     }
   });

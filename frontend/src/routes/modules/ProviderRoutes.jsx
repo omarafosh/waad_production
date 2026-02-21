@@ -10,6 +10,7 @@ const ProviderView = Loadable(lazy(() => import('pages/providers/ProviderView'))
 const ProviderContractsList = Loadable(lazy(() => import('pages/provider-contracts')));
 const ProviderContractView = Loadable(lazy(() => import('pages/provider-contracts/ProviderContractView')));
 const ProviderContractCreate = Loadable(lazy(() => import('pages/provider-contracts/ProviderContractCreate')));
+const ProviderContractEdit = Loadable(lazy(() => import('pages/provider-contracts/ProviderContractEdit')));
 
 const ProviderRoutes = [
     // Providers Module
@@ -50,6 +51,11 @@ const ProviderRoutes = [
             createRoute({
                 path: 'create',
                 element: ProviderContractCreate,
+                roles: ROLES.ADMIN_INSURANCE
+            }),
+            createRoute({
+                path: 'edit/:id',
+                element: ProviderContractEdit,
                 roles: ROLES.ADMIN_INSURANCE
             }),
             createRoute({

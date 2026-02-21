@@ -787,8 +787,6 @@ public class ProviderPortalController {
                                                 // Get category name
                                                 if (item.getEffectiveCategory() != null) {
                                                         categoryName = item.getEffectiveCategory().getName();
-                                                } else if (item.getMedicalCategory() != null) {
-                                                        categoryName = item.getMedicalCategory().getName();
                                                 }
 
                                                 return MyContractServiceDto.builder()
@@ -888,13 +886,9 @@ public class ProviderPortalController {
                         // 4. Filter only services that require pre-approval from benefit policy
                         java.util.List<MyContractServiceDto> servicesRequiringPA = allPricingItems.stream()
                                         .filter(item -> {
-                                                Long serviceId = null;
-                                                if (item.getMedicalService() != null) {
-                                                        serviceId = item.getMedicalService().getId();
-                                                }
-                                                if (serviceId == null)
-                                                        return false;
-
+                                                Long serviceId = item.getMedicalService() != null ? item.getMedicalService().getId() : null;
+                                                if (serviceId == null) return false;
+                                                
                                                 // Check if this service requires pre-approval in the member's policy
                                                 // Passing null for encounterType as this is a general lookup
                                                 return benefitPolicyRuleService.requiresPreApproval(policyId, serviceId,
@@ -903,7 +897,6 @@ public class ProviderPortalController {
                                         .map(item -> {
                                                 String serviceCode = item.getServiceCode();
                                                 String serviceName = item.getServiceName();
-                                                String serviceNameAr = item.getServiceName();
                                                 String categoryName = item.getCategoryName();
                                                 Long medicalServiceId = null;
 
@@ -915,8 +908,6 @@ public class ProviderPortalController {
 
                                                 if (item.getEffectiveCategory() != null) {
                                                         categoryName = item.getEffectiveCategory().getName();
-                                                } else if (item.getMedicalCategory() != null) {
-                                                        categoryName = item.getMedicalCategory().getName();
                                                 }
 
                                                 return MyContractServiceDto.builder()

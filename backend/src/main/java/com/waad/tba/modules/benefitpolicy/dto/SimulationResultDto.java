@@ -14,7 +14,7 @@ public class SimulationResultDto {
     private String serviceName;
     private String categoryName;
     private Integer coveragePercent;
-    private BigDecimal amountLimit;
+
     private Integer timesLimit;
     private Integer waitingPeriodDays;
     private boolean requiresPreApproval;

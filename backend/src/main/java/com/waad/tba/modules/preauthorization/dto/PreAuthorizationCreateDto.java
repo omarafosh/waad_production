@@ -38,7 +38,6 @@ public class PreAuthorizationCreateDto {
      * ARCHITECTURAL LAW: Service MUST be selected from Provider Contract - NO free-text allowed
      */
     @NotNull(message = "Medical Service ID is required - Select from Provider Contract services")
-    @Positive(message = "Medical Service ID must be positive")
     private Long medicalServiceId;
 
     // ==================== AUTO-DERIVED FIELDS (from system) ====================

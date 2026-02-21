@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS lifecycle_logs (
 CREATE INDEX IF NOT EXISTS idx_lifecycle_entity ON lifecycle_logs(entity_type, entity_id);
 
 -- 3. الجدول الرئيسي للمستفيدين (Members)
-CREATE TABLE members (
+CREATE TABLE IF NOT EXISTS members (
     id BIGSERIAL PRIMARY KEY,
     
     -- الهيكل الهرمي (أصيل / تابع)
@@ -88,19 +88,24 @@ CREATE TABLE members (
     eligibility_updated_at TIMESTAMP,
     
     -- البيانات الوصفية والصور
-    photo_url VARCHAR(1000), -- تم دمج profile_photo_path هنا
+    photo_url VARCHAR(1000),
     notes VARCHAR(2000),
     
     -- أعمدة عامة (Global Columns)
-    version BIGINT DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 0,
     valid_from TIMESTAMP,
     valid_to TIMESTAMP,
     
     -- التدقيق (Audit)
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    created_by VARCHAR(255),
-    updated_by VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+    
+    -- Soft Delete Support
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(100),
     
     CONSTRAINT fk_members_parent FOREIGN KEY (parent_id) REFERENCES members(id) ON DELETE CASCADE,
     CONSTRAINT fk_members_employer FOREIGN KEY (employer_org_id) REFERENCES organizations(id),
@@ -108,19 +113,25 @@ CREATE TABLE members (
     CONSTRAINT fk_members_policy FOREIGN KEY (benefit_policy_id) REFERENCES benefit_policies(id),
     CONSTRAINT uk_member_card_number UNIQUE (card_number),
     CONSTRAINT uk_member_barcode UNIQUE (barcode),
-    CONSTRAINT uk_member_civil_id UNIQUE (civil_id) -- إضافة قيد التفرد للهوية
+    CONSTRAINT uk_member_civil_id UNIQUE (civil_id),
+    
+    -- Enum Constraints
+    CONSTRAINT chk_member_status CHECK (status IN ('ACTIVE', 'SUSPENDED', 'TERMINATED', 'PENDING', 'DRAFT', 'PENDING_VERIFICATION')),
+    CONSTRAINT chk_member_gender CHECK (gender IN ('MALE', 'FEMALE', 'UNDEFINED')),
+    CONSTRAINT chk_member_relationship CHECK (relationship IN ('WIFE', 'HUSBAND', 'SON', 'DAUGHTER', 'FATHER', 'MOTHER', 'BROTHER', 'SISTER', 'SPOUSE', 'CHILD', 'PARENT', 'OTHER')),
+    CONSTRAINT chk_member_marital_status CHECK (marital_status IN ('SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED', 'OTHER'))
 );
 
-CREATE INDEX idx_members_parent ON members(parent_id);
-CREATE INDEX idx_members_employer ON members(employer_org_id);
-CREATE INDEX idx_members_barcode ON members(barcode);
-CREATE INDEX idx_members_active ON members(active);
-CREATE INDEX idx_members_civil_id ON members(civil_id);
-CREATE INDEX idx_members_status ON members(status);
-CREATE INDEX idx_members_full_name_lower ON members(LOWER(full_name));
+CREATE INDEX IF NOT EXISTS idx_members_parent ON members(parent_id);
+CREATE INDEX IF NOT EXISTS idx_members_employer ON members(employer_org_id);
+CREATE INDEX IF NOT EXISTS idx_members_barcode ON members(barcode);
+CREATE INDEX IF NOT EXISTS idx_members_active ON members(active);
+CREATE INDEX IF NOT EXISTS idx_members_civil_id ON members(civil_id);
+CREATE INDEX IF NOT EXISTS idx_members_status ON members(status);
+CREATE INDEX IF NOT EXISTS idx_members_full_name_lower ON members(LOWER(full_name));
 
 -- 4. وثائق المستفيد (Member Documents)
-CREATE TABLE member_documents (
+CREATE TABLE IF NOT EXISTS member_documents (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     document_type VARCHAR(50) NOT NULL,
@@ -138,7 +149,7 @@ CREATE TABLE member_documents (
 );
 
 -- 5. سمات المستفيد (Member Attributes)
-CREATE TABLE member_attributes (
+CREATE TABLE IF NOT EXISTS member_attributes (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     attribute_code VARCHAR(100) NOT NULL,
@@ -153,7 +164,7 @@ CREATE TABLE member_attributes (
 );
 
 -- 6. الأمراض المزمنة للمستفيد (Member Chronic Conditions)
-CREATE TABLE member_chronic_conditions (
+CREATE TABLE IF NOT EXISTS member_chronic_conditions (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     condition_type VARCHAR(50) NOT NULL,
@@ -191,10 +202,10 @@ CREATE TABLE member_chronic_conditions (
     CONSTRAINT fk_mcc_member FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_mcc_member_id ON member_chronic_conditions(member_id);
+CREATE INDEX IF NOT EXISTS idx_mcc_member_id ON member_chronic_conditions(member_id);
 
 -- 7. سجلات استيراد الأعضاء (Member Import Logs)
-CREATE TABLE member_import_logs (
+CREATE TABLE IF NOT EXISTS member_import_logs (
     id BIGSERIAL PRIMARY KEY,
     import_batch_id VARCHAR(64) UNIQUE NOT NULL,
     file_name VARCHAR(500),
@@ -217,7 +228,7 @@ CREATE TABLE member_import_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE member_import_errors (
+CREATE TABLE IF NOT EXISTS member_import_errors (
     id BIGSERIAL PRIMARY KEY,
     import_log_id BIGINT NOT NULL,
     row_number INTEGER NOT NULL,
@@ -230,7 +241,7 @@ CREATE TABLE member_import_errors (
 );
 
 -- 8. تاريخ سير العمل (Workflow History)
-CREATE TABLE member_workflow_history (
+CREATE TABLE IF NOT EXISTS member_workflow_history (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
     from_status VARCHAR(255),

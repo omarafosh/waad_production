@@ -80,19 +80,28 @@ public class LocalFileStorageService implements FileStorageService {
         // Validate file
         validateFile(file);
         
-        // Generate unique file key
+        // Sanitize input folder
+        String safeFolder = FileResourceUtils.sanitizePath(folder);
+        
+        // Generate unique file key with sanitized filename
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = getFileExtension(originalFilename);
-        String uniqueFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-        String fileKey = folder + "/" + uniqueFilename;
+        String safeOriginalFilename = FileResourceUtils.sanitizeFilename(originalFilename);
+        String uniqueFilename = UUID.randomUUID().toString() + "_" + safeOriginalFilename;
+        String fileKey = safeFolder + "/" + uniqueFilename;
         
         try {
             // Create folder if not exists
-            Path folderPath = uploadPath.resolve(folder);
+            Path folderPath = uploadPath.resolve(safeFolder);
             Files.createDirectories(folderPath);
             
             // Copy file to target location
             Path targetPath = uploadPath.resolve(fileKey);
+            
+            // Security double-check: ensure the target path is still within uploadPath
+            if (!targetPath.normalize().startsWith(uploadPath)) {
+                throw new FileStorageException("Invalid target file path");
+            }
+            
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
             
             log.info("File uploaded successfully: {}", fileKey);
@@ -103,7 +112,7 @@ public class LocalFileStorageService implements FileStorageService {
                 .fileName(originalFilename)
                 .contentType(file.getContentType())
                 .size(file.getSize())
-                .folder(folder)
+                .folder(safeFolder)
                 .filePath(targetPath.toString())
                 .url("/api/files/download?key=" + java.net.URLEncoder.encode(fileKey, java.nio.charset.StandardCharsets.UTF_8))
                 .uploadedAt(LocalDateTime.now())
@@ -118,15 +127,16 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public byte[] download(String fileKey) {
         try {
-            Path filePath = uploadPath.resolve(fileKey).normalize();
+            String safeKey = FileResourceUtils.sanitizePath(fileKey);
+            Path filePath = uploadPath.resolve(safeKey).normalize();
             
             // Security check: prevent directory traversal
             if (!filePath.startsWith(uploadPath)) {
-                throw new FileStorageException("Invalid file path");
+                throw new FileStorageException("Invalid file path: Security violation attempt");
             }
             
             if (!Files.exists(filePath)) {
-                throw new FileStorageException("File not found: " + fileKey);
+                throw new FileStorageException("File not found: " + safeKey);
             }
             
             return Files.readAllBytes(filePath);
@@ -139,15 +149,16 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String fileKey) {
         try {
-            Path filePath = uploadPath.resolve(fileKey).normalize();
+            String safeKey = FileResourceUtils.sanitizePath(fileKey);
+            Path filePath = uploadPath.resolve(safeKey).normalize();
             
             // Security check
             if (!filePath.startsWith(uploadPath)) {
-                throw new FileStorageException("Invalid file path");
+                throw new FileStorageException("Invalid file path: Security violation attempt");
             }
             
             Files.deleteIfExists(filePath);
-            log.info("File deleted: {}", fileKey);
+            log.info("File deleted: {}", safeKey);
             
         } catch (IOException e) {
             throw new FileStorageException("Failed to delete file: " + fileKey, e);
@@ -156,15 +167,16 @@ public class LocalFileStorageService implements FileStorageService {
     
     @Override
     public String getPresignedUrl(String fileKey, int expiryMinutes) {
-        // For local storage, return direct download URL
-        // In production with S3/MinIO, generate actual presigned URL
-        return "/api/files/" + fileKey + "/download";
+        // For local storage, return direct download URL with sanitized key
+        String safeKey = FileResourceUtils.sanitizePath(fileKey);
+        return "/api/files/download?key=" + java.net.URLEncoder.encode(safeKey, java.nio.charset.StandardCharsets.UTF_8);
     }
     
     @Override
     public boolean exists(String fileKey) {
-        Path filePath = uploadPath.resolve(fileKey).normalize();
-        return Files.exists(filePath);
+        String safeKey = FileResourceUtils.sanitizePath(fileKey);
+        Path filePath = uploadPath.resolve(safeKey).normalize();
+        return Files.exists(filePath) && filePath.startsWith(uploadPath);
     }
     
     // ===== Helper Methods =====

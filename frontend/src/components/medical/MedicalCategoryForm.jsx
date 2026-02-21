@@ -149,9 +149,7 @@ const MedicalCategoryForm = ({ initialValues, onSubmit, onCancel, isEditMode }) 
         active: initialValues?.active ?? true
     });
 
-    const [categoryType, setCategoryType] = useState(
-        initialValues?.parentId ? CATEGORY_TYPE.SUB : CATEGORY_TYPE.MAIN
-    );
+    const [categoryType, setCategoryType] = useState(CATEGORY_TYPE.SUB); // Default to SUB
 
     const [categories, setCategories] = useState([]); // Parent options
     const [loadingParents, setLoadingParents] = useState(false);
@@ -207,7 +205,7 @@ const MedicalCategoryForm = ({ initialValues, onSubmit, onCancel, isEditMode }) 
         const mainCats = categories.filter((c) => !c.parentId);
         return mainCats.map((main) => ({
             ...main,
-            children: categories.filter((c) => c.parentId === main.id)
+            children: [] // We only allow main categories as parents, no deep nesting
         }));
     }, [categories]);
 
@@ -228,12 +226,7 @@ const MedicalCategoryForm = ({ initialValues, onSubmit, onCancel, isEditMode }) 
         [errors]
     );
 
-    const handleCategoryTypeChange = useCallback((type) => {
-        setCategoryType(type);
-        if (type === CATEGORY_TYPE.MAIN) {
-            setForm((prev) => ({ ...prev, parentId: '' }));
-        }
-    }, []);
+
 
     const validate = useCallback(() => {
         const newErrors = {};
@@ -291,90 +284,52 @@ const MedicalCategoryForm = ({ initialValues, onSubmit, onCancel, isEditMode }) 
                 </Alert>
             )}
 
-            {/* ========== Section 1: Category Type Selection ========== */}
-            <SectionHeader
-                icon={AccountTreeIcon}
-                title="نوع التصنيف"
-                subtitle={isEditMode ? "يمكنك تغيير نوع التصنيف من رئيسي إلى فرعي أو العكس" : "اختر نوع التصنيف الذي تريد إنشاءه"}
-                color="primary"
-            />
+            {/* ========== Section 1: Parent Category Selection (Mandatory) ========== */}
+            <Box sx={{ mb: 4 }}>
+                <SectionHeader
+                    icon={FolderIcon}
+                    title="التصنيف الأب"
+                    subtitle="يجب اختيار التصنيف الرئيسي الذي سيتبعه هذا التصنيف الفرعي"
+                    color="primary"
+                />
 
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <CategoryTypeCard
-                        type={CATEGORY_TYPE.MAIN}
-                        selected={categoryType === CATEGORY_TYPE.MAIN}
-                        onSelect={handleCategoryTypeChange}
-                        disabled={submitting}
-                    />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <CategoryTypeCard
-                        type={CATEGORY_TYPE.SUB}
-                        selected={categoryType === CATEGORY_TYPE.SUB}
-                        onSelect={handleCategoryTypeChange}
-                        disabled={submitting}
-                    />
-                </Grid>
-            </Grid>
+                <Alert severity="info" sx={{ mb: 3 }} icon={<InfoOutlinedIcon />}>
+                    <strong>نظام التصنيف الموحد:</strong> يمكنك فقط إنشاء تصنيفات فرعية تندرج تحت التصنيفات الرئيسية الثمانية المعتمدة.
+                </Alert>
 
-            <Divider sx={{ my: 4 }} />
+                <FormControl fullWidth error={!!errors.parentId} required>
+                    <InputLabel>اختر التصنيف الأب</InputLabel>
+                    <Select
+                        value={form.parentId}
+                        onChange={handleChange('parentId')}
+                        label="اختر التصنيف الأب"
+                        disabled={submitting || loadingParents || isEditMode}
+                        sx={{ '& .MuiSelect-select': { py: 1.5 } }}
+                    >
+                        <MenuItem value="" disabled>
+                            <Typography color="text.secondary">— اختر التصنيف الأب —</Typography>
+                        </MenuItem>
 
-            {/* ========== Section 2: Parent Category (if sub-category) ========== */}
-            <Collapse in={categoryType === CATEGORY_TYPE.SUB}>
-                <Box sx={{ mb: 4 }}>
-                    <SectionHeader
-                        icon={FolderIcon}
-                        title="التصنيف الأب"
-                        subtitle="اختر التصنيف الرئيسي الذي سيتبعه هذا التصنيف الفرعي"
-                        color="secondary"
-                    />
-
-                    <FormControl fullWidth error={!!errors.parentId}>
-                        <InputLabel>اختر التصنيف الأب *</InputLabel>
-                        <Select
-                            value={form.parentId}
-                            onChange={handleChange('parentId')}
-                            label="اختر التصنيف الأب *"
-                            disabled={submitting || loadingParents}
-                            sx={{ '& .MuiSelect-select': { py: 1.5 } }}
-                        >
-                            <MenuItem value="" disabled>
-                                <Typography color="text.secondary">— اختر التصنيف الأب —</Typography>
+                        {organizedCategories.map((mainCat) => [
+                            <MenuItem
+                                key={mainCat.id}
+                                value={mainCat.id}
+                                sx={{ fontWeight: 600, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) }}
+                            >
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <FolderIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                                    <span>{mainCat.name}</span>
+                                    <Chip label={mainCat.code} size="small" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />
+                                </Stack>
                             </MenuItem>
+                        ])}
+                    </Select>
+                    {errors.parentId && <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{errors.parentId}</Typography>}
+                    {loadingParents && <Typography variant="caption" color="text.secondary">جارِ تحميل التصنيفات...</Typography>}
+                </FormControl>
 
-                            {organizedCategories.map((mainCat) => [
-                                <MenuItem
-                                    key={mainCat.id}
-                                    value={mainCat.id}
-                                    sx={{ fontWeight: 600, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) }}
-                                >
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <FolderIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-                                        <span>{mainCat.name}</span>
-                                        <Chip label={mainCat.code} size="small" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />
-                                    </Stack>
-                                </MenuItem>,
-                                ...mainCat.children.map((subCat) => (
-                                    <MenuItem key={subCat.id} value={subCat.id} sx={{ pr: 4 }}>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <SubdirectoryArrowLeftIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                            <span>{subCat.name}</span>
-                                            <Chip label={subCat.code} size="small" variant="outlined" sx={{ ml: 1, height: 18, fontSize: '0.65rem' }} />
-                                        </Stack>
-                                    </MenuItem>
-                                ))
-                            ])}
-                        </Select>
-                        {errors.parentId && <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>{errors.parentId}</Typography>}
-                        {loadingParents && <Typography variant="caption" color="text.secondary">جارِ تحميل التصنيفات...</Typography>}
-                    </FormControl>
-
-                    <ParentPreview parent={selectedParent} />
-                </Box>
-
-                <Divider sx={{ my: 4 }} />
-            </Collapse>
+                <ParentPreview parent={selectedParent} />
+            </Box>
 
             {/* ========== Section 3: Category Details ========== */}
             <SectionHeader icon={LabelIcon} title="بيانات التصنيف" subtitle="المعلومات الأساسية" color="info" />

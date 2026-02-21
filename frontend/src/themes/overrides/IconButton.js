@@ -5,8 +5,8 @@ export default function IconButton(theme) {
     MuiIconButton: {
       styleOverrides: {
         root: {
-          borderRadius: 4,
-          fontSize: '1.2rem',
+          borderRadius: theme.shape.borderRadius,
+          fontSize: '1.4rem', // Matching the new button icon standard
           '&.MuiIconButton-loading': {
             pointerEvents: 'none !important',
             '& svg': {
@@ -18,12 +18,12 @@ export default function IconButton(theme) {
         sizeLarge: {
           width: theme.spacing(5.5),
           height: theme.spacing(5.5),
-          fontSize: '1.4rem' // Slightly larger for large buttons if needed, or keep 1.2rem
+          fontSize: '1.6rem'
         },
         sizeMedium: {
           width: theme.spacing(4.5),
           height: theme.spacing(4.5),
-          fontSize: '1.2rem'
+          fontSize: '1.4rem'
         },
         sizeSmall: {
           width: theme.spacing(3.75),

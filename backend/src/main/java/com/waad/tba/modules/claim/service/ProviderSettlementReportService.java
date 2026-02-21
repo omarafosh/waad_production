@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto.ClaimDetail;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto.LineStatus;
@@ -346,14 +347,14 @@ public class ProviderSettlementReportService {
         String serviceCategory = null;
         
         if (line.getMedicalService() != null) {
+            MedicalService ems = line.getMedicalService();
             if (serviceCode == null) {
-                serviceCode = line.getMedicalService().getCode();
+                serviceCode = ems.getCode();
             }
             if (serviceName == null) {
-                serviceName = line.getMedicalService().getName();
+                serviceName = ems.getName();
             }
-            // Category is stored as categoryId, not as a relationship
-            // serviceCategory would require a separate lookup - skip for now
+            serviceCategory = ems.getCategoryName();
         }
         
         return ServiceLineDetail.builder()

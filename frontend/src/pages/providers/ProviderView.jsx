@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getAppLocale, getNumberLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -107,10 +108,10 @@ const ProviderView = () => {
 
   const [openContractDialog, setOpenContractDialog] = useState(false);
   const [contractForm, setContractForm] = useState({
-    contractCode: '',
+    contractNumber: '',
     startDate: '',
     endDate: '',
-    discountPercent: 0,
+    discountRate: 0,
     autoRenew: false,
     insuranceOrganizationId: 1, // Default to GIG for now
     employerId: null
@@ -158,10 +159,10 @@ const ProviderView = () => {
 
   const handleOpenContractDialog = () => {
     setContractForm({
-      contractCode: `CONT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
+      contractNumber: `CONT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-      discountPercent: 0,
+      discountRate: 0,
       autoRenew: true,
       insuranceOrganizationId: 1,
       employerId: null
@@ -171,13 +172,10 @@ const ProviderView = () => {
 
   const handleSaveContract = async () => {
     try {
-      // Fix: Include providerId in the payload to satisfy backend validation
-      // Ensure providerId is a number
       const payload = {
         ...contractForm,
         providerId: parseInt(id, 10),
-        // Ensure discountPercent is a number
-        discountPercent: parseFloat(contractForm.discountPercent)
+        discountRate: parseFloat(contractForm.discountRate)
       };
 
       await providersService.createContract(id, payload);
@@ -249,11 +247,10 @@ const ProviderView = () => {
     );
   }
 
-  // Derive values defensively
   const providerName = provider?.name ?? '—';
   const providerDisplayName = providerName;
   const providerStatus = getProviderStatus(provider);
-  const networkTier = getNetworkTier(provider);
+  const networkTierSelection = getNetworkTier(provider);
 
   return (
     <>
@@ -276,16 +273,13 @@ const ProviderView = () => {
 
       <MainCard>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
-          {/* Provider Type Chip */}
           <Chip
             label={PROVIDER_TYPE_LABELS[provider?.providerType] ?? provider?.providerType ?? '—'}
             color={PROVIDER_TYPE_COLORS[provider?.providerType] || 'default'}
             size="small"
             variant="outlined"
           />
-          {/* Network Status Badge */}
-          {networkTier && <NetworkBadge networkTier={networkTier} showLabel={true} size="small" language="ar" />}
-          {/* Status Badge */}
+          {networkTierSelection && <NetworkBadge networkTier={networkTierSelection} showLabel={true} size="small" language="ar" />}
           <CardStatusBadge
             status={providerStatus}
             customLabel={STATUS_LABELS_AR[providerStatus] ?? 'غير محدد'}
@@ -301,11 +295,9 @@ const ProviderView = () => {
           </Tabs>
         </Box>
 
-        {/* Tab 0: Basic Info & Location */}
         <Box hidden={activeTab !== 0}>
           {activeTab === 0 && (
             <Grid container spacing={3}>
-              {/* Basic Information */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 3 }}>
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
@@ -342,7 +334,6 @@ const ProviderView = () => {
                 </Paper>
               </Grid>
 
-              {/* Location & Contact Information */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 3, height: '100%' }}>
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
@@ -412,7 +403,7 @@ const ProviderView = () => {
                         تاريخ الإنشاء
                       </Typography>
                       <Typography variant="body1" fontWeight={500}>
-                        {provider?.createdAt ? new Date(provider.createdAt).toLocaleDateString('ar-SA') : '—'}
+                        {provider?.createdAt ? new Date(provider.createdAt).toLocaleDateString(getAppLocale()) : '—'}
                       </Typography>
                     </Grid>
                     <Grid item xs={12}>
@@ -420,7 +411,7 @@ const ProviderView = () => {
                         آخر تحديث
                       </Typography>
                       <Typography variant="body1" fontWeight={500}>
-                        {provider?.updatedAt ? new Date(provider.updatedAt).toLocaleDateString('ar-SA') : '—'}
+                        {provider?.updatedAt ? new Date(provider.updatedAt).toLocaleDateString(getAppLocale()) : '—'}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -430,11 +421,9 @@ const ProviderView = () => {
           )}
         </Box>
 
-        {/* Tab 1: Contracts */}
         <Box hidden={activeTab !== 1}>
           {activeTab === 1 && (
             <Grid container spacing={3}>
-              {/* Contract Information Summary */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 3 }}>
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
@@ -467,23 +456,13 @@ const ProviderView = () => {
                         {provider?.defaultDiscountRate ? `${provider.defaultDiscountRate}%` : '—'}
                       </Typography>
                     </Grid>
-                    {provider?.allowAllEmployers && (
-                      <Grid item xs={12}>
-                        <Box sx={{ mt: 2, p: 2, bgcolor: 'success.lighter', borderRadius: 1, border: '1px dashed', borderColor: 'success.main' }}>
-                          <Typography variant="subtitle2" color="success.dark">
-                            • هذا المزود مفعل كشبكة عامة (مسموح لجميع الجهات)
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    )}
                   </Grid>
                 </Paper>
               </Grid>
 
-              {/* Provider Contracts Table */}
               <Grid item xs={12}>
                 <Paper sx={{ p: 3 }}>
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, justifyContent: 'space-between' }}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <VerifiedUser sx={{ color: '#1890ff' }} />
                       <Typography variant="h5">عقود مقدم الخدمة</Typography>
@@ -516,51 +495,47 @@ const ProviderView = () => {
                             <TableCell>نسبة الخصم</TableCell>
                             <TableCell>التجديد التلقائي</TableCell>
                             <TableCell>الحالة</TableCell>
+                            <TableCell>الإجراءات</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {Array.isArray(contracts) &&
-                            contracts.map((contract) => (
-                              <TableRow key={contract.id}>
-                                <TableCell>{contract.contractNumber}</TableCell>
-                                <TableCell>{contract.startDate ? new Date(contract.startDate).toLocaleDateString('ar-SA') : '-'}</TableCell>
-                                <TableCell>{contract.endDate ? new Date(contract.endDate).toLocaleDateString('ar-SA') : '-'}</TableCell>
-                                <TableCell>{contract.discountRate ? `${contract.discountRate}%` : '-'}</TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={contract.autoRenew ? 'نعم' : 'لا'}
-                                    color={contract.autoRenew ? 'success' : 'default'}
-                                    size="small"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  {(() => {
-                                    const statusConfig = {
-                                      ACTIVE: { label: 'نشط', color: 'success' },
-                                      DRAFT: { label: 'مسودة', color: 'default' },
-                                      SUSPENDED: { label: 'موقوف', color: 'warning' },
-                                      EXPIRED: { label: 'منتهي', color: 'error' },
-                                      TERMINATED: { label: 'ملغي', color: 'error' }
-                                    };
-                                    const config = statusConfig[contract.status] || { label: contract.status || 'غير محدد', color: 'default' };
-                                    return (
-                                      <Chip
-                                        label={config.label}
-                                        color={config.color}
-                                        size="small"
-                                      />
-                                    );
-                                  })()}
-                                </TableCell>
-                                <TableCell>
-                                  <Tooltip title="حذف العقد">
-                                    <IconButton color="error" size="small" onClick={() => handleDeleteContract(contract.id)}>
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                          {contracts.map((contract) => (
+                            <TableRow key={contract.id}>
+                              <TableCell>{contract.contractNumber}</TableCell>
+                              <TableCell>{contract.startDate ? new Date(contract.startDate).toLocaleDateString(getAppLocale()) : '-'}</TableCell>
+                              <TableCell>{contract.endDate ? new Date(contract.endDate).toLocaleDateString(getAppLocale()) : '-'}</TableCell>
+                              <TableCell>{contract.discountRate ? `${contract.discountRate}%` : '-'}</TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={contract.autoRenew ? 'نعم' : 'لا'}
+                                  color={contract.autoRenew ? 'success' : 'default'}
+                                  size="small"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {(() => {
+                                  const statusConfig = {
+                                    ACTIVE: { label: 'نشط', color: 'success' },
+                                    DRAFT: { label: 'مسودة', color: 'default' },
+                                    SUSPENDED: { label: 'موقوف', color: 'warning' },
+                                    EXPIRED: { label: 'منتهي', color: 'error' },
+                                    TERMINATED: { label: 'ملغي', color: 'error' }
+                                  };
+                                  const config = statusConfig[contract.status] || { label: contract.status || 'غير محدد', color: 'default' };
+                                  return (
+                                    <Chip label={config.label} color={config.color} size="small" />
+                                  );
+                                })()}
+                              </TableCell>
+                              <TableCell>
+                                <Tooltip title="حذف العقد">
+                                  <IconButton color="error" size="small" onClick={() => handleDeleteContract(contract.id)}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                         </TableBody>
                       </Table>
                     </TableContainer>
@@ -600,15 +575,6 @@ const ProviderView = () => {
                 onChange={(e) => setContractForm({ ...contractForm, endDate: e.target.value })}
               />
             </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="نسبة الخصم %"
-                type="number"
-                value={contractForm.discountRate}
-                onChange={(e) => setContractForm({ ...contractForm, discountRate: parseFloat(e.target.value) })}
-              />
-            </Grid>
             <Grid item xs={12}>
               <Autocomplete
                 options={activeEmployers}
@@ -622,16 +588,10 @@ const ProviderView = () => {
                   <TextField
                     {...params}
                     label="الجهة (Employer)"
-                    helperText="اتركه فارغاً لإنشاء عقد شبكة عامة (يشمل جميع الجهات)"
+                    helperText="اتركه فارغاً لإنشاء عقد شبكة عامة"
                     placeholder="ابحث عن جهة..."
                   />
                 )}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={<Checkbox checked={contractForm.autoRenew} onChange={(e) => setContractForm({ ...contractForm, autoRenew: e.target.checked })} />}
-                label="تجديد تلقائي"
               />
             </Grid>
           </Grid>
@@ -640,7 +600,7 @@ const ProviderView = () => {
           <Button onClick={() => setOpenContractDialog(false)}>إلغاء</Button>
           <Button onClick={handleSaveContract} variant="contained" color="primary">حفظ</Button>
         </DialogActions>
-      </Dialog >
+      </Dialog>
     </>
   );
 };

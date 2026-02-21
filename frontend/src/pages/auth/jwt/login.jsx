@@ -14,7 +14,7 @@ import useAuth from 'hooks/useAuth';
 import AuthWrapper from 'sections/auth/AuthWrapper';
 import AuthLogin from 'sections/auth/jwt/AuthLogin';
 import Logo from 'components/logo';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 
 // assets - security icons
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -27,8 +27,11 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 export default function Login() {
   const { isLoggedIn } = useAuth();
   const theme = useTheme();
-  const { companyName, getLogoSrc, hasLogo, settings } = useCompanySettings();
+  const { systemName, logoUrl, settings } = useSystemSettings(); // Destructured
   const isDarkMode = theme.palette.mode === 'dark';
+
+  // Font size helper
+  const fontSize = settings?.fontSize || 12;
 
   const [searchParams] = useSearchParams();
   const auth = searchParams.get('auth');
@@ -39,11 +42,11 @@ export default function Login() {
         {/* Internal Branding Section */}
         <Grid size={12}>
           <Stack sx={{ alignItems: 'center', mb: 1.5 }}>
-            {hasLogo() ? (
+            {logoUrl ? (
               <Box
                 component="img"
-                src={getLogoSrc()}
-                alt={companyName}
+                src={logoUrl}
+                alt={systemName}
                 sx={{
                   height: { xs: 45, sm: 55 },
                   width: 'auto',
@@ -61,13 +64,13 @@ export default function Login() {
                 fontWeight: 800,
                 color: theme.palette.primary.main,
                 mb: 0.25,
-                fontSize: `${(settings?.fontSize || 12) * 1.5}px`
+                fontSize: `${fontSize * 1.5}px`
               }}
             >
               مرحباً بك
             </Typography>
             <Stack sx={{ alignItems: 'center', mt: 0.25 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: `${settings?.fontSize || 12}px` }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: `${fontSize}px` }}>
                 سجّل دخولك للوصول إلى
               </Typography>
               <Typography
@@ -75,13 +78,13 @@ export default function Login() {
                 sx={{
                   color: 'primary.main',
                   fontWeight: 800,
-                  fontSize: `${(settings?.fontSize || 12) * 1.1}px`,
+                  fontSize: `${fontSize * 1.1}px`,
                   mt: 0.25,
                   px: 1,
                   borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
                 }}
               >
-                {companyName || 'نظام وعد الطبي'}
+                {systemName || 'نظام إدارة التأمين'}
               </Typography>
             </Stack>
           </Stack>
@@ -113,8 +116,8 @@ export default function Login() {
             }}
           >
             <Stack direction="row" justifyContent="center" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
-              <ShieldOutlinedIcon sx={{ fontSize: `${(settings?.fontSize || 12) * 1.2}px`, color: 'success.main' }} />
-              <Typography variant="caption" color="success.main" fontWeight={700} sx={{ fontSize: `${(settings?.fontSize || 12) * 0.9}px` }}>
+              <ShieldOutlinedIcon sx={{ fontSize: `${fontSize * 1.2}px`, color: 'success.main' }} />
+              <Typography variant="caption" color="success.main" fontWeight={700} sx={{ fontSize: `${fontSize * 0.9}px` }}>
                 نظام محمي ومؤمّن
               </Typography>
             </Stack>

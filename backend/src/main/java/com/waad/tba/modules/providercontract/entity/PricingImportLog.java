@@ -1,0 +1,175 @@
+package com.waad.tba.modules.providercontract.entity;
+
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Audit log for bulk provider contract pricing imports.
+ * 
+ * Tracks:
+ * - Who imported (user)
+ * - When (timestamps)
+ * - What file
+ * - How many records (created/updated/errors)
+ */
+@Entity
+@Table(name = "pricing_import_logs")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
+public class PricingImportLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "Import batch ID is required")
+    @Column(name = "import_batch_id", unique = true, nullable = false, length = 64)
+    private String importBatchId;
+
+    @Column(name = "contract_id", nullable = false)
+    private Long contractId;
+
+    @Column(name = "file_name", length = 500)
+    private String fileName;
+
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
+
+    // Statistics
+    @Builder.Default
+    @Column(name = "total_rows")
+    private Integer totalRows = 0;
+
+    @Builder.Default
+    @Column(name = "created_count")
+    private Integer createdCount = 0;
+
+    @Builder.Default
+    @Column(name = "updated_count")
+    private Integer updatedCount = 0;
+
+    @Builder.Default
+    @Column(name = "skipped_count")
+    private Integer skippedCount = 0;
+
+    @Builder.Default
+    @Column(name = "error_count")
+    private Integer errorCount = 0;
+
+    // Status
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(nullable = false, length = 30)
+    private ImportStatus status = ImportStatus.PENDING;
+
+    @Column(name = "error_message", columnDefinition = "TEXT")
+    private String errorMessage;
+
+    // Processing timestamps
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "processing_time_ms")
+    private Long processingTimeMs;
+
+    // Security context
+    @Column(name = "imported_by_user_id")
+    private Long importedByUserId;
+
+    @Column(name = "imported_by_username", length = 100)
+    private String importedByUsername;
+
+    @Column(name = "company_scope_id")
+    private Long companyScopeId;
+
+    @CreatedDate
+    @Column(updatable = false, name = "created_at")
+    private LocalDateTime createdAt;
+
+    /**
+     * Import status enum
+     */
+    public enum ImportStatus {
+        PENDING,        // File uploaded, waiting to process
+        VALIDATING,     // Validating rows
+        PROCESSING,     // Creating/updating pricing items
+        COMPLETED,      // All done successfully
+        PARTIAL,        // Completed with some errors
+        FAILED          // Import failed completely
+    }
+
+    /**
+     * Calculate success rate
+     */
+    public double getSuccessRate() {
+        if (totalRows == null || totalRows == 0) return 0;
+        int successful = (createdCount != null ? createdCount : 0) + 
+                        (updatedCount != null ? updatedCount : 0);
+        return (double) successful / totalRows * 100;
+    }
+
+    /**
+     * Mark as started
+     */
+    public void markStarted() {
+        this.status = ImportStatus.PROCESSING;
+        this.startedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Mark as completed with statistics
+     */
+    public void markCompleted(int created, int updated, int skipped, int error) {
+        this.completedAt = LocalDateTime.now();
+        this.createdCount = created;
+        this.updatedCount = updated;
+        this.skippedCount = skipped;
+        this.errorCount = error;
+        this.totalRows = created + updated + skipped + error;
+        
+        if (startedAt != null) {
+            this.processingTimeMs = java.time.Duration.between(startedAt, completedAt).toMillis();
+        }
+        
+        if (errorCount > 0) {
+            this.status = (createdCount > 0 || updatedCount > 0) ? ImportStatus.PARTIAL : ImportStatus.FAILED;
+        } else {
+            this.status = ImportStatus.COMPLETED;
+        }
+    }
+
+    /**
+     * Mark as failed
+     */
+    public void markFailed(String message) {
+        this.status = ImportStatus.FAILED;
+        this.errorMessage = message;
+        this.completedAt = LocalDateTime.now();
+        if (startedAt != null) {
+            this.processingTimeMs = java.time.Duration.between(startedAt, completedAt).toMillis();
+        }
+    }
+}

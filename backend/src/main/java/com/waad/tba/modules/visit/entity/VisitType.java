@@ -74,7 +74,16 @@ public enum VisitType {
      * Day surgery (admission and discharge same day)
      * جراحة يومية
      */
-    DAY_SURGERY("جراحة يومية", "Day Surgery", "DAY_SURG");
+    DAY_SURGERY("جراحة يومية", "Day Surgery", "DAY_SURG"),
+
+    // New Contexts for Unified Benefit Policy
+    LABORATORY("مختبر", "Laboratory", "LAB"),
+    RADIOLOGY("أشعة", "Radiology", "RAD"),
+    DENTAL("أسنان", "Dental", "DENT"),
+    OPTICAL("بصريات", "Optical", "OPT"),
+    PHYSIOTHERAPY("علاج طبيعي", "Physiotherapy", "PHYS"),
+    PHARMACY("صيدلية", "Pharmacy", "PHARM"),
+    OPERATIONS("عمليات", "Operations", "OPS");
     
     private final String arabicLabel;
     private final String englishLabel;

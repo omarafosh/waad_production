@@ -1,6 +1,5 @@
 package com.waad.tba.modules.providercontract.dto;
 
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,13 +9,10 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * DTO for returning Provider Contract Pricing Item data in API responses.
- * 
- * @version 1.0
- * @since 2024-12-24
+ * (REFACTORED 2026-02-15 - UNIFIED DICTIONARY)
  */
 @Data
 @Builder
@@ -39,11 +35,11 @@ public class ProviderContractPricingItemResponseDto {
     // Category name (for imported items - display/grouping)
     private String categoryName;
 
+    // Specialty (for grouping)
+    private String specialty;
+
     // Quantity (for imported items)
     private Integer quantity;
-
-    // Category info (optional override)
-    private CategorySummaryDto medicalCategory;
 
     // Effective category (from item or service)
     private CategorySummaryDto effectiveCategory;
@@ -74,69 +70,38 @@ public class ProviderContractPricingItemResponseDto {
      * Convert entity to response DTO
      */
     public static ProviderContractPricingItemResponseDto fromEntity(ProviderContractPricingItem entity) {
-        return fromEntity(entity, null);
-    }
-
-    /**
-     * Convert entity to response DTO with category lookup
-     * 
-     * @param entity      The pricing item entity
-     * @param categoryMap Map of categoryId -> MedicalCategory (for resolving
-     *                    service categories)
-     */
-    public static ProviderContractPricingItemResponseDto fromEntity(
-            ProviderContractPricingItem entity,
-            Map<Long, MedicalCategory> categoryMap) {
         if (entity == null) {
             return null;
         }
 
         ServiceSummaryDto serviceDto = null;
-        Long serviceCategoryId = null;
+        String serviceCategory = null;
         if (entity.getMedicalService() != null) {
             serviceDto = ServiceSummaryDto.builder()
                     .id(entity.getMedicalService().getId())
                     .code(entity.getMedicalService().getCode())
-                    .name(entity.getMedicalService().getName())
+                    .name(entity.getMedicalService().getName()) // Use Arabic name
                     .build();
-            serviceCategoryId = entity.getMedicalService().getCategoryId();
+            serviceCategory = entity.getMedicalService().getCategoryName();
         }
 
-        CategorySummaryDto categoryDto = null;
-        if (entity.getMedicalCategory() != null) {
-            categoryDto = CategorySummaryDto.builder()
-                    .id(entity.getMedicalCategory().getId())
-                    .code(entity.getMedicalCategory().getCode())
-                    .name(entity.getMedicalCategory().getName())
-                    .build();
+        // Determine effective category name
+        String effectiveCategoryName = entity.getCategoryName();
+        if (serviceCategory != null) {
+            effectiveCategoryName = serviceCategory;
         }
 
-        // Determine effective category:
-        // 1. Item's medicalCategory (override)
-        // 2. Service's category (from categoryMap lookup)
-        // 3. Item's categoryName field (for imported items)
         CategorySummaryDto effectiveCategoryDto = null;
-        String effectiveCategoryName = entity.getCategoryName(); // Fallback for imported items
-
-        if (entity.getMedicalCategory() != null) {
-            // Use item's override category
-            effectiveCategoryDto = categoryDto;
-            effectiveCategoryName = entity.getMedicalCategory().getName();
-        } else if (serviceCategoryId != null && categoryMap != null && categoryMap.containsKey(serviceCategoryId)) {
-            // Lookup category from service's categoryId
-            MedicalCategory serviceCategory = categoryMap.get(serviceCategoryId);
+        if (effectiveCategoryName != null) {
             effectiveCategoryDto = CategorySummaryDto.builder()
-                    .id(serviceCategory.getId())
-                    .code(serviceCategory.getCode())
-                    .name(serviceCategory.getName())
+                    .name(effectiveCategoryName)
                     .build();
-            effectiveCategoryName = serviceCategory.getName();
         }
 
         // Get display name: prefer medical service name, fallback to serviceName field
         String displayServiceName = entity.getServiceName();
-        if (entity.getMedicalService() != null && entity.getMedicalService().getName() != null) {
-            displayServiceName = entity.getMedicalService().getName();
+        if (entity.getMedicalService() != null) {
+             displayServiceName = entity.getMedicalService().getName();
         }
 
         return ProviderContractPricingItemResponseDto.builder()
@@ -146,8 +111,8 @@ public class ProviderContractPricingItemResponseDto {
                 .serviceName(displayServiceName)
                 .serviceCode(entity.getServiceCode())
                 .categoryName(effectiveCategoryName)
+                .specialty(entity.getSpecialty() != null ? entity.getSpecialty() : (entity.getMedicalService() != null ? entity.getMedicalService().getSpecialty() : null))
                 .quantity(entity.getQuantity())
-                .medicalCategory(categoryDto)
                 .effectiveCategory(effectiveCategoryDto)
                 .basePrice(entity.getBasePrice() != null ? entity.getBasePrice() : java.math.BigDecimal.ZERO)
                 .contractPrice(
@@ -188,7 +153,6 @@ public class ProviderContractPricingItemResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CategorySummaryDto {
-        private Long id;
         private String code;
         private String name;
     }

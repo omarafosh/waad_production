@@ -125,7 +125,6 @@ public class PreAuthorizationService {
 
         // ═══════════════════════════════════════════════════════════════════════════
         // STEP 3: Validate MedicalService (ARCHITECTURAL LAW: No free-text services)
-        // ═══════════════════════════════════════════════════════════════════════════
         MedicalService service = medicalServiceRepository.findById(dto.getMedicalServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "ARCHITECTURAL VIOLATION: Medical Service not found with ID: " + dto.getMedicalServiceId() + 
@@ -188,8 +187,8 @@ public class PreAuthorizationService {
 
         // Determine service type from category or use default
         String serviceType = "MEDICAL";
-        if (service.getCategoryId() != null) {
-            serviceType = "CATEGORY_" + service.getCategoryId();
+        if (service.getCategoryName() != null) {
+            serviceType = "CATEGORY_" + service.getCategoryName();
         }
 
         PreAuthorization preAuth = PreAuthorization.builder()
@@ -202,7 +201,7 @@ public class PreAuthorizationService {
                 .serviceCode(service.getCode())      // Denormalized snapshot
                 .serviceName(service.getName())      // Denormalized snapshot
                 .serviceType(serviceType)            // Legacy column (required by database)
-                .serviceCategoryId(service.getCategoryId())
+                .serviceCategory(service.getCategoryName())
                 .requestDate(requestDate)
                 .expectedServiceDate(requestDate)    // Default: same as request date
                 .expiryDate(expiryDate)
@@ -805,7 +804,7 @@ public class PreAuthorizationService {
                 .medicalServiceId(service != null ? service.getId() : null)
                 .serviceCode(preAuth.getServiceCode())
                 .serviceName(service != null ? service.getName() : null)
-                .serviceCategoryId(preAuth.getServiceCategoryId())
+                .serviceCategory(preAuth.getServiceCategory())
                 .requiresPA(preAuth.getRequiresPA())
                 // Diagnosis
                 .diagnosisCode(preAuth.getDiagnosisCode())

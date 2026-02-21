@@ -17,7 +17,7 @@ public class MedicalPackageDTO {
     private String code;
     private String name;
     private String description;
-    private Set<Long> serviceIds;
+    private java.util.Set<Long> serviceIds;
     private java.math.BigDecimal totalCoverageLimit;
     private Boolean active;
 }

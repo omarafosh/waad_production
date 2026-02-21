@@ -18,7 +18,22 @@ export default function GuestGuard({ children }) {
     // CRITICAL: Only redirect when we KNOW user is authenticated
     // Do NOT redirect during INITIALIZING
     if (authStatus === AUTH_STATUS.AUTHENTICATED) {
-      navigate(location?.state?.from ? location?.state?.from : APP_DEFAULT_PATH, {
+      const from = location?.state?.from || APP_DEFAULT_PATH;
+
+      // Security: Prevent Open Redirect to external domains
+      // 1. Must start with /
+      // 2. Must NOT start with // (protocol-relative)
+      // 3. Must NOT contain special encoded characters or protocol markers
+      const isValidInternalPath =
+        from.startsWith('/') &&
+        !from.startsWith('//') &&
+        !from.includes('\\') &&
+        !from.includes('://') &&
+        !/^[a-z0-9]+:/i.test(from); // No data:, javascript:, etc.
+
+      const safeFrom = isValidInternalPath ? from : APP_DEFAULT_PATH;
+
+      navigate(safeFrom, {
         state: {
           from: ''
         },

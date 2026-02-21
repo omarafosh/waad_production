@@ -63,7 +63,7 @@ import MappingWizard from './MappingWizard';
 // Custom Hooks
 import useTableState from 'hooks/useTableState';
 import { useAllMedicalCategories } from 'hooks/useMedicalCategories';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import SmartClassificationModal from './SmartClassificationModal';
 
 // Contexts
@@ -93,7 +93,7 @@ const MedicalCatalogList = () => {
     const fileInputRef = useRef(null);
     const { enqueueSnackbar } = useSnackbar();
     const { refreshKey } = useTableRefresh();
-    const { settings } = useCompanySettings();
+    const { settings } = useSystemSettings(); // Changed
 
     // ========================================
     // LOCAL STATE
@@ -262,33 +262,34 @@ const MedicalCatalogList = () => {
     // ========================================
     // STYLES
     // ========================================
-    const headerButtonStyle = (type) => {
+    const headerButtonStyle = (type, theme) => {
         const isExcel = type === 'excel';
         const isDelete = type === 'delete';
         const isAdd = type === 'add';
-        const brandColor = '#008e92';
-        const color = isExcel ? '#1b5e20' : (isDelete ? '#d32f2f' : brandColor);
+        const isWizard = type === 'wizard';
+        const color = isExcel ? theme.palette.success.main : (isDelete ? theme.palette.error.main : theme.palette.primary.main);
 
         return {
-            minWidth: '155px',
-            color: color || '#fff',
+            minWidth: '140px',
+            color: color,
             borderColor: color,
             '&:hover': {
-                backgroundColor: color ? `${color}10` : undefined,
+                backgroundColor: `${color}10`,
                 borderColor: color,
                 color: isDelete && showDeleted ? '#fff' : color
             },
             '&.MuiButton-contained': {
                 color: '#fff',
-                backgroundColor: isAdd ? brandColor : undefined,
+                backgroundColor: color,
                 '&:hover': {
-                    backgroundColor: isAdd ? '#00797c' : undefined
+                    backgroundColor: isAdd || isWizard ? theme.palette.primary.dark : theme.palette.success.dark
                 }
             },
-            fontWeight: 700,
+            fontWeight: theme.typography.button.fontWeight,
+            fontSize: theme.typography.button.fontSize,
             whiteSpace: 'nowrap',
-            px: 1.5,
-            height: '40px'
+            px: 2,
+            height: '38px'
         };
     };
 
@@ -313,42 +314,32 @@ const MedicalCatalogList = () => {
                 minWidth: 200
             },
             {
-                accessorKey: 'categoryName',
-                header: 'التصنيف',
-                minWidth: 180,
+                id: 'categories',
+                header: 'التصنيفات والارتباطات',
+                minWidth: 250,
                 cell: ({ row }) => {
-                    const currentCategoryId = row.original.categoryId;
-
+                    const mappings = row.original.categories || [];
+                    if (mappings.length === 0) {
+                        return <Typography variant="caption" color="error">غير مصنف</Typography>;
+                    }
                     return (
-                        <FormControl variant="standard" size="small" fullWidth sx={{ minWidth: 120 }}>
-                            <Select
-                                value={currentCategoryId || ''}
-                                onChange={(e) => {
-                                    const newVal = e.target.value;
-                                    if (newVal !== currentCategoryId) {
-                                        setReclassifyModal({
-                                            open: true,
-                                            service: row.original,
-                                            newCategoryId: newVal
-                                        });
-                                    }
-                                }}
-                                displayEmpty
-                                disableUnderline
-                                onClick={(e) => e.stopPropagation()} // Prevent row click
-                                sx={{
-                                    fontSize: '0.875rem',
-                                    '& .MuiSelect-select': { py: 0.5, px: 0 },
-                                    fontWeight: 500
-                                }}
-                            >
-                                {categories?.map((cat) => (
-                                    <MenuItem key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                            {mappings.map((m, idx) => (
+                                <Tooltip key={idx} title={`Context: ${m.context}`}>
+                                    <Chip
+                                        label={m.categoryName}
+                                        size="small"
+                                        variant={m.primary ? "filled" : "outlined"}
+                                        color={m.primary ? "primary" : "secondary"}
+                                        sx={{
+                                            fontSize: '0.7rem',
+                                            height: '20px',
+                                            '& .MuiChip-label': { px: 1 }
+                                        }}
+                                    />
+                                </Tooltip>
+                            ))}
+                        </Stack>
                     );
                 }
             },
@@ -381,7 +372,7 @@ const MedicalCatalogList = () => {
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="روابط المزودين">
-                            <IconButton size="small" sx={{ color: '#008e92' }} onClick={() => handleViewMappings(row.original.id)}>
+                            <IconButton size="small" color="primary" onClick={() => handleViewMappings(row.original.id)}>
                                 <AccountTreeIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -439,7 +430,7 @@ const MedicalCatalogList = () => {
                                 variant="contained"
                                 startIcon={<AutoFixHighIcon />}
                                 onClick={handleOpenWizard}
-                                sx={{ bgcolor: '#008e92', '&:hover': { bgcolor: '#007a7e' }, fontWeight: 'bold' }}
+                                sx={(theme) => headerButtonStyle('wizard', theme)}
                             >
                                 معالج الربط الذكي
                             </Button>
@@ -447,20 +438,26 @@ const MedicalCatalogList = () => {
                             {/* View/Action Group */}
                             <Button
                                 variant={showDeleted ? 'contained' : 'outlined'}
-                                color="error"
                                 startIcon={showDeleted ? <VisibilityIcon /> : <DeleteIcon />}
                                 onClick={() => setShowDeleted(!showDeleted)}
-                                sx={{ fontWeight: 'bold' }}
+                                sx={(theme) => ({
+                                    ...headerButtonStyle('delete', theme),
+                                    backgroundColor: showDeleted ? theme.palette.error.main : 'transparent',
+                                    color: showDeleted ? theme.palette.error.contrastText : theme.palette.error.main,
+                                    '&:hover': {
+                                        backgroundColor: showDeleted ? theme.palette.error.dark : `${theme.palette.error.main}10`,
+                                        color: showDeleted ? theme.palette.error.contrastText : theme.palette.error.main,
+                                    }
+                                })}
                             >
                                 {showDeleted ? 'العودة للقائمة النشطة' : 'المحذوفات'}
                             </Button>
 
                             <Button
                                 variant="contained"
-                                color="primary"
                                 startIcon={<AddIcon />}
                                 onClick={() => navigate('/medical-catalog/create')}
-                                sx={{ fontWeight: 'bold', px: 3 }}
+                                sx={(theme) => headerButtonStyle('add', theme)}
                             >
                                 إضافة خدمة جديدة
                             </Button>
@@ -482,6 +479,11 @@ const MedicalCatalogList = () => {
                             sx={{ minWidth: 200, flexGrow: 1 }}
                             InputProps={{
                                 sx: { fontSize: '1rem', height: 36 },
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon color="action" />
+                                    </InputAdornment>
+                                ),
                                 endAdornment: localSearchTerm && (
                                     <InputAdornment position="end">
                                         <IconButton size="small" onClick={() => setLocalSearchTerm('')}>
@@ -599,16 +601,13 @@ const MedicalCatalogList = () => {
                 }}
             />
 
-            {/* Smart Reclassification Modal */}
-            <SmartClassificationModal
-                open={reclassifyModal.open}
-                onClose={() => setReclassifyModal({ ...reclassifyModal, open: false })}
-                service={reclassifyModal.service}
-                categories={categories}
-                initialNewCategoryId={reclassifyModal.newCategoryId}
-                onSuccess={() => {
-                    refetch();
-                }}
+            {/* Hidden Input for Excel Import */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept=".xlsx, .xls"
+                onChange={handleFileChange}
             />
         </Box>
     );

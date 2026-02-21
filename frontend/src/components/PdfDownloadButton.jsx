@@ -39,23 +39,23 @@ const downloadPdfReport = async (module, filters = {}, sorting = []) => {
   try {
     // Build query parameters
     const params = new URLSearchParams();
-    
+
     // Add filters
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== '' && value !== null && value !== undefined) {
         params.append(key, value);
       }
     });
-    
+
     // Add sorting
     if (sorting.length > 0) {
       const sort = sorting[0];
       params.append('sort', `${sort.id},${sort.desc ? 'desc' : 'asc'}`);
     }
-    
+
     // Backend endpoint
     const endpoint = `/api/reports/${module}/pdf?${params.toString()}`;
-    
+
     // Fetch PDF
     const response = await fetch(endpoint, {
       method: 'GET',
@@ -63,33 +63,42 @@ const downloadPdfReport = async (module, filters = {}, sorting = []) => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error('فشل تحميل التقرير');
     }
-    
+
     // Get filename from response headers
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = `${module}_report.pdf`;
-    
+
     if (contentDisposition) {
       const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
       if (matches != null && matches[1]) {
         filename = matches[1].replace(/['"]/g, '');
       }
     }
-    
+
     // Create blob and download
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    // Security: Only allow blob URLs and sanitize filename to prevent DOM XSS
+    if (url && url.startsWith('blob:')) {
+      const link = document.createElement('a');
+      const safeUrl = url.startsWith('blob:') ? url : 'about:blank';
+      link.href = safeUrl;
+
+      const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+      link.download = safeFilename;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     window.URL.revokeObjectURL(url);
-    
+
     return true;
   } catch (error) {
     console.error('[PdfDownload] Error:', error);
@@ -101,9 +110,9 @@ const downloadPdfReport = async (module, filters = {}, sorting = []) => {
 // MAIN COMPONENT
 // ============================================================================
 
-const PdfDownloadButton = ({ 
-  module, 
-  filters = {}, 
+const PdfDownloadButton = ({
+  module,
+  filters = {},
   sorting = [],
   label = 'طباعة PDF',
   variant = 'outlined',
@@ -114,10 +123,10 @@ const PdfDownloadButton = ({
 
   const handleDownload = async () => {
     setIsLoading(true);
-    
+
     try {
       await downloadPdfReport(module, filters, sorting);
-      
+
       openSnackbar({
         message: 'تم تحميل التقرير بنجاح',
         variant: 'success'

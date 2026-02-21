@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -23,10 +24,10 @@ import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimStatus;
 import com.waad.tba.modules.claim.entity.ClaimLine;
 import com.waad.tba.modules.claim.repository.ClaimRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
+import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.entity.Member.Gender;
 import com.waad.tba.modules.member.entity.Member.MemberType;
@@ -52,7 +53,7 @@ import com.waad.tba.modules.rbac.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Component
+// @Component // Disabled as requested by user to stop seeding trial data
 @Profile("!test") // Do not run in test environment
 @RequiredArgsConstructor
 @Slf4j
@@ -86,17 +87,17 @@ public class ModulesDataSeeder implements CommandLineRunner {
         log.info("🚀 Seeding System Data...");
 
         // 0. Base Taxonomy
-        MedicalCategory consultationsCat = createCategory("Consultations", "استشارات", "CAT-CONS");
-        MedicalCategory diagnosticsCat = createCategory("Diagnostics", "تشخيص وأشعة", "CAT-DIAG");
+        String consultationsCat = "Consultations";
+        String diagnosticsCat = "Diagnostics";
 
         // 1. Create Organizations
         Organization insuranceOrg = createOrg("Gulf Insurance Group", "GIG", "INSURANCE_COMPANY");
         Organization employerOrg = createOrg("Tech Solutions Ltd", "TECH-SOL", "EMPLOYER");
 
         // 2. Medical Services
-        MedicalService consultation = createService("GP Consultation", "استشارة عامة", "GP-001", consultationsCat.getId());
-        MedicalService xRay = createService("Chest X-Ray", "أشعة صدر", "IMG-001", diagnosticsCat.getId());
-        MedicalService bloodTest = createService("CBC Blood Test", "تحليل دم شامل", "LAB-001", diagnosticsCat.getId());
+        MedicalService consultation = createService("GP Consultation", "استشارة عامة", "GP-001", consultationsCat);
+        MedicalService xRay = createService("Chest X-Ray", "أشعة صدر", "IMG-001", diagnosticsCat);
+        MedicalService bloodTest = createService("CBC Blood Test", "تحليل دم شامل", "LAB-001", diagnosticsCat);
 
         // 3. Benefit Policy
         BenefitPolicy policy = createPolicy(insuranceOrg, employerOrg);
@@ -130,21 +131,16 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .build());
     }
 
-    private MedicalCategory createCategory(String nameEn, String name, String code) {
-        if (medicalCategoryRepository.existsByCode(code)) return medicalCategoryRepository.findByCode(code).get();
-        return medicalCategoryRepository.save(MedicalCategory.builder()
-                .name(name)
-                .code(code)
-                .active(true)
-                .build());
-    }
-
-    private MedicalService createService(String nameEn, String nameAr, String code, Long categoryId) {
-        if (medicalServiceRepository.existsByCode(code)) return medicalServiceRepository.findByCode(code).get();
-        return medicalServiceRepository.save(MedicalService.builder()
-                .name(nameAr).code(code)
-                .categoryId(categoryId)
-                .active(true).build());
+    private MedicalService createService(String nameEn, String nameAr, String code, String category) {
+        return medicalServiceRepository.findByCode(code)
+                .orElseGet(() -> medicalServiceRepository.save(MedicalService.builder()
+                        .name(nameAr)
+                        .nameEn(nameEn)
+                        .code(code)
+                        .categoryName(category)
+                        .isMaster(true)
+                        .active(true)
+                        .build()));
     }
 
     private BenefitPolicy createPolicy(Organization insurance, Organization employer) {
@@ -160,7 +156,6 @@ public class ModulesDataSeeder implements CommandLineRunner {
                 .build());
     }
     
-    // Quick fix: Assuming logic for policy/rules creation
     private void createRule(BenefitPolicy policy, MedicalService service, double coverage, double copay) {
          benefitPolicyRuleRepository.save(BenefitPolicyRule.builder()
                 .benefitPolicy(policy)
@@ -184,7 +179,6 @@ public class ModulesDataSeeder implements CommandLineRunner {
         providerContractRepository.save(ProviderContract.builder()
                 .provider(provider)
                 .contractCode("CON-" + provider.getId() + "-" + System.currentTimeMillis())
-                //.insuranceOrganization(insurance) // Relationship check required
                 .startDate(LocalDate.now().minusMonths(1))
                 .active(true)
                 .build());
@@ -244,24 +238,37 @@ public class ModulesDataSeeder implements CommandLineRunner {
     }
 
     private void createClaim(Visit visit, PreAuthorization preAuth, Provider provider, MedicalService service) {
+        log.info("📝 Creating sample claim for visit: {}", visit.getId());
+        
+        // 1. Create the line first
+        ClaimLine line = ClaimLine.builder()
+                .medicalService(service)
+                .quantity(1)
+                .unitPrice(new BigDecimal("150.00"))
+                .serviceCode(service.getCode())
+                .serviceName(service.getName())
+                .serviceCategory(service.getCategoryName())
+                .requiresPA(false)
+                .build();
+
+        // 2. Create the claim with the line explicitly in the list
         Claim claim = Claim.builder()
                 .visit(visit)
-                .preAuthorization(preAuth) // Optional if preAuth is linked
+                .preAuthorization(preAuth)
                 .member(visit.getMember())
                 .providerId(provider.getId())
                 .providerName(provider.getName())
                 .status(ClaimStatus.SUBMITTED)
                 .requestedAmount(new BigDecimal("150.00"))
                 .serviceDate(LocalDate.now())
+                .lines(new java.util.ArrayList<>(java.util.Collections.singletonList(line)))
+                .active(true)
                 .build();
         
-        ClaimLine line = ClaimLine.builder()
-                .medicalService(service)
-                .quantity(1)
-                .unitPrice(new BigDecimal("150.00"))
-                .build();
+        // 3. Ensure bidirectional link (Required for JPA)
+        line.setClaim(claim);
         
-        claim.addLine(line);
         claimRepository.save(claim);
+        log.info("✅ Sample claim created with ID: {}", claim.getId());
     }
 }

@@ -14,11 +14,13 @@
  * @updated 2026-01-31 (Arabic support request)
  */
 
+import { getNumberLocale } from './locale-helper';
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-export const LOCALE = 'ar-SA';
+export const LOCALE = getNumberLocale(); // Changed to dynamic call
 export const CURRENCY_CODE = 'LYD';
 export const CURRENCY_SYMBOL = 'د.ل';
 

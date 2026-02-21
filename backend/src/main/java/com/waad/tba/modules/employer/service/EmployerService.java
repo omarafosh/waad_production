@@ -73,7 +73,7 @@ public class EmployerService {
             Boolean hasPolicy) {
         
         // 1. Build Specification
-        org.springframework.data.jpa.domain.Specification<Organization> spec = org.springframework.data.jpa.domain.Specification.where(null);
+        org.springframework.data.jpa.domain.Specification<Organization> spec = org.springframework.data.jpa.domain.Specification.allOf();
 
         // Filter: Archived (Default specific logic)
         boolean isArchived = Boolean.TRUE.equals(deleted);
@@ -137,6 +137,7 @@ public class EmployerService {
      * @deprecated Use getAll(Boolean deleted) instead
      */
     @Transactional(readOnly = true)
+    @Deprecated
     public List<EmployerResponseDto> getAllIncludingArchived() {
         return organizationRepository.findAll()
                 .stream()

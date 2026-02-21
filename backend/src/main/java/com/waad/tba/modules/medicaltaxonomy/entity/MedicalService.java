@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Medical Service Entity (Reference Data)
@@ -46,7 +48,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @lombok.experimental.SuperBuilder
 @org.hibernate.annotations.SQLDelete(sql = "UPDATE medical_services SET active = false WHERE id = ?")
-@org.hibernate.annotations.Where(clause = "active = true")
+@org.hibernate.annotations.SQLRestriction("active = true")
 public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Id
@@ -54,10 +56,10 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
     private Long id;
 
     /**
-     * Unique business identifier (immutable)
-     * Examples: "SRV-CARDIO-001", "SRV-LAB-CBC", "SRV-IMAGING-XRAY"
+     * كود الخدمة الموحد (Unique business identifier)
+     * Examples: "SRV-LAB-CBC", "SRV-CONS-001"
      */
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 255)
     private String code;
 
     @Enumerated(EnumType.STRING)
@@ -66,42 +68,20 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
     private MedicalServiceStatus status = MedicalServiceStatus.ACTIVE;
 
     /**
-     * Service name (Arabic)
+     * اسم الخدمة بالعربي
      */
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "name_ar", nullable = false, length = 200)
     private String name;
 
     /**
-     * Service name (English) - New for Master Catalog
+     * اسم الخدمة بالإنجليزي
      */
     @Column(name = "name_en", length = 200)
     private String nameEn;
 
     /**
-     * Flag indicating if this is a Master Service (Reference)
-     * Default is true for existing services. 
-     * Mapping services will have this as false.
-     */
-    @Column(name = "is_master", nullable = false)
-    @Builder.Default
-    private boolean isMaster = true;
-
-    // Explicit accessors to resolve Lombok boolean naming conflicts across versions
-    public boolean isMaster() {
-        return isMaster;
-    }
-
-    public void setIsMaster(boolean isMaster) {
-        this.isMaster = isMaster;
-    }
-
-    /**
-     * Reference to medical category
-     * 
-     * ARCHITECTURAL RULE: This field is MANDATORY for ACTIVE services
-     * - Links service to classification hierarchy
-     * - Required for coverage fallback resolution
-     * - Can be null ONLY if status = DRAFT
+     * رابط التصنيف الطبي
+     * ARCHITECTURAL RULE: إلزامي للخدمات لتحديد قواعد التغطية
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", insertable = false, updatable = false)
@@ -111,44 +91,52 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
     private Long categoryId;
 
     /**
-     * Service description (optional)
+     * قائمة التصنيفات المرتبطة بالخدمة (دعم تعدد التصنيفات والربط المتعدد)
+     * REFACTORED 2026-02-18
+     */
+    @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ServiceCategoryMapping> categoryMappings = new ArrayList<>();
+
+    /**
+     * التصنيف (نصي - للتوافق مع الأنظمة القديمة)
+     */
+    @Column(name = "category", length = 255)
+    private String categoryName;
+
+    /**
+     * التصنيف الفرعي (نصي)
+     */
+    @Column(name = "sub_category", length = 255)
+    private String subCategory;
+
+    /**
+     * التخصص (نصي)
+     */
+    @Column(name = "specialty", length = 255)
+    private String specialty;
+
+    /**
+     * هل هذه الخدمة هي الخدمة الرئيسية (Master)
+     */
+    @Column(name = "is_master", nullable = false)
+    @Builder.Default
+    private Boolean isMaster = true;
+
+    /**
+     * وصف الخدمة (اختياري)
      */
     @Column(name = "description", length = 500)
     private String description;
 
     /**
-     * [REFERENCE ONLY] Base/reference price
-     * 
-     * @deprecated This field is for reference only. 
-     * Actual price must come from ProviderContract.contractPrice
-     * 
-     * Purpose:
-     * - Baseline for price estimation
-     * - Out-of-network fallback
-     * - Reporting and analytics
-     * 
-     * NOT used for:
-     * - Final claim calculation (use ProviderContract rate)
-     * - Coverage calculation (use BenefitPolicyRule)
+     * السعر الأساسي الاسترشادي (Reference only)
+     * ARCHITECTURAL RULE: This is for estimation and reporting only.
+     * Actual price MUST come from ProviderContract.
      */
-    @Deprecated(since = "2026-01-22", forRemoval = false)
     @Column(name = "base_price", precision = 10, scale = 2)
-    private BigDecimal basePrice;
-
-    /**
-     * [DEPRECATED] Flag indicating if service requires pre-authorization
-     * 
-     * @deprecated PA requirement is now determined ONLY by BenefitPolicyRule.
-     * This field remains for backward compatibility but should not be used
-     * for business logic.
-     * 
-     * Use BenefitPolicyCoverageService.requiresPreApproval() instead.
-     */
-    @Deprecated(since = "2026-01-22", forRemoval = false)
-    @Column(name = "requires_pa", nullable = false)
-    private boolean requiresPA = true;
-
-    // active, createdAt, updatedAt are inherited from SoftDeleteEntity
+    @Builder.Default
+    private BigDecimal basePrice = BigDecimal.ZERO;
 
     @Override
     protected void onCreate() {
@@ -163,43 +151,29 @@ public class MedicalService extends com.waad.tba.common.entity.SoftDeleteEntity 
     }
 
     /**
-     * Validate architectural rules before persist/update.
-     * These rules are NON-NEGOTIABLE.
+     * التحقق من القواعد المعمارية (Non-negotiable)
      */
     private void validateArchitecturalRules() {
-        // RULE 1: Category is mandatory for ACTIVE services
-        if ((status == MedicalServiceStatus.ACTIVE || active) && categoryId == null) {
-            throw ArchitecturalViolationException.serviceWithoutCategory(code);
+        // القاعدة: التصنيف إلزامي للخدمات النشطة لضمان عمل محرك التغطية
+        // تم التحديث لدعم التحقق من القائمة الجديدة أيضاً
+        boolean hasCategory = categoryId != null || categoryName != null || 
+                             (categoryMappings != null && !categoryMappings.isEmpty());
+                             
+        if ((status == MedicalServiceStatus.ACTIVE || active) && !hasCategory) {
+            throw com.waad.tba.common.exception.ArchitecturalViolationException.serviceWithoutCategory(code);
         }
         
-        // Auto-correct: If status is DRAFT, force active = false
+        // إذا كانت الخدمة مسودة (DRAFT)، يتم تعطيل نشاطها تلقائياً
         if (status == MedicalServiceStatus.DRAFT) {
             this.active = false;
         }
     }
 
     /**
-     * Get the category ID (non-null guaranteed by architectural rule)
+     * Compatibility helper to support isActive() name from old code
      */
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    /**
-     * Get base price (reference only - not for calculation)
-     * @deprecated Use ProviderContract.contractPrice for actual pricing
-     */
-    @Deprecated
-    public BigDecimal getBasePrice() {
-        return basePrice;
-    }
-
-    /**
-     * Check if PA is required (deprecated - use policy rules instead)
-     * @deprecated Use BenefitPolicyCoverageService.requiresPreApproval()
-     */
-    @Deprecated
-    public boolean isRequiresPA() {
-        return requiresPA;
+    public boolean isActive() {
+        return active;
     }
 }
+

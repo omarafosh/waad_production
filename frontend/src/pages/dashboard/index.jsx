@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { getAppLocale } from 'utils/locale-helper';
 import { useNavigate } from 'react-router-dom';
 
 // material-ui
@@ -20,9 +21,9 @@ import {
   Skeleton,
   IconButton,
   Tooltip,
-  useTheme,
   alpha
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 // Icons
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -264,7 +265,7 @@ const RecentClaimsTable = ({ claims, loading, onViewClaim }) => {
 
   const formatDate = (date) => {
     if (!date) return '—';
-    return new Date(date).toLocaleDateString('ar-SA', {
+    return new Date(date).toLocaleDateString(getAppLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'

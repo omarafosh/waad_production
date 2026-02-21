@@ -33,11 +33,18 @@ import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import LifecycleActionModal from 'components/common/lifecycle/LifecycleActionModal';
 
 import MainCard from 'components/MainCard';
-import ModernPageHeader from 'components/tba/ModernPageHeader';
-import GenericDataTable from 'components/GenericDataTable';
+import { GenericDataTable, ModernPageHeader, RBACGuard } from 'components/tba';
 import TableErrorBoundary from 'components/TableErrorBoundary';
-import RBACGuard from 'components/tba/RBACGuard';
-import useTableState from 'hooks/useTableState';
+
+// Constants
+import { PERMISSIONS } from 'constants/permissions.constants';
+
+// Hooks
+import { useTableState } from 'hooks/useTableState';
+
+// Style Utils
+import { headerButtonStyle } from 'utils/styleUtils';
+
 import { getBenefitPolicies, deleteBenefitPolicy, restoreBenefitPolicy, activateBenefitPolicy } from 'services/api/benefit-policies.service';
 
 const QUERY_KEY = 'benefit-policies';
@@ -78,9 +85,11 @@ const BenefitPoliciesList = () => {
   const savedPageSize = localStorage.getItem('benefitPolicies_pageSize');
 
   const tableState = useTableState({
-    initialPageSize: savedPageSize ? parseInt(savedPageSize, 10) : 8,
+    initialPageSize: savedPageSize ? parseInt(savedPageSize, 10) : 10,
+    allowedPageSizes: [10, 25, 50, 100],
     defaultSort: { field: 'createdAt', direction: 'desc' },
-    initialFilters: {}
+    initialFilters: {},
+    storageKey: 'benefitPolicies_pageSize'
   });
 
   // Save page size when it changes
@@ -291,9 +300,9 @@ const BenefitPoliciesList = () => {
 
             {/* Edit available for non-deleted (mostly Draft/Active) */}
             {!isDeleted && (
-              <RBACGuard requiredPermissions={['benefit_policies.update']}>
+              <RBACGuard requiredPermissions={[PERMISSIONS.BENEFIT_POLICY_EDIT]}>
                 <Tooltip title="تعديل">
-                  <IconButton size="small" color="info" onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original?.id); }}>
+                  <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleNavigateEdit(row.original?.id); }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -302,7 +311,7 @@ const BenefitPoliciesList = () => {
 
             {/* Standard Status Actions (Quick Activation) */}
             {!isDeleted && row.original.status === 'DRAFT' && (
-              <RBACGuard requiredPermissions={['benefit_policies.activate']}>
+              <RBACGuard requiredPermissions={[PERMISSIONS.BENEFIT_POLICY_ACTIVATE]}>
                 <Tooltip title="تفعيل">
                   <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); handleActivate(row.original?.id); }}>
                     <PolicyIcon fontSize="small" />
@@ -312,7 +321,7 @@ const BenefitPoliciesList = () => {
             )}
 
             {/* Hub: Lifecycle & Deletion Management */}
-            <RBACGuard requiredPermissions={['benefit_policies.delete', 'benefit_policies.update']}>
+            <RBACGuard requiredPermissions={[PERMISSIONS.BENEFIT_POLICY_DELETE, PERMISSIONS.BENEFIT_POLICY_EDIT]}>
               <Tooltip title={isDeleted ? "استعادة / إدارة" : "إدارة الحالة والحذف"}>
                 <IconButton
                   size="small"
@@ -324,21 +333,21 @@ const BenefitPoliciesList = () => {
               </Tooltip>
             </RBACGuard>
           </Stack>
-        );
+        )
       }
     }
-  ], [handleNavigateView, handleNavigateEdit, handleDelete, handleRestore]);
+  ], [handleNavigateView, handleNavigateEdit, handleDelete, handleRestore, handleActivate, handleOpenLifecycle]);
 
   return (
-    <RBACGuard requiredPermissions={['benefit_policies.view']}>
-      <Box>
+    <RBACGuard requiredPermissions={[PERMISSIONS.BENEFIT_POLICY_VIEW]}>
+      <Box sx={{ height: 'calc(100vh - 130px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <ModernPageHeader
           title="سياسات المنافع"
           subtitle="إدارة سياسات المنافع والتغطية التأمينية"
-          icon={PolicyIcon}
-          breadcrumbs={[{ label: 'الرئيسية', path: '/dashboard' }, { label: 'سياسات المنافع' }]}
+          icon={<PolicyIcon />}
+          breadcrumbs={[{ label: 'الرئيسية', path: '/' }, { label: 'سياسات المنافع' }]}
           actions={
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center">
               <IconButton onClick={() => queryClient.invalidateQueries({ queryKey: [QUERY_KEY] })} color="primary">
                 <RefreshIcon />
               </IconButton>
@@ -349,29 +358,48 @@ const BenefitPoliciesList = () => {
                 onChange={() => setShowDeleted(!showDeleted)}
                 color="warning"
                 size="small"
-                sx={{ borderRadius: 2, px: 2 }}
+                sx={(theme) => ({
+                  borderRadius: 2,
+                  px: 2,
+                  height: 38,
+                  borderColor: theme.palette.warning.main,
+                  color: showDeleted ? theme.palette.warning.contrastText : theme.palette.warning.main,
+                  backgroundColor: showDeleted ? theme.palette.warning.main : 'transparent',
+                  '&:hover': {
+                    backgroundColor: showDeleted ? theme.palette.warning.dark : `${theme.palette.warning.main}10`,
+                  }
+                })}
               >
-                <DeleteSweepIcon sx={{ mr: 1 }} />
-                <Typography variant="body2" component="span">
-                  {showDeleted ? 'إخفاء المحذوفات' : 'عرض المحذوفات'}
+                <DeleteSweepIcon fontSize="small" sx={{ mr: 1 }} />
+                <Typography variant="body2" fontWeight={600}>
+                  {showDeleted ? 'قائمة الوثائق' : 'المحذوفات'}
                 </Typography>
               </ToggleButton>
 
-              <RBACGuard requiredPermissions={['benefit_policies.create']}>
+              <RBACGuard requiredPermissions={[PERMISSIONS.BENEFIT_POLICY_CREATE]}>
                 <Button
                   variant="contained"
-                  startIcon={<Box component={AddIcon} />}
+                  startIcon={<AddIcon />}
                   onClick={handleNavigateAdd}
+                  sx={(theme) => headerButtonStyle('add', theme)}
                 >
-                  إنشاء سياسة جديدة
+                  إنشاء سياسة
                 </Button>
               </RBACGuard>
             </Stack>
           }
+          sx={{ mb: 1.5 }}
         />
-        <MainCard>
+
+        <MainCard content={false} sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 2
+        }}>
           {isError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ m: 2 }}>
               فشل تحميل البيانات: {error?.response?.data?.message || error?.message || 'خطأ غير معروف'}
             </Alert>
           )}
@@ -386,11 +414,9 @@ const BenefitPoliciesList = () => {
               enableSorting={true}
               enablePagination={true}
               stickyHeader={true}
-              minHeight={400}
-              maxHeight="calc(100vh - 300px)"
               onRowClick={(row) => handleNavigateView(row.id)}
               emptyMessage="لا توجد سياسات"
-              rowsPerPageOptions={[8, 16, 24, 32, 40, 50, 100]}
+              rowsPerPageOptions={[10, 25, 50, 100]}
             />
           </TableErrorBoundary>
         </MainCard>

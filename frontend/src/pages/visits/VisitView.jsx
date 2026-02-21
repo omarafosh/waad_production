@@ -1,4 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import RBACGuard from 'components/tba/RBACGuard';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -136,7 +138,7 @@ const VisitView = () => {
   const visitStatus = getVisitStatus(visit);
   const networkTier = getNetworkTier(visit?.provider);
   const memberName = visit?.member?.fullName ?? '—';
-  const providerName = visit?.provider?.name ?? '—';
+  const providerName = visit?.providerName ?? visit?.provider?.name ?? '—';
   const services = Array.isArray(visit?.services) ? visit.services : [];
 
   // Enhanced InfoRow with icon support and defensive coding
@@ -190,7 +192,7 @@ const VisitView = () => {
             </Box>
           </Stack>
         }
-        subtitle={`${memberName} - ${visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString('ar-SA', { dateStyle: 'long' }) : '—'}`}
+        subtitle={`${memberName} - ${visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString(getAppLocale(), { dateStyle: 'long' }) : '—'}`}
         icon={LocalHospitalIcon}
         breadcrumbs={breadcrumbs}
         actions={
@@ -198,9 +200,11 @@ const VisitView = () => {
             <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/visits')}>
               رجوع
             </Button>
-            <Button variant="contained" startIcon={<EditIcon />} onClick={() => navigate(`/visits/edit/${id}`)}>
-              تعديل
-            </Button>
+            <RBACGuard permission="CAN_EDIT_VISIT">
+              <Button variant="contained" startIcon={<EditIcon />} onClick={() => navigate(`/visits/edit/${id}`)}>
+                تعديل
+              </Button>
+            </RBACGuard>
           </Stack>
         }
       />
@@ -219,9 +223,10 @@ const VisitView = () => {
           >
             <InfoRow
               label="تاريخ الزيارة"
-              value={visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString('ar-SA', { dateStyle: 'long' }) : '—'}
+              value={visit?.visitDate ? new Date(visit.visitDate).toLocaleDateString(getAppLocale(), { dateStyle: 'long' }) : '—'}
               icon={CalendarMonthIcon}
             />
+            {visit?.specialty && <InfoRow label="التخصص" value={visit.specialty} icon={MedicalServicesIcon} />}
             {visit?.visitType && <InfoRow label="نوع الزيارة" value={VISIT_TYPE_LABELS_AR[visit.visitType] ?? visit.visitType} />}
             <InfoRow label="معرف الزيارة" value={visit?.id ?? '—'} />
           </MainCard>
@@ -255,7 +260,7 @@ const VisitView = () => {
             }
             contentSX={{ pt: 2 }}
           >
-            <InfoRow label="اسم مقدم الخدمة" value={visit?.provider?.name ?? '—'} icon={BusinessIcon} />
+            <InfoRow label="اسم مقدم الخدمة" value={providerName} icon={BusinessIcon} />
             <InfoRow label="معرف المقدم" value={visit?.providerId ?? visit?.provider?.id ?? '—'} />
             {/* Network Status */}
             <Box sx={{ mb: 2 }}>
@@ -299,6 +304,7 @@ const VisitView = () => {
                     <TableRow sx={{ bgcolor: 'grey.50' }}>
                       <TableCell sx={{ fontWeight: 600 }}>الرمز</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>اسم الخدمة</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>التخصص</TableCell>
                       <TableCell align="center" sx={{ fontWeight: 600 }}>
                         السعر
                       </TableCell>
@@ -312,6 +318,7 @@ const VisitView = () => {
                       <TableRow key={service?.id ?? idx}>
                         <TableCell>{service?.code ?? '—'}</TableCell>
                         <TableCell>{service?.name ?? '—'}</TableCell>
+                        <TableCell>{service?.specialty || service?.medicalService?.specialty || '—'}</TableCell>
                         <TableCell align="center">{typeof service?.price === 'number' ? `${service.price.toFixed(2)} د.ل` : '—'}</TableCell>
                         <TableCell align="center">
                           {service?.requiresApproval ? (
@@ -421,13 +428,13 @@ const VisitView = () => {
             <InfoRow
               label="تاريخ الإنشاء"
               value={
-                visit?.createdAt ? new Date(visit.createdAt).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+                visit?.createdAt ? new Date(visit.createdAt).toLocaleString(getAppLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—'
               }
             />
             <InfoRow
               label="آخر تحديث"
               value={
-                visit?.updatedAt ? new Date(visit.updatedAt).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+                visit?.updatedAt ? new Date(visit.updatedAt).toLocaleString(getAppLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—'
               }
             />
           </MainCard>

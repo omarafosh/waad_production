@@ -5,6 +5,7 @@ import ReactApexChart from 'react-apexcharts';
 import { useColorScheme } from '@mui/material/styles';
 import { ThemeMode } from 'config';
 import useConfig from 'hooks/useConfig';
+import { getAppLocale } from 'utils/locale-helper';
 
 /**
  * Line Chart: تطور المطالبات شهريًا
@@ -38,7 +39,8 @@ const ClaimsLineChart = ({ data, loading }) => {
       labels: {
         style: {
           colors: theme.palette.text.secondary,
-          fontFamily: fontFamily
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize // Scalable unit
         }
       }
     },
@@ -46,23 +48,25 @@ const ClaimsLineChart = ({ data, loading }) => {
       labels: {
         style: {
           colors: theme.palette.text.secondary,
-          fontFamily: fontFamily
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize // Scalable unit
         },
-        formatter: (val) => val.toLocaleString('ar-SA')
+        formatter: (val) => val.toLocaleString(getAppLocale())
       }
     },
     colors: [theme.palette.primary.main],
     tooltip: {
       theme: colorScheme === ThemeMode.DARK ? 'dark' : 'light',
       y: {
-        formatter: (val) => val.toLocaleString('ar-SA')
+        formatter: (val) => val.toLocaleString('ar-SA-u-nu-latn')
       }
     },
     legend: {
       show: true,
       position: 'top',
       horizontalAlign: 'right',
-      fontFamily: fontFamily
+      fontFamily: fontFamily,
+      fontSize: theme.typography.body2.fontSize // Scalable unit
     }
   });
 
@@ -78,7 +82,7 @@ const ClaimsLineChart = ({ data, loading }) => {
       // Transform data for chart
       const categories = data.map((item) => {
         const date = new Date(item.date || item.month);
-        return date.toLocaleDateString('ar-SA', { month: 'short', year: 'numeric' });
+        return date.toLocaleDateString(getAppLocale(), { month: 'short', year: 'numeric' });
       });
       const values = data.map((item) => item.count || item.value || 0);
 

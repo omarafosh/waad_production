@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
+import com.waad.tba.common.file.FileResourceUtils;
 
 /**
  * Service for managing PreAuthorization Attachments
@@ -69,25 +70,36 @@ public class PreAuthorizationAttachmentService {
 
         try {
             // Create directory structure
+            // Security: Sanitize ID and construct path safely
             String directoryPath = uploadPath + "/pre-authorizations/" + preAuthorizationId;
-            Path directory = Paths.get(directoryPath);
+            Path directory = Paths.get(uploadPath, "pre-authorizations", String.valueOf(preAuthorizationId));
             Files.createDirectories(directory);
 
             // Generate unique filename
             String originalFileName = file.getOriginalFilename();
+            // Security: Sanitize original filename to prevent path traversal in database record
+            String safeOriginalName = originalFileName != null ? originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_") : "attachment";
+            
             String extension = originalFileName != null && originalFileName.contains(".") 
                     ? originalFileName.substring(originalFileName.lastIndexOf("."))
                     : "";
             String storedFileName = UUID.randomUUID().toString() + extension;
             
             // Save file
-            Path filePath = directory.resolve(storedFileName);
+            // Security: Use Path.resolve for safe path concatenation
+            Path filePath = directory.resolve(storedFileName).normalize();
+            
+            // Final check: ensures the file is still within the intended directory
+            if (!filePath.startsWith(directory.toAbsolutePath())) {
+                throw new SecurityException("Potential Path Traversal attack detected");
+            }
+
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Create attachment record
             PreAuthorizationAttachment attachment = PreAuthorizationAttachment.builder()
                     .preAuthorizationId(preAuthorizationId)
-                    .originalFileName(originalFileName)
+                    .originalFileName(safeOriginalName)
                     .storedFileName(storedFileName)
                     .filePath(filePath.toString())
                     .fileType(contentType)

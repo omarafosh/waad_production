@@ -16,7 +16,7 @@ import com.waad.tba.modules.benefitpolicy.service.BenefitPolicyCoverageService;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.rbac.entity.User;
-import com.waad.tba.modules.systemadmin.service.AuditLogService;
+import com.waad.tba.common.audit.service.AuditLogService;
 import com.waad.tba.modules.visit.dto.VisitCreateDto;
 import com.waad.tba.modules.visit.dto.VisitResponseDto;
 import com.waad.tba.modules.visit.entity.Visit;

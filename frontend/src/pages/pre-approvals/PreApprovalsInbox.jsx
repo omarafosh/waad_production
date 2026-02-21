@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -264,7 +265,7 @@ const PreApprovalsInbox = () => {
       size: 130,
       cell: ({ row }) => {
         const date = row.original.expiryDate || row.original.expiresAt;
-        return date ? new Date(date).toLocaleDateString('ar-SA') : '-';
+        return date ? new Date(date).toLocaleDateString(getAppLocale()) : '-';
       }
     },
     {

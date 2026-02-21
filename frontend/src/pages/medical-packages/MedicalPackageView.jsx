@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale, getNumberLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -250,7 +251,7 @@ const MedicalPackageView = () => {
               <Typography variant="caption" color="text.secondary">
                 تاريخ الإنشاء
               </Typography>
-              <Typography variant="body1">{pkg.createdAt ? new Date(pkg.createdAt).toLocaleString('ar-SA') : '-'}</Typography>
+              <Typography variant="body1">{pkg.createdAt ? new Date(pkg.createdAt).toLocaleString(getNumberLocale()) : '-'}</Typography>
             </Paper>
           </Grid>
 
@@ -259,7 +260,7 @@ const MedicalPackageView = () => {
               <Typography variant="caption" color="text.secondary">
                 تاريخ آخر تحديث
               </Typography>
-              <Typography variant="body1">{pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString('ar-SA') : '-'}</Typography>
+              <Typography variant="body1">{pkg.updatedAt ? new Date(pkg.updatedAt).toLocaleString(getNumberLocale()) : '-'}</Typography>
             </Paper>
           </Grid>
 

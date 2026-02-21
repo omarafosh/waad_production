@@ -24,20 +24,20 @@ import { SaveOutlined, ApiOutlined, EyeOutlined, EyeInvisibleOutlined, CheckCirc
 export default function TabIntegrations() {
   const initialValues = {
     // API Configuration
-    apiKey: 'sk_test_abc123xyz789',
-    enableApiAccess: true,
+    apiKey: '',
+    enableApiAccess: false,
 
     // Payment Gateway
-    enablePaymentGateway: true,
-    paymentGatewayUrl: 'https://payment-gateway.example.com/api',
-    paymentMerchantId: 'MERCHANT_12345',
-    paymentApiKey: 'pk_live_payment_key_xyz',
+    enablePaymentGateway: false,
+    paymentGatewayUrl: '',
+    paymentMerchantId: '',
+    paymentApiKey: '',
 
     // SMS Gateway
-    enableSMSGateway: true,
-    smsGatewayUrl: 'https://sms-gateway.example.com/api',
-    smsUsername: 'tba_waad_user',
-    smsApiKey: 'sk_sms_key_abc123',
+    enableSMSGateway: false,
+    smsGatewayUrl: '',
+    smsUsername: '',
+    smsApiKey: '',
 
     // Webhook URLs
     webhookClaims: 'https://api.example.com/webhooks/claims',

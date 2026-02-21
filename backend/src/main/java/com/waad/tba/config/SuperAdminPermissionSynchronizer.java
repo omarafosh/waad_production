@@ -175,6 +175,9 @@ public class SuperAdminPermissionSynchronizer implements CommandLineRunner {
                 Permission newPermission = Permission.builder()
                         .name(permissionName)
                         .description("Auto-created permission for " + permissionName)
+                        .module("SYSTEM")
+                        .moduleName("النظام")
+                        .category(com.waad.tba.modules.rbac.entity.PermissionCategory.GENERAL)
                         .build();
                 permissionRepository.save(newPermission);
                 created++;

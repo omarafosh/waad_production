@@ -1,103 +1,50 @@
 package com.waad.tba.modules.rbac.service;
 
-import com.waad.tba.common.exception.ResourceNotFoundException;
 import com.waad.tba.modules.rbac.dto.PermissionCreateDto;
 import com.waad.tba.modules.rbac.dto.PermissionResponseDto;
-import com.waad.tba.modules.rbac.entity.Permission;
-import com.waad.tba.modules.rbac.mapper.PermissionMapper;
-import com.waad.tba.modules.rbac.repository.PermissionRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class PermissionService {
+/**
+ * واجهة خدمة الصلاحيات (Permission Service Interface).
+ * تهدف إلى إدارة الصلاحيات المتاحة في النظام وتصنيفها حسب الموديولات.
+ */
+public interface PermissionService {
 
-    private final PermissionRepository permissionRepository;
-    private final PermissionMapper permissionMapper;
+    /**
+     * جلب كافة الصلاحيات المتاحة في النظام.
+     */
+    List<PermissionResponseDto> findAll();
 
-    @Transactional(readOnly = true)
-    public List<PermissionResponseDto> findAll() {
-        log.debug("Finding all permissions");
-        return permissionRepository.findAll().stream()
-                .map(permissionMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
+    /**
+     * جلب تفاصيل صلاحية معينة بواسطة المعرف (ID).
+     */
+    PermissionResponseDto findById(Long id);
 
-    @Transactional(readOnly = true)
-    public PermissionResponseDto findById(Long id) {
-        log.debug("Finding permission by id: {}", id);
-        Permission permission = permissionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Permission", "id", id));
-        return permissionMapper.toResponseDto(permission);
-    }
+    /**
+     * إضافة صلاحية جديدة للنظام.
+     */
+    PermissionResponseDto create(PermissionCreateDto dto);
 
-    @Transactional
-    public PermissionResponseDto create(PermissionCreateDto dto) {
-        log.info("Creating new permission: {}", dto.getName());
-        
-        if (permissionRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Permission name already exists");
-        }
+    /**
+     * تحديث بيانات صلاحية موجودة.
+     */
+    PermissionResponseDto update(Long id, PermissionCreateDto dto);
 
-        Permission permission = permissionMapper.toEntity(dto);
-        Permission savedPermission = permissionRepository.save(permission);
-        
-        log.info("Permission created successfully with id: {}", savedPermission.getId());
-        return permissionMapper.toResponseDto(savedPermission);
-    }
+    /**
+     * حذف صلاحية من النظام (حذف ناعم).
+     */
+    void delete(Long id);
 
-    @Transactional
-    public PermissionResponseDto update(Long id, PermissionCreateDto dto) {
-        log.info("Updating permission with id: {}", id);
-        
-        Permission permission = permissionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Permission", "id", id));
+    /**
+     * البحث عن الصلاحيات باستخدام نص بحث.
+     */
+    List<PermissionResponseDto> search(String query);
 
-        // Check name uniqueness if changed
-        if (!permission.getName().equals(dto.getName()) && permissionRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Permission name already exists");
-        }
-
-        permissionMapper.updateEntityFromDto(permission, dto);
-        Permission updatedPermission = permissionRepository.save(permission);
-        
-        log.info("Permission updated successfully: {}", id);
-        return permissionMapper.toResponseDto(updatedPermission);
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        log.info("Deleting permission with id: {}", id);
-        
-        if (!permissionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Permission", "id", id);
-        }
-        
-        permissionRepository.deleteById(id);
-        log.info("Permission deleted successfully: {}", id);
-    }
-
-    @Transactional(readOnly = true)
-    public List<PermissionResponseDto> search(String query) {
-        log.debug("Searching permissions with query: {}", query);
-        return permissionRepository.searchPermissions(query).stream()
-                .map(permissionMapper::toResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PermissionResponseDto> findAllPaginated(Pageable pageable) {
-        log.debug("Finding permissions with pagination");
-        return permissionRepository.findAll(pageable)
-                .map(permissionMapper::toResponseDto);
-    }
+    /**
+     * جلب الصلاحيات مع ترقيم الصفحات (Pagination).
+     */
+    Page<PermissionResponseDto> findAllPaginated(Pageable pageable);
 }

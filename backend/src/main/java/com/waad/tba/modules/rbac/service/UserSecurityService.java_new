@@ -1,0 +1,92 @@
+package com.waad.tba.modules.rbac.service;
+
+import com.waad.tba.modules.rbac.dto.*;
+import com.waad.tba.modules.rbac.entity.User;
+
+/**
+ * واجهة خدمة أمن المستخدمين (User Security Service Interface).
+ * تتعامل مع عمليات إدارة كلمات المرور، التحقق من البريد، وحماية الحسابات.
+ */
+public interface UserSecurityService {
+
+    /**
+     * تغيير كلمة المرور للمستخدم المسجل حالياً.
+     */
+    void changePassword(Long userId, ChangePasswordDto dto, String ipAddress, String userAgent);
+
+    /**
+     * تغيير كلمة المرور بواسطة اسم المستخدم.
+     */
+    void changePassword(String username, String currentPassword, String newPassword);
+
+    /**
+     * طلب استعادة كلمة المرور (Forgot Password).
+     */
+    void requestPasswordReset(ForgotPasswordDto dto, String ipAddress, String userAgent);
+
+    /**
+     * إعادة تعيين كلمة المرور باستخدام التوكن.
+     */
+    void resetPassword(ResetPasswordDto dto, String ipAddress, String userAgent);
+
+    /**
+     * إنشاء وإرسال توكن التحقق من البريد الإلكتروني.
+     */
+    void sendEmailVerification(User user);
+
+    /**
+     * التحقق من البريد الإلكتروني باستخدام التوكن.
+     */
+    void verifyEmail(VerifyEmailDto dto, String ipAddress, String userAgent);
+
+    /**
+     * إعادة إرسال رابط التحقق من البريد.
+     */
+    void resendEmailVerification(Long userId);
+
+    /**
+     * إعادة إرسال رابط التحقق من البريد بواسطة البريد الإلكتروني.
+     */
+    void resendEmailVerification(String email);
+
+    /**
+     * تسجيل محاولة دخول فاشلة وتحديث حالة قفل الحساب.
+     */
+    void recordFailedLogin(String username, String reason, String ipAddress, String userAgent);
+
+    /**
+     * نسخة مبسطة لتسجيل محاولة دخول فاشلة.
+     */
+    void recordFailedLogin(String username);
+
+    /**
+     * تسجيل نجاح عملية الدخول وتحديث عدادات المحاولات.
+     */
+    void recordSuccessfulLogin(Long userId, String ipAddress, String userAgent);
+
+    /**
+     * نسخة مبسطة لتسجيل نجاح الدخول بواسطة اسم المستخدم.
+     */
+    void recordSuccessfulLogin(String username);
+
+    /**
+     * التحقق مما إذا كان الحساب مقفلاً حالياً.
+     */
+    void checkAccountLocked(User user);
+
+    /**
+     * التحقق مما إذا كان تفعيل البريد مطلوباً ولم يتم بعد.
+     */
+    void checkEmailVerified(User user);
+
+    /**
+     * إنشاء سجل تدقيق أمني (Audit Log).
+     */
+    void auditLog(Long userId, String action, String details, 
+                  String ipAddress, String userAgent, Long performedBy);
+
+    /**
+     * تنظيف التوكنات المنتهية الصلاحية.
+     */
+    void cleanupExpiredTokens();
+}

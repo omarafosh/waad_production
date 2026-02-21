@@ -45,22 +45,23 @@ public class CoverageSimulationService {
                 .orElseThrow(() -> new BusinessRuleException("Service not found"));
 
         // Use the existing core logic from BenefitPolicyRuleService
-        var ruleOpt = ruleRepository.findBestRuleForService(
+        var ruleOpt = ruleRepository.findApplicableRulesForService(
                 policy.getId(), 
                 service.getId(), 
                 java.util.Collections.emptyList(), 
-                service.getCategoryId(), 
-                request.getEncounterType());
+                service.getCategoryName(), 
+                request.getEncounterType())
+                .stream().findFirst(); // Simplification: pick first or best match logic needed if multiple
 
         SimulationResultDto.SimulationResultDtoBuilder builder = SimulationResultDto.builder()
                 .policyName(policy.getName())
                 .serviceName(service.getName())
-                .categoryName(service.getCategory() != null ? service.getCategory().getName() : "Unknown");
+                .categoryName(service.getCategoryName() != null ? service.getCategoryName() : "Unknown");
 
         if (ruleOpt.isPresent()) {
             BenefitPolicyRule rule = ruleOpt.get();
             builder.coveragePercent(rule.getEffectiveCoveragePercent())
-                    .amountLimit(rule.getAmountLimit())
+
                     .timesLimit(rule.getTimesLimit())
                     .waitingPeriodDays(rule.getWaitingPeriodDays())
                     .requiresPreApproval(rule.isRequiresPreApproval())

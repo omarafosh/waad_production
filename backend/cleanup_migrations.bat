@@ -1,6 +1,21 @@
 @echo off
-cd /d "d:\Backend\waadTbaSystem2026-main_final\waadTbaSystem2026-main\backend\src\main\resources\db\migration"
-del "V900116__create_lifecycle_logs.sql"
-del "V9005__create_lifecycle_logs.sql"
-ren "V9005__coverage_priority_config.sql" "V9034__coverage_priority_config.sql"
-dir > d:\Backend\cleanup_verify.txt
+set "MIGRATION_DIR=src\main\resources\db\migration"
+echo Cleaning up migrations in %MIGRATION_DIR%...
+
+if exist "%MIGRATION_DIR%\V12__create_system_admin_tables.sql" (
+    echo Deleting V12 redundant file...
+    del /f /q "%MIGRATION_DIR%\V12__create_system_admin_tables.sql"
+)
+
+if exist "%MIGRATION_DIR%\V13__Fix_Approval_Requests.sql" (
+    echo Deleting V13 redundant file...
+    del /f /q "%MIGRATION_DIR%\V13__Fix_Approval_Requests.sql"
+)
+
+if exist "%MIGRATION_DIR%\V13__consolidated_fixes.sql" (
+    echo Renaming V13 consolidated fixes...
+    ren "%MIGRATION_DIR%\V13__consolidated_fixes.sql" "V13_2__consolidated_fixes.sql"
+)
+
+echo Cleanup complete.
+dir "%MIGRATION_DIR%\V1*"

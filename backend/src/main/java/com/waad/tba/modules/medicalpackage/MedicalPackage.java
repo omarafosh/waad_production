@@ -31,7 +31,7 @@ public class MedicalPackage {
     private String code;
 
     /**
-     * Package name (unified - Arabic-only system)
+     * Package name
      */
     @Column(nullable = false)
     private String name;
@@ -40,8 +40,7 @@ public class MedicalPackage {
     private String description;
 
     /**
-     * Many-to-Many relationship with MedicalService
-     * A package can include multiple services, and a service can be in multiple packages
+     * Many-to-Many relationship with Unified MedicalService
      */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

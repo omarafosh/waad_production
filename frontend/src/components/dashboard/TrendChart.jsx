@@ -1,10 +1,13 @@
-import { Card, CardContent, CardHeader, Box, Typography } from '@mui/material';
 import Chart from 'react-apexcharts';
+import { useTheme } from '@mui/material';
+import useConfig from 'hooks/useConfig';
 
 /**
  * Trend chart for PreAuth submissions over time
  */
 const TrendChart = ({ data, loading, days = 30 }) => {
+  const theme = useTheme();
+  const { state: { fontFamily } } = useConfig();
   if (loading || !data || data.length === 0) {
     return (
       <Card>
@@ -20,7 +23,7 @@ const TrendChart = ({ data, loading, days = 30 }) => {
 
   // Transform data for chart
   const categories = data.map((item) =>
-    new Date(item.date).toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' })
+    new Date(item.date).toLocaleDateString('ar-SA-u-nu-latn', { month: 'short', day: 'numeric' })
   );
   const seriesData = data.map((item) => item.count || 0);
 
@@ -36,7 +39,7 @@ const TrendChart = ({ data, loading, days = 30 }) => {
       zoom: {
         enabled: false
       },
-      fontFamily: 'Tajawal, sans-serif'
+      fontFamily: fontFamily
     },
     dataLabels: {
       enabled: false
@@ -56,21 +59,24 @@ const TrendChart = ({ data, loading, days = 30 }) => {
       categories: categories,
       labels: {
         style: {
-          fontFamily: 'Tajawal, sans-serif'
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize
         }
       }
     },
     yaxis: {
       labels: {
         style: {
-          fontFamily: 'Tajawal, sans-serif'
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize
         },
         formatter: (value) => value.toFixed(0)
       }
     },
     tooltip: {
       style: {
-        fontFamily: 'Tajawal, sans-serif'
+        fontFamily: fontFamily,
+        fontSize: theme.typography.caption.fontSize
       }
     }
   };

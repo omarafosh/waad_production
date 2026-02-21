@@ -9,6 +9,9 @@ import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.repository.ServiceCategoryMappingRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.ServiceCategoryMapping;
+import com.waad.tba.modules.medicaltaxonomy.dto.ServiceCategoryMappingDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +40,7 @@ public class MedicalCategoryService {
 
     private final MedicalCategoryRepository categoryRepository;
     private final MedicalServiceRepository serviceRepository;
+    private final ServiceCategoryMappingRepository mappingRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // CREATE
@@ -256,19 +260,83 @@ public class MedicalCategoryService {
      */
     @Transactional(readOnly = true)
     public List<MedicalServiceResponseDto> findServicesByCategory(Long categoryId) {
-        log.debug("Finding services for category: {}", categoryId);
+        return findServicesByCategory(categoryId, null);
+    }
+
+    /**
+     * Find services by category and optional context.
+     * Updated to use multi-category mapping table.
+     */
+    @Transactional(readOnly = true)
+    public List<MedicalServiceResponseDto> findServicesByCategory(Long categoryId, String context) {
+        log.debug("Finding services for category: {} (context: {})", categoryId, context);
         
-        // Get category info for response enrichment
+        // Get category info
         MedicalCategory category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BusinessRuleException("Medical category not found: " + categoryId));
         
-        // Get all active services in this category
-        List<MedicalService> services = serviceRepository.findActiveByCategoryId(categoryId);
+        // Get all services in this category via the new many-to-many junction
+        List<MedicalService> services = serviceRepository.findActiveByCategoryIdInMultiMapping(categoryId, context);
         
-        // Convert to DTOs with category info
+        // Convert to DTOs
         return services.stream()
-                .map(service -> toServiceDto(service, category))
+                .map(this::toServiceResponseDto)
                 .collect(Collectors.toList());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MULTI-CATEGORY MANAGEMENT (NEW 2026-02-18)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Transactional
+    public void addCategoryToService(Long serviceId, Long categoryId, boolean isPrimary, String context) {
+        log.info("Adding category {} to service {} (context: {})", categoryId, serviceId, context);
+        
+        MedicalService service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new BusinessRuleException("Medical service not found: " + serviceId));
+        
+        MedicalCategory category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new BusinessRuleException("Medical category not found: " + categoryId));
+
+        // Check for existing mapping
+        mappingRepository.findByServiceIdAndCategoryIdAndContext(serviceId, categoryId, context)
+                .ifPresent(m -> { throw new BusinessRuleException("Mapping already exists for this context"); });
+
+        // If setting as primary, unset other primaries for this service
+        if (isPrimary) {
+            mappingRepository.findByServiceIdAndIsPrimaryTrue(serviceId)
+                .ifPresent(m -> { m.setPrimary(false); mappingRepository.save(m); });
+        }
+
+        ServiceCategoryMapping mapping = ServiceCategoryMapping.builder()
+                .service(service)
+                .category(category)
+                .isPrimary(isPrimary)
+                .context(context != null ? context : "ANY")
+                .build();
+
+        mappingRepository.save(mapping);
+        
+        // Update legacy field for backward compatibility if primary
+        if (isPrimary) {
+            service.setCategoryId(categoryId);
+            service.setCategoryName(category.getName());
+            serviceRepository.save(service);
+        }
+    }
+
+    @Transactional
+    public void removeCategoryFromService(Long serviceId, Long categoryId, String context) {
+        log.info("Removing category {} from service {} (context: {})", categoryId, serviceId, context);
+        
+        ServiceCategoryMapping mapping = mappingRepository.findByServiceIdAndCategoryIdAndContext(serviceId, categoryId, context)
+                .orElseThrow(() -> new BusinessRuleException("Mapping not found"));
+
+        if (mapping.isPrimary()) {
+            throw new BusinessRuleException("Cannot remove primary category mapping. Set another category as primary first.");
+        }
+
+        mappingRepository.delete(mapping);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -292,6 +360,7 @@ public class MedicalCategoryService {
                 .name(category.getName())
                 .parentId(category.getParentId())
                 .parentName(parentName)
+                .serviceCount((int) serviceRepository.countActiveByCategoryId(category.getId()))
                 .active(category.isActive())
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
@@ -299,22 +368,45 @@ public class MedicalCategoryService {
     }
     
     /**
-     * Convert MedicalService entity to DTO with category info.
+     * Convert MedicalService entity to DTO with all category mappings.
      */
-    private MedicalServiceResponseDto toServiceDto(MedicalService service, MedicalCategory category) {
+    private MedicalServiceResponseDto toServiceResponseDto(MedicalService service) {
+        List<ServiceCategoryMappingDto> mappingDtos = service.getCategoryMappings().stream()
+                .map(m -> ServiceCategoryMappingDto.builder()
+                        .categoryId(m.getCategory().getId())
+                        .categoryCode(m.getCategory().getCode())
+                        .categoryName(m.getCategory().getName())
+                        .isPrimary(m.isPrimary())
+                        .context(m.getContext())
+                        .build())
+                .collect(Collectors.toList());
+
+        ServiceCategoryMappingDto primary = mappingDtos.stream()
+                .filter(ServiceCategoryMappingDto::isPrimary)
+                .findFirst()
+                .orElse(null);
+
         return MedicalServiceResponseDto.builder()
                 .id(service.getId())
                 .code(service.getCode())
                 .name(service.getName())
-                .categoryId(category.getId())
-                .categoryName(category.getName())
-                .categoryCode(category.getCode())
+                .nameEn(service.getNameEn())
+                .categoryId(primary != null ? primary.getCategoryId() : null)
+                .categoryName(primary != null ? primary.getCategoryName() : null)
+                .categoryCode(primary != null ? primary.getCategoryCode() : null)
+                .categories(mappingDtos)
+                .primaryCategoryMapping(primary)
                 .description(service.getDescription())
                 .basePrice(service.getBasePrice())
-                .requiresPA(service.isRequiresPA())
+                .requiresPA(true)
                 .active(service.isActive())
                 .createdAt(service.getCreatedAt())
                 .updatedAt(service.getUpdatedAt())
                 .build();
+    }
+    
+    // Legacy support
+    private MedicalServiceResponseDto toServiceDto(MedicalService service, MedicalCategory category) {
+        return toServiceResponseDto(service);
     }
 }

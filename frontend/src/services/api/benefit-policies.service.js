@@ -256,6 +256,28 @@ export const cloneBenefitPolicy = async (id, payload = {}) => {
   return unwrap(response);
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RULES OPERATIONS (Individual & Bulk)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Bulk create rules for a policy
+ * Endpoint: POST /api/benefit-policies/{policyId}/rules/bulk
+ */
+export const bulkCreateRules = async (policyId, rules) => {
+  const response = await axiosClient.post(`${BASE_URL}/${policyId}/rules/bulk`, rules);
+  return unwrap(response);
+};
+
+/**
+ * Delete all rules for a policy
+ * Endpoint: DELETE /api/benefit-policies/{policyId}/rules
+ */
+export const deleteAllRules = async (policyId) => {
+  const response = await axiosClient.delete(`${BASE_URL}/${policyId}/rules`);
+  return unwrap(response);
+};
+
 /**
  * Simulate benefit coverage
  * Endpoint: POST /api/benefit-policies/simulate
@@ -264,6 +286,33 @@ export const cloneBenefitPolicy = async (id, payload = {}) => {
  */
 export const simulateCoverage = async (payload) => {
   const response = await axiosClient.post(`${BASE_URL}/simulate`, payload);
+  return unwrap(response);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RULE TEMPLATES (PACKAGES) OPERATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get all available rule templates
+ * Endpoint: GET /api/benefit-rule-templates
+ */
+export const getRuleTemplates = async () => {
+  const response = await axiosClient.get('/benefit-rule-templates');
+  return unwrap(response);
+};
+
+/**
+ * Apply a rule template to a policy
+ * Endpoint: POST /api/benefit-rule-templates/{templateId}/apply/{policyId}
+ * @param {number} templateId - Template ID
+ * @param {number} policyId - Target Policy ID
+ * @param {boolean} replaceExisting - Whether to delete current rules first
+ */
+export const applyRuleTemplate = async (templateId, policyId, replaceExisting = false) => {
+  const response = await axiosClient.post(`/benefit-rule-templates/${templateId}/apply/${policyId}`, null, {
+    params: { replaceExisting }
+  });
   return unwrap(response);
 };
 

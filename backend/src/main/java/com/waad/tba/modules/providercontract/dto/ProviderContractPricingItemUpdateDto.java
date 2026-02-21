@@ -24,7 +24,12 @@ public class ProviderContractPricingItemUpdateDto {
     /**
      * Optional category override
      */
-    private Long medicalCategoryId;
+    private String categoryName;
+
+    /**
+     * Specialty (Optional)
+     */
+    private String specialty;
 
     /**
      * Standard/list price

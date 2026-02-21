@@ -150,15 +150,16 @@ public class MedicalCategoryController {
                       "This is the canonical endpoint for service selection - services MUST be filtered by category first."
     )
     public ResponseEntity<ApiResponse<List<MedicalServiceResponseDto>>> getServicesByCategory(
-            @Parameter(description = "Category ID") @PathVariable Long id) {
+            @Parameter(description = "Category ID") @PathVariable Long id,
+            @Parameter(description = "Context (OUTPATIENT, INPATIENT, etc.)") @RequestParam(required = false) String context) {
         
         log.info("[MEDICAL-CATEGORIES] GET /api/medical-categories/{}/medical-services - Canonical service lookup", id);
         
         // Validate category exists
         categoryService.findById(id); // Throws if not found
         
-        // Get services for this category
-        List<MedicalServiceResponseDto> services = categoryService.findServicesByCategory(id);
+        // Get services for this category with optional context
+        List<MedicalServiceResponseDto> services = categoryService.findServicesByCategory(id, context);
         
         log.info("[MEDICAL-CATEGORIES] Found {} services for category {}", services.size(), id);
         

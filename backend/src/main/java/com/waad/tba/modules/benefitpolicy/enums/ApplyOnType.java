@@ -9,5 +9,7 @@ public enum ApplyOnType {
     /** Rule applies to a specific medical service */
     SERVICE,
     /** Rule applies to a medical package */
-    PACKAGE
+    PACKAGE,
+    /** Rule applies to an entire encounter type (global) */
+    GENERAL
 }

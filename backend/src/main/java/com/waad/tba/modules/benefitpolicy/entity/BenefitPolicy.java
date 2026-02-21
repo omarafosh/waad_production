@@ -39,7 +39,8 @@ import java.util.List;
 @lombok.experimental.SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@lombok.EqualsAndHashCode(callSuper = true)
+@lombok.EqualsAndHashCode(callSuper = true, exclude = {"rules", "distributions"})
+@lombok.ToString(exclude = {"rules", "distributions"})
 @org.hibernate.annotations.SQLDelete(sql = "UPDATE benefit_policies SET active = false, updated_at = NOW() WHERE id = ?")
 @org.hibernate.annotations.SQLRestriction("active = true")
 public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
@@ -302,6 +303,13 @@ public class BenefitPolicy extends com.waad.tba.common.entity.SoftDeleteEntity {
         return rules.stream()
                 .filter(BenefitPolicyRule::isActive)
                 .toList();
+    }
+
+    /**
+     * Get count of rules
+     */
+    public int getRulesCount() {
+        return rules != null ? rules.size() : 0;
     }
 
     /**

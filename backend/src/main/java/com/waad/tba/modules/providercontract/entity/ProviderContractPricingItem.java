@@ -1,6 +1,5 @@
 package com.waad.tba.modules.providercontract.entity;
 
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -12,28 +11,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Provider Contract Pricing Item Entity - represents per-service pricing within a contract.
- * 
- * Business Rules:
- * - Each service can only appear once per contract (unique constraint)
- * - discount_percent is auto-calculated from base_price and contract_price
- * - Pricing items inherit contract's effective dates if not specified
- * - Read-only if parent contract is EXPIRED or TERMINATED
- * 
- * Maps to: provider_contract_pricing_items table
- * 
- * @version 1.0
- * @since 2024-12-24
+ * (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "provider_contract_pricing_items", indexes = {
     @Index(name = "idx_pricing_contract_id", columnList = "contract_id"),
     @Index(name = "idx_pricing_service_id", columnList = "medical_service_id"),
-    @Index(name = "idx_pricing_category_id", columnList = "medical_category_id"),
-    @Index(name = "idx_pricing_active", columnList = "active"),
-    @Index(name = "idx_pricing_service_name", columnList = "service_name")
+    @Index(name = "idx_pricing_active", columnList = "active")
 })
 @Getter
 @Setter
@@ -55,50 +43,43 @@ public class ProviderContractPricingItem {
     private ProviderContract contract;
 
     /**
-     * Medical service being priced (optional for imported items)
-     * Can be null when importing from Excel without linking to medical services
+     * Unified medical service being priced
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id")
     private MedicalService medicalService;
     
     /**
-     * Service name - for imported items without medical service link
-     * Either medicalService OR serviceName must be provided
+     * Service name - denormalized snapshot
      */
     @Size(max = 255)
     @Column(name = "service_name", length = 255)
     private String serviceName;
     
     /**
-     * Service code - for reference and lookup (optional)
-     * Can be entered manually or linked from MedicalService
+     * Service code - denormalized lookup
      */
     @Size(max = 50)
     @Column(name = "service_code", length = 50)
     private String serviceCode;
     
     /**
-     * Category name - for display and grouping (optional)
-     * Can be entered manually or linked from MedicalCategory
+     * Category name - from Unified MedicalService
      */
     @Size(max = 255)
     @Column(name = "category_name", length = 255)
     private String categoryName;
     
+    @Size(max = 255)
+    @Column(name = "specialty", length = 255)
+    private String specialty;
+    
     /**
-     * Quantity (for imported items)
+     * Quantity (for internal tracking)
      */
     @Column(name = "quantity")
     @Builder.Default
     private Integer quantity = 0;
-
-    /**
-     * Optional category override (defaults to service's category)
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "medical_category_id")
-    private MedicalCategory medicalCategory;
 
     /**
      * Standard/list price for this service
@@ -249,14 +230,12 @@ public class ProviderContractPricingItem {
     }
 
     /**
-     * Get effective category (from item or from service)
+     * Get effective category name
      */
-    public MedicalCategory getEffectiveCategory() {
-        if (medicalCategory != null) {
-            return medicalCategory;
+    public String getEffectiveCategoryName() {
+        if (categoryName != null) {
+            return categoryName;
         }
-        // MedicalService only has categoryId, not category entity
-        // Caller should fetch category separately if needed
-        return null;
+        return medicalService != null ? medicalService.getCategoryName() : null;
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -245,7 +246,7 @@ const SettlementInbox = () => {
 
   const handleExportPDF = () => {
     const tabNames = ['المعلقة', 'الفواتير', 'المدفوعات', 'المكتملة'];
-    const title = `تقرير التسويات - ${tabNames[activeTab]} - ${new Date().toLocaleDateString('ar-SA')}`;
+    const title = `تقرير التسويات - ${tabNames[activeTab]} - ${new Date().toLocaleDateString(getAppLocale())}`;
     exportToPDF(claims, title);
   };
 
@@ -275,7 +276,7 @@ const SettlementInbox = () => {
           const val = getValue();
           if (!val) return '-';
           try {
-            return new Date(val).toLocaleDateString('ar-SA');
+            return new Date(val).toLocaleDateString(getAppLocale());
           } catch (error) {
             return '-';
           }
@@ -308,7 +309,7 @@ const SettlementInbox = () => {
           const val = getValue();
           if (!val) return '-';
           try {
-            return new Date(val).toLocaleDateString('ar-SA');
+            return new Date(val).toLocaleDateString(getAppLocale());
           } catch (error) {
             return '-';
           }
@@ -360,7 +361,7 @@ const SettlementInbox = () => {
           const val = getValue();
           if (!val) return '-';
           try {
-            return new Date(val).toLocaleDateString('ar-SA');
+            return new Date(val).toLocaleDateString(getAppLocale());
           } catch (error) {
             return '-';
           }
@@ -407,7 +408,7 @@ const SettlementInbox = () => {
           const val = getValue();
           if (!val) return '-';
           try {
-            return new Date(val).toLocaleDateString('ar-SA');
+            return new Date(val).toLocaleDateString(getAppLocale());
           } catch (error) {
             return '-';
           }
@@ -456,7 +457,7 @@ const SettlementInbox = () => {
           const val = getValue();
           if (!val) return '-';
           try {
-            return new Date(val).toLocaleDateString('ar-SA');
+            return new Date(val).toLocaleDateString(getAppLocale());
           } catch (error) {
             return '-';
           }

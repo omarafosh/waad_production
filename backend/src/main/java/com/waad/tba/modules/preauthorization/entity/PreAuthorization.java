@@ -68,50 +68,41 @@ public class PreAuthorization extends SoftDeleteEntity {
 
     /**
      * Visit this pre-authorization is linked to
-     * ARCHITECTURAL LAW: Pre-authorizations MUST always reference an existing Visit
-     * This is NON-NEGOTIABLE - no standalone pre-authorization creation allowed
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_id", nullable = false)
     private Visit visit;
     
-    // ==================== CONTRACT-DRIVEN MEDICAL SERVICE ====================
+    // ==================== ENTERPRISE MEDICAL SERVICE ====================
 
-    /**
-     * Medical Service (FK to medical_services)
-     * ARCHITECTURAL LAW: Service MUST be selected from Provider Contract
-     * NO free-text service description allowed
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id", nullable = false)
     private MedicalService medicalService;
     
     /**
-     * Service code (denormalized snapshot for queries/reports)
-     * Auto-populated from medicalService.code on save
+     * Service code (denormalized snapshot)
      */
     @Column(name = "service_code", nullable = false, length = 50)
     private String serviceCode;
     
     /**
-     * Service name (denormalized snapshot for queries/reports)
+     * Service name (denormalized snapshot)
      */
     @Column(name = "service_name", length = 200)
     private String serviceName;
     
     /**
-     * Service type (legacy column - required by database)
-     * Defaults to category name or "MEDICAL"
+     * Service type
      */
     @Column(name = "service_type", nullable = false, length = 100)
     @Builder.Default
     private String serviceType = "MEDICAL";
     
     /**
-     * Service category ID (denormalized from MedicalService for filtering)
+     * Service category (denormalized from EnterpriseMedicalService)
      */
-    @Column(name = "service_category_id")
-    private Long serviceCategoryId;
+    @Column(name = "service_category", length = 100)
+    private String serviceCategory;
 
     /**
      * Date when the service is requested/planned
@@ -316,13 +307,12 @@ public class PreAuthorization extends SoftDeleteEntity {
             referenceNumber = preAuthNumber; // Sync with preAuthNumber
         }
         
-        // Populate denormalized fields from MedicalService
+        // Populate denormalized fields from EnterpriseMedicalService
         if (medicalService != null) {
             this.serviceCode = medicalService.getCode();
-            this.serviceCategoryId = medicalService.getCategoryId();
-            // NOTE: requiresPA is no longer taken from MedicalService
-            // PA requirement comes from BenefitPolicyRule.requiresPreApproval
-            this.requiresPA = true; // PreAuthorizations always require PA (that's why they exist)
+            this.serviceName = medicalService.getName();
+            this.serviceCategory = medicalService.getCategoryName();
+            this.requiresPA = true; // PreAuthorizations always require PA
         }
         
         // Populate memberId from Visit

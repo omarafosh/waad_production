@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
     Box,
     Button,
@@ -140,7 +141,7 @@ const SettlementBatchView = () => {
                         {row.original.claimNumber || `#${row.original.claimId}`}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                        ({new Date(row.original.serviceDate).toLocaleDateString('ar-SA')})
+                        ({new Date(row.original.serviceDate).toLocaleDateString(getAppLocale())})
                     </Typography>
                 </Stack>
             )
@@ -197,7 +198,7 @@ const SettlementBatchView = () => {
             {/* Header */}
             <ModernPageHeader
                 title={`دفعة تسوية #${batch.id}`}
-                subtitle={`تاريخ الإنشاء: ${new Date(batch.createdAt).toLocaleDateString('ar-SA')}`}
+                subtitle={`تاريخ الإنشاء: ${new Date(batch.createdAt).toLocaleDateString(getAppLocale())}`}
                 icon={<ReceiptIcon />}
                 actions={
                     <Stack direction="row" spacing={1}>

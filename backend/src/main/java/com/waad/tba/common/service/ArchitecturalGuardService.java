@@ -62,10 +62,10 @@ public class ArchitecturalGuardService {
         if (service == null) {
             throw new ArchitecturalViolationException("MedicalService", "Service cannot be null");
         }
-        if (service.getCategoryId() == null) {
+        if (service.getCategory() == null) {
             throw ArchitecturalViolationException.serviceWithoutCategory(service.getCode());
         }
-        log.trace("✅ Guard passed: Service {} has category {}", service.getCode(), service.getCategoryId());
+        log.trace("✅ Guard passed: Service {} has category {}", service.getCode(), service.getCategory());
     }
 
     /**
@@ -86,7 +86,7 @@ public class ArchitecturalGuardService {
             return; // Skip null service IDs
         }
         medicalServiceRepository.findById(serviceId).ifPresent(service -> {
-            if (service.getCategoryId() == null) {
+            if (service.getCategory() == null) {
                 throw ArchitecturalViolationException.serviceWithoutCategory(service.getCode());
             }
         });
@@ -150,7 +150,7 @@ public class ArchitecturalGuardService {
      * Validate service IDs provided for claim creation (ID-based).
      * Called before entity is created.
      */
-    public void guardClaimHasServices(List<Long> serviceIds) {
+    public void guardClaimHasServices(java.util.List<Long> serviceIds) {
         if (serviceIds == null || serviceIds.isEmpty()) {
             throw ArchitecturalViolationException.claimWithoutService(null);
         }
@@ -357,7 +357,7 @@ public class ArchitecturalGuardService {
      * @param visitId The visit ID from DTO
      * @param serviceIds List of medical service IDs from DTO lines
      */
-    public void guardClaimCreation(Long visitId, List<Long> serviceIds) {
+    public void guardClaimCreation(Long visitId, java.util.List<Long> serviceIds) {
         log.debug("🔒 Running architectural guards for Claim creation (ID-based)");
         guardClaimHasVisit(visitId);
         guardClaimHasServices(serviceIds);

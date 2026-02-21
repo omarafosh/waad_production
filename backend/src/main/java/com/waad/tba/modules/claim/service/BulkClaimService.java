@@ -43,7 +43,7 @@ import java.util.Optional;
 public class BulkClaimService {
 
     private final MemberRepository memberRepository;
-    private final MedicalServiceRepository medicalServiceRepository;
+    private final MedicalServiceRepository serviceRepository;
     private final ProviderRepository providerRepository;
     private final VisitRepository visitRepository;
     private final ClaimRepository claimRepository;
@@ -124,7 +124,7 @@ public class BulkClaimService {
         }
 
         // 3. Validate Service & Price
-        MedicalService service = medicalServiceRepository.findByCode(serviceCode)
+        MedicalService service = serviceRepository.findByCode(serviceCode)
                 .orElseThrow(() -> new IllegalArgumentException("Service code invalid: " + serviceCode));
 
         // In a real scenario, we check the contract pricing here. 

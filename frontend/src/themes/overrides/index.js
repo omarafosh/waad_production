@@ -78,7 +78,7 @@ export default function ComponentsOverrides(theme) {
     DatePicker(),
     Dialog(theme),
     DialogContentText(theme),
-    DialogTitle(),
+    DialogTitle(theme),
     Drawer(),
     Fab(theme),
     FormHelperText(),

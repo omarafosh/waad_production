@@ -19,8 +19,11 @@ import java.time.LocalDateTime;
 @Schema(description = "Provider service assignment details")
 public class ProviderServiceResponseDto {
 
-    @Schema(description = "Assignment ID", example = "1")
+    @Schema(description = "Medical Service ID (Enterprise)", example = "1")
     private Long id;
+
+    @Schema(description = "Assignment ID (Junction)", example = "1")
+    private Long assignmentId;
 
     @Schema(description = "Provider ID", example = "100")
     @JsonProperty("provider_id")

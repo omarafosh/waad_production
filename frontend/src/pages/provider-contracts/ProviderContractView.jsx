@@ -31,25 +31,19 @@ import {
   DialogActions,
   Grid,
   IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
   Stack,
-  Tab,
-  Tabs,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
   TextField,
   InputAdornment,
   Tooltip,
   Typography,
-  Autocomplete
+  Autocomplete,
+  alpha
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -66,13 +60,18 @@ import {
   Cancel as TerminateIcon,
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Category as CategoryIcon
 } from '@mui/icons-material';
 
 // Project Components
 import MainCard from 'components/MainCard';
 import ModernPageHeader from 'components/tba/ModernPageHeader';
 import RBACGuard from 'components/tba/RBACGuard';
+import GenericDataTable from 'components/GenericDataTable';
+import DataImportWizard from 'components/ExcelImport/DataImportWizard';
+import useFormatter from 'hooks/useFormatter';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 
 // API Service
 import {
@@ -100,32 +99,6 @@ import { useSnackbar } from 'notistack';
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * Format date for display
- */
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-';
-  try {
-    return new Date(dateStr).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  } catch {
-    return dateStr;
-  }
-};
-
-/**
- * Format currency
- */
-const formatCurrency = (value) => {
-  if (value === null || value === undefined) return '-';
-  return new Intl.NumberFormat('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value) + ' د.ل';
-};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPER COMPONENTS
@@ -134,24 +107,28 @@ const formatCurrency = (value) => {
 /**
  * Info Row - displays label/value pairs
  */
-const InfoRow = ({ label, value, valueColor, icon: Icon }) => (
-  <ListItem disablePadding sx={{ py: 1 }}>
-    <ListItemText
-      primary={
-        <Stack direction="row" spacing={1} alignItems="center">
-          {Icon && <Icon fontSize="small" color="action" />}
-          <Typography variant="body2" color="text.secondary">
-            {label}
-          </Typography>
-        </Stack>
-      }
-      secondary={
-        <Typography variant="body1" fontWeight={500} sx={{ mt: 0.5 }} color={valueColor || 'text.primary'}>
-          {value}
+/**
+ * Info Row - displays label/value pairs with fixed height and branding
+ */
+/**
+ * Info Table Row
+ */
+const InfoTableRow = ({ label, value, valueColor, icon: Icon, iconColor }) => (
+  <TableRow sx={{ '& td, & th': { border: 0, py: 1, px: 1 } }}>
+    <TableCell component="th" scope="row" align="left" sx={{ width: '40%', verticalAlign: 'middle' }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        {Icon && <Icon sx={{ fontSize: 18, color: iconColor || 'text.secondary' }} />}
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+          {label}
         </Typography>
-      }
-    />
-  </ListItem>
+      </Stack>
+    </TableCell>
+    <TableCell align="left" sx={{ verticalAlign: 'middle' }}>
+      <Typography variant="body2" fontWeight={600} color={valueColor || 'text.primary'} align="left">
+        {value}
+      </Typography>
+    </TableCell>
+  </TableRow>
 );
 
 /**
@@ -174,6 +151,9 @@ const ProviderContractView = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
+  const { formatDate, formatCurrency } = useFormatter();
+  const { primaryColor } = useSystemSettings(); // Changed: cardTitleColor was likely an alias for primaryColor or mainColor
+  const cardTitleColor = primaryColor; // Mapping for backwards compatibility within this file
 
   // File input ref for price list import
   const fileInputRef = useRef(null);
@@ -182,10 +162,11 @@ const ProviderContractView = () => {
   // STATE
   // ─────────────────────────────────────────────────────────────────────────
 
-  const [activeTab, setActiveTab] = useState(0);
   const [pricingSearch, setPricingSearch] = useState('');
   const [pricingPage, setPricingPage] = useState(0);
-  const [pricingRowsPerPage, setPricingRowsPerPage] = useState(10);
+  const [pricingRowsPerPage, setPricingRowsPerPage] = useState(3);
+  const [pricingSorting, setPricingSorting] = useState([]);
+  const [pricingFilters, setPricingFilters] = useState({});
 
   // Dialog states
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
@@ -203,8 +184,11 @@ const ProviderContractView = () => {
     medicalCategoryId: null,
     basePrice: '',
     contractPrice: '',
+    specialty: '',
     notes: ''
   });
+
+  const [importWizardOpen, setImportWizardOpen] = useState(false);
 
   // ─────────────────────────────────────────────────────────────────────────
   // DATA FETCHING (Real API)
@@ -227,12 +211,13 @@ const ProviderContractView = () => {
 
   // Fetch pricing items
   const { data: pricingItemsData, isLoading: pricingLoading } = useQuery({
-    queryKey: ['provider-contract-pricing', id, pricingPage, pricingRowsPerPage, pricingSearch],
+    queryKey: ['provider-contract-pricing', id, pricingPage, pricingRowsPerPage, pricingSearch, pricingSorting, pricingFilters],
     queryFn: () =>
       getContractPricingItems(id, {
         page: pricingPage,
         size: pricingRowsPerPage,
         q: pricingSearch || undefined
+        // Filters and sorting could be added here if backend supports it
       }),
     enabled: !!id,
     keepPreviousData: true
@@ -283,21 +268,21 @@ const ProviderContractView = () => {
     [id, queryClient, enqueueSnackbar]
   );
 
-  const handleImportPriceList = useCallback(
+  const handleDownloadTemplate = useCallback(
     async () => {
       try {
         await downloadPricingTemplate(id);
-        enqueueSnackbar('تم تحميل القالب بنجاح. يرجى ملء الأعمدة الإلزامية ثم رفع الملف.', { variant: 'success' });
-
-        setTimeout(() => {
-          fileInputRef.current?.click();
-        }, 500);
+        enqueueSnackbar('تم تحميل القالب بنجاح. يرجى ملء البيانات المطلوبة.', { variant: 'success' });
       } catch (error) {
         enqueueSnackbar('فشل تحميل القالب', { variant: 'error' });
       }
     },
     [id, enqueueSnackbar]
   );
+
+  const handleImportPriceList = useCallback(() => {
+    setImportWizardOpen(true);
+  }, []);
 
   const activateMutation = useMutation({
     mutationFn: () => activateContract(id),
@@ -351,8 +336,8 @@ const ProviderContractView = () => {
     onSuccess: () => {
       enqueueSnackbar('تم إضافة الخدمة بنجاح', { variant: 'success' });
       queryClient.invalidateQueries(['provider-contract-pricing', id]);
-      setAddPricingDialogOpen(false);
-      setPricingForm({ medicalServiceId: null, basePrice: '', contractPrice: '', notes: '' });
+      // setAddPricingDialogOpen(false); // Controlled by handleAddPricingSubmit options
+      setPricingForm({ medicalServiceId: null, medicalCategoryId: null, basePrice: '', contractPrice: '', notes: '' });
     },
     onError: (err) => {
       enqueueSnackbar(err.message || 'فشل إضافة الخدمة', { variant: 'error' });
@@ -417,9 +402,6 @@ const ProviderContractView = () => {
     navigate(`/provider-contracts/edit/${id}`);
   }, [navigate, id]);
 
-  const handleTabChange = useCallback((event, newValue) => {
-    setActiveTab(newValue);
-  }, []);
 
   const handlePricingPageChange = useCallback((event, newPage) => {
     setPricingPage(newPage);
@@ -446,23 +428,44 @@ const ProviderContractView = () => {
     }
   }, [terminateMutation, terminateReason]);
 
+  // Table Columns Definition
+
+
   // Pricing Handlers
   const handleOpenAddPricing = useCallback(() => {
     setPricingForm({ medicalServiceId: null, medicalCategoryId: null, basePrice: '', contractPrice: '', notes: '' });
     setAddPricingDialogOpen(true);
   }, []);
 
-  const handleAddPricingSubmit = useCallback(() => {
-    if (!pricingForm.medicalServiceId || !pricingForm.basePrice || !pricingForm.contractPrice) return;
+  const handleAddPricingSubmit = useCallback((stayOpen = false) => {
+    // Validation: Require either ID (standard) or Name (custom)
+    if ((!pricingForm.medicalServiceId && !pricingForm.serviceName) || !pricingForm.basePrice || !pricingForm.contractPrice) return;
 
-    addPricingMutation.mutate({
-      medicalServiceId: pricingForm.medicalServiceId.id,
+    // For custom services, category is MANDATORY
+    if (!pricingForm.medicalServiceId && !pricingForm.medicalCategoryId) {
+      enqueueSnackbar('يجب اختيار التصنيف للخدمات المخصصة', { variant: 'warning' });
+      return;
+    }
+
+    const payload = {
+      medicalServiceId: pricingForm.medicalServiceId ? pricingForm.medicalServiceId.id : null,
+      serviceName: pricingForm.serviceName || null,
       medicalCategoryId: pricingForm.medicalCategoryId?.id || null,
+      categoryName: pricingForm.medicalCategoryId?.name || null,
       basePrice: parseFloat(pricingForm.basePrice),
       contractPrice: parseFloat(pricingForm.contractPrice),
+      specialty: pricingForm.specialty || null,
       notes: pricingForm.notes
+    };
+
+    addPricingMutation.mutate(payload, {
+      onSuccess: () => {
+        if (!stayOpen) {
+          setAddPricingDialogOpen(false);
+        }
+      }
     });
-  }, [addPricingMutation, pricingForm]);
+  }, [addPricingMutation, pricingForm, enqueueSnackbar]);
 
   const handleOpenEditPricing = useCallback((item) => {
     setSelectedPricingItem(item);
@@ -471,6 +474,7 @@ const ProviderContractView = () => {
       medicalCategoryId: item.medicalCategory || null,
       basePrice: item.basePrice ?? '',
       contractPrice: item.contractPrice ?? '',
+      specialty: item.specialty || '',
       notes: item.notes || ''
     });
     setEditPricingDialogOpen(true);
@@ -483,6 +487,7 @@ const ProviderContractView = () => {
       medicalCategoryId: pricingForm.medicalCategoryId?.id || null,
       basePrice: parseFloat(pricingForm.basePrice),
       contractPrice: parseFloat(pricingForm.contractPrice),
+      specialty: pricingForm.specialty || null,
       notes: pricingForm.notes
     });
   }, [updatePricingMutation, pricingForm]);
@@ -491,6 +496,87 @@ const ProviderContractView = () => {
     setSelectedPricingItem(item);
     setDeletePricingDialogOpen(true);
   }, []);
+
+  // Table Columns Definition
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'code',
+      header: 'رمز الخدمة',
+      cell: ({ row }) => (
+        <Typography variant="body2" fontWeight={500} color="primary">
+          {row.original.medicalService?.code || row.original.serviceCode || row.original.service?.code || '-'}
+        </Typography>
+      )
+    },
+    {
+      accessorKey: 'name',
+      header: 'اسم الخدمة',
+      cell: ({ row }) => (
+        <Stack spacing={0}>
+          <Typography variant="body2">
+            {row.original.serviceName || row.original.medicalService?.name || '-'}
+          </Typography>
+        </Stack>
+      )
+    },
+    {
+      accessorKey: 'specialty',
+      header: 'التخصص',
+      cell: ({ row }) => (
+        <Typography variant="body2" color="text.secondary">
+          {row.original.specialty || '-'}
+        </Typography>
+      )
+    },
+    {
+      accessorKey: 'category',
+      header: 'التصنيف',
+      cell: ({ row }) => (
+        <Typography variant="body2" color="text.secondary">
+          {row.original.effectiveCategory?.name || row.original.medicalCategory?.name || row.original.categoryName || '-'}
+        </Typography>
+      )
+    },
+    {
+      accessorKey: 'basePrice',
+      header: 'السعر الأساسي',
+      align: 'right',
+      cell: ({ row }) => formatCurrency(row.original.basePrice)
+    },
+    {
+      accessorKey: 'contractPrice',
+      header: 'سعر العقد',
+      align: 'right',
+      cell: ({ row }) => (
+        <Typography fontWeight={500} color="primary.main">
+          {formatCurrency(row.original.contractPrice)}
+        </Typography>
+      )
+    },
+    {
+      id: 'actions',
+      header: 'الإجراءات',
+      align: 'center',
+      cell: ({ row }) => (
+        <Stack direction="row" spacing={1} justifyContent="center">
+          <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
+            <Tooltip title="تعديل السعر">
+              <IconButton size="small" color="primary" onClick={() => handleOpenEditPricing(row.original)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </RBACGuard>
+          <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
+            <Tooltip title="حذف">
+              <IconButton size="small" color="error" onClick={() => handleOpenDeletePricing(row.original)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </RBACGuard>
+        </Stack>
+      )
+    }
+  ], [formatCurrency, handleOpenEditPricing, handleOpenDeletePricing]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER - LOADING STATE
@@ -612,229 +698,188 @@ const ProviderContractView = () => {
         }
       />
 
-      {/* Contract Summary Card */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <MainCard title="معلومات العقد" secondary={<Chip label={statusConfig.label} color={statusConfig.color} size="small" />}>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <List disablePadding>
-                  <InfoRow label="رمز العقد" value={contract.contractCode} icon={ContractIcon} />
-                  <InfoRow label="نموذج التسعير" value={pricingModelConfig.label} icon={PriceIcon} />
-                  <InfoRow label="نسبة الخصم" value={contract.discountPercent ? `${contract.discountPercent}%` : '-'} icon={PriceIcon} />
-                </List>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <List disablePadding>
-                  <InfoRow label="تاريخ البدء" value={formatDate(contract.startDate)} icon={CalendarIcon} />
-                  <InfoRow label="تاريخ الانتهاء" value={formatDate(contract.endDate)} icon={CalendarIcon} />
-                  <InfoRow label="عدد بنود التسعير" value={contract.pricingItemsCount || pricingItems.length} icon={InfoIcon} />
-                </List>
-              </Grid>
+      {/* Main Content Area - Lifted higher to reduce white space */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', mt: -1.5 }}>
+
+        {/* Contract Summary Card - Compact section */}
+        <Box sx={{ flex: '0 0 auto', mb: 0.5, overflow: 'hidden' }}>
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <MainCard
+                title="معلومات العقد"
+                secondary={<Chip label={statusConfig.label} color={statusConfig.color} size="small" />}
+                sx={{
+                  height: '100%',
+                  borderColor: alpha(cardTitleColor, 0.3),
+                  '& .MuiCardHeader-root': { height: 48, py: 1, borderBottom: `1px solid ${alpha(cardTitleColor, 0.1)}`, bgcolor: alpha(cardTitleColor, 0.04) }
+                }}
+                titleTypographyProps={{ variant: 'subtitle2', sx: { color: cardTitleColor, fontWeight: 700 } }}
+              >
+                <Grid container spacing={1}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableBody>
+                          <InfoTableRow label="رمز العقد" value={contract.contractCode} icon={ContractIcon} iconColor={cardTitleColor} />
+                          <InfoTableRow label="نموذج التسعير" value={pricingModelConfig.label} icon={PriceIcon} iconColor={cardTitleColor} />
+                          <InfoTableRow label="نسبة الخصم" value={contract.discountPercent ? `${contract.discountPercent}%` : '-'} icon={PriceIcon} iconColor={cardTitleColor} />
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableBody>
+                          <InfoTableRow label="تاريخ البدء" value={formatDate(contract.startDate)} icon={CalendarIcon} iconColor={cardTitleColor} />
+                          <InfoTableRow label="تاريخ الانتهاء" value={formatDate(contract.endDate)} icon={CalendarIcon} iconColor={cardTitleColor} />
+                          <InfoTableRow label="عدد بنود التسعير" value={contract.pricingItemsCount || pricingItems.length} icon={InfoIcon} iconColor={cardTitleColor} />
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                </Grid>
+              </MainCard>
             </Grid>
-          </MainCard>
-        </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <MainCard title="مقدم الخدمة" secondary={<ProviderIcon color="primary" />}>
-            <List disablePadding>
-              <InfoRow label="الاسم" value={contract.providerName || contract.provider?.name || '-'} />
-              <InfoRow label="المدينة" value={contract.provider?.city || '-'} />
-              <InfoRow label="رقم الهاتف" value={contract.provider?.phone || '-'} />
-            </List>
-          </MainCard>
-        </Grid>
-      </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <MainCard
+                title="مقدم الخدمة"
+                secondary={<ProviderIcon sx={{ fontSize: 18, color: cardTitleColor }} />}
+                sx={{
+                  height: '100%',
+                  borderColor: alpha(cardTitleColor, 0.3),
+                  '& .MuiCardHeader-root': { height: 48, py: 1, borderBottom: `1px solid ${alpha(cardTitleColor, 0.1)}`, bgcolor: alpha(cardTitleColor, 0.04) }
+                }}
+                titleTypographyProps={{ variant: 'subtitle2', sx: { color: cardTitleColor, fontWeight: 700 } }}
+              >
+                <TableContainer>
+                  <Table size="small">
+                    <TableBody>
+                      <InfoTableRow label="الاسم" value={contract.providerName || contract.provider?.name || '-'} />
+                      <InfoTableRow label="المدينة" value={contract.provider?.city || '-'} />
+                      <InfoTableRow label="رقم الهاتف" value={contract.provider?.phone || '-'} />
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </MainCard>
+            </Grid>
+          </Grid>
+        </Box>
 
-      {/* Notes Section */}
-      {contract.notes && (
-        <MainCard title="ملاحظات" secondary={<NotesIcon color="action" />} sx={{ mb: 3 }}>
-          <Typography variant="body1" color="text.secondary">
-            {contract.notes}
-          </Typography>
+
+
+        {/* Pricing Actions Card */}
+        <MainCard sx={{ mb: 0.5 }} content={false}>
+          <Box sx={{ p: 1.5 }}>
+            {/* Search and Excel Upload */}
+            <Stack direction="row" spacing={2} sx={{ mb: 1.5, flexShrink: 0 }} alignItems="center">
+              <TextField
+                placeholder="بحث في بنود التسعير..."
+                value={pricingSearch}
+                onChange={(e) => {
+                  setPricingSearch(e.target.value);
+                  setPricingPage(0);
+                }}
+                size="small"
+                sx={{ flexGrow: 1, maxWidth: 400, '& .MuiOutlinedInput-root': { height: 40 } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  )
+                }}
+              />
+
+              {/* Add System Service Button */}
+              <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleOpenAddPricing}
+                  startIcon={<AddIcon />}
+                  sx={{ height: 40 }}
+                >
+                  إضافة خدمة طبية
+                </Button>
+              </RBACGuard>
+
+              {/* Template Preparation Button */}
+              <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={handleDownloadTemplate}
+                  startIcon={<RefreshIcon />}
+                  sx={{ height: 40 }}
+                >
+                  تجهيز قالب الاستيراد
+                </Button>
+              </RBACGuard>
+
+              {/* Import Price List Button - Only opens file picker now */}
+              <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleImportPriceList}
+                  startIcon={<ContractIcon />}
+                  sx={{ height: 40 }}
+                >
+                  استيراد القائمة
+                </Button>
+              </RBACGuard>
+
+              {/* Hidden file input for uploading filled template */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleExcelUpload(file);
+                }}
+              />
+            </Stack>
+          </Box>
         </MainCard>
-      )}
 
-      {/* Tabs Section */}
-      <MainCard>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="contract tabs" sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="بنود التسعير" id="contract-tab-0" />
-          <Tab label="سجل التغييرات" id="contract-tab-1" disabled />
-        </Tabs>
-
-        {/* Pricing Items Tab */}
-        <TabPanel value={activeTab} index={0}>
-          {/* Search and Excel Upload */}
-          <Stack direction="row" spacing={2} sx={{ mb: 2 }} alignItems="center">
-            <TextField
-              placeholder="بحث في بنود التسعير..."
-              value={pricingSearch}
-              onChange={(e) => {
-                setPricingSearch(e.target.value);
-                setPricingPage(0);
-              }}
-              size="small"
-              sx={{ flexGrow: 1, maxWidth: 400 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                )
-              }}
-            />
-
-            {/* Add System Service Button */}
-            <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleOpenAddPricing}
-                startIcon={<AddIcon />}
-                size="medium"
-              >
-                إضافة خدمة طبية
-              </Button>
-            </RBACGuard>
-
-            {/* Import Price List Button - Downloads template then allows upload */}
-            <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleImportPriceList}
-                startIcon={<ContractIcon />}
-                size="medium"
-              >
-                استيراد قائمة الأسعار
-              </Button>
-            </RBACGuard>
-
-            {/* Hidden file input for uploading filled template */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleExcelUpload(file);
-              }}
-            />
-          </Stack>
-
-          {/* Pricing Table */}
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                  <TableCell>رمز الخدمة</TableCell>
-                  <TableCell>اسم الخدمة</TableCell>
-                  <TableCell>التصنيف</TableCell>
-                  <TableCell align="right">السعر الأساسي</TableCell>
-                  <TableCell align="right">سعر العقد</TableCell>
-                  <TableCell align="right">الخصم %</TableCell>
-                  <TableCell align="center">الإجراءات</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {pricingLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                      <CircularProgress size={32} />
-                    </TableCell>
-                  </TableRow>
-                ) : pricingItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">
-                        {pricingSearch ? 'لم يتم العثور على بنود مطابقة' : 'لا توجد بنود تسعير'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  pricingItems.map((item, index) => (
-                    <TableRow key={item.id || index} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={500} color="primary">
-                          {item.medicalService?.code || item.serviceCode || item.service?.code || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0}>
-                          <Typography variant="body2">
-                            {item.serviceName || item.medicalService?.name || '-'}
-                          </Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.effectiveCategory?.name || item.medicalCategory?.name || item.categoryName || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">{formatCurrency(item.basePrice)}</TableCell>
-                      <TableCell align="right">
-                        <Typography fontWeight={500} color="primary.main">
-                          {formatCurrency(item.contractPrice)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        {item.discountPercent !== null && item.discountPercent !== undefined ? (
-                          <Chip label={`${item.discountPercent}%`} size="small" color="success" variant="outlined" />
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={1} justifyContent="center">
-                          <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
-                            <Tooltip title="تعديل السعر">
-                              <IconButton size="small" color="primary" onClick={() => handleOpenEditPricing(item)}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </RBACGuard>
-                          <RBACGuard requiredPermissions={['MANAGE_PROVIDER_CONTRACTS']}>
-                            <Tooltip title="حذف">
-                              <IconButton size="small" color="error" onClick={() => handleOpenDeletePricing(item)}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </RBACGuard>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Pagination */}
-          {totalPricingItems > 0 && (
-            <TablePagination
-              component="div"
-              count={totalPricingItems}
-              page={pricingPage}
-              onPageChange={handlePricingPageChange}
-              rowsPerPage={pricingRowsPerPage}
-              onRowsPerPageChange={handlePricingRowsPerPageChange}
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              labelRowsPerPage="عدد الصفوف:"
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} من ${count !== -1 ? count : `أكثر من ${to}`}`}
-            />
-          )}
-        </TabPanel>
-
-        {/* Change Log Tab (Future) */}
-        <TabPanel value={activeTab} index={1}>
-          <Typography color="text.secondary">سجل التغييرات قيد التطوير</Typography>
-        </TabPanel>
-      </MainCard>
+        {/* Pricing Table Section - Outside Card */}
+        {/* Define columns for GenericDataTable */}
+        {/* Assuming GenericDataTable, formatCurrency, RBACGuard, Tooltip, IconButton, EditIcon, DeleteIcon, Typography, Chip, Stack are imported */}
+        {/* Also assuming pricingPage, pricingRowsPerPage, setPricingPage, setPricingRowsPerPage, handleOpenEditPricing, handleOpenDeletePricing are defined */}
+        <GenericDataTable
+          columns={columns}
+          data={pricingItems}
+          totalCount={totalPricingItems}
+          isLoading={pricingLoading}
+          tableState={{
+            page: pricingPage,
+            pageSize: pricingRowsPerPage,
+            sorting: pricingSorting,
+            columnFilters: pricingFilters,
+            setPage: setPricingPage,
+            setPageSize: setPricingRowsPerPage,
+            setSorting: setPricingSorting,
+            setFilter: (id, val) => setPricingFilters(prev => ({ ...prev, [id]: val })),
+            clearFilters: () => setPricingFilters({}),
+            hasActiveFilters: Object.keys(pricingFilters).length > 0
+          }}
+          enableFiltering={false}
+          minHeight={235}
+          maxHeight={235}
+          cellPadding="dense"
+          rowsPerPageOptions={[3, 6, 9, 12]}
+          onRowClick={(row) => handleOpenEditPricing(row)}
+          emptyMessage={pricingSearch ? 'لم يتم العثور على بنود مطابقة' : 'لا توجد بنود تسعير'}
+        />
+      </Box>
 
       {/* Suspend Dialog */}
-      <Dialog open={suspendDialogOpen} onClose={() => setSuspendDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>إيقاف العقد</DialogTitle>
+      < Dialog open={suspendDialogOpen} onClose={() => setSuspendDialogOpen(false)} maxWidth="sm" fullWidth >
+        <DialogTitle sx={{ color: cardTitleColor }}>إيقاف العقد</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>هل أنت متأكد من إيقاف العقد؟ يرجى إدخال سبب الإيقاف.</DialogContentText>
           <TextField
@@ -859,11 +904,11 @@ const ProviderContractView = () => {
             {suspendMutation.isLoading ? <CircularProgress size={20} /> : 'إيقاف العقد'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Terminate Dialog */}
-      <Dialog open={terminateDialogOpen} onClose={() => setTerminateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle color="error">إلغاء العقد</DialogTitle>
+      < Dialog open={terminateDialogOpen} onClose={() => setTerminateDialogOpen(false)} maxWidth="sm" fullWidth >
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 700 }}>إلغاء العقد</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
             <strong>تحذير:</strong> إلغاء العقد إجراء نهائي ولا يمكن التراجع عنه. يرجى إدخال سبب الإلغاء.
@@ -890,11 +935,11 @@ const ProviderContractView = () => {
             {terminateMutation.isLoading ? <CircularProgress size={20} /> : 'إلغاء العقد نهائياً'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Add Pricing Item Dialog */}
-      <Dialog open={addPricingDialogOpen} onClose={() => setAddPricingDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>إضافة خدمة طبية للتسعير</DialogTitle>
+      < Dialog open={addPricingDialogOpen} onClose={() => setAddPricingDialogOpen(false)} maxWidth="sm" fullWidth >
+        <DialogTitle sx={{ color: cardTitleColor }}>إضافة خدمة طبية للتسعير</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 3 }}>
             اختر الخدمة الطبية من النظام وأدخل السعر المتفق عليه. يمكنك اختيار تصنيف مختلف اختيارياً.
@@ -903,23 +948,50 @@ const ProviderContractView = () => {
             <MedicalServiceSelector
               value={pricingForm.medicalServiceId}
               onChange={(newValue) => {
-                setPricingForm({
-                  ...pricingForm,
-                  medicalServiceId: newValue,
-                  basePrice: newValue ? (newValue.basePrice ?? '') : '',
-                  contractPrice: '',
-                  medicalCategoryId: null // Reset category when service changes
-                });
+                // Handle Custom Entry (New Service)
+                if (newValue && (newValue.isCustom || typeof newValue === 'string')) {
+                  const customName = newValue.inputValue || newValue;
+                  setPricingForm({
+                    ...pricingForm,
+                    medicalServiceId: null, // No ID for custom
+                    serviceName: customName,
+                    basePrice: '',
+                    contractPrice: '',
+                    medicalCategoryId: null
+                  });
+                } else {
+                  // Handle Standard Selection
+                  setPricingForm({
+                    ...pricingForm,
+                    medicalServiceId: newValue,
+                    serviceName: null,
+                    basePrice: newValue ? (newValue.basePrice ?? '') : '',
+                    contractPrice: '',
+                    medicalCategoryId: null // Reset category when service changes
+                  });
+                }
               }}
               required
               label="الخدمة الطبية *"
               size="medium"
             />
 
+            {/* Show Default Category Info */}
+            {pricingForm.medicalServiceId?.categoryName && (
+              <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px dashed', borderColor: 'divider' }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CategoryIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    التصنيف التلقائي: <strong>{pricingForm.medicalServiceId.categoryName}</strong>
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
+
             {/* Category Override (Optional) */}
             <Autocomplete
               options={medicalCategories || []}
-              getOptionLabel={(option) => option.nameAr || option.nameEn || option.name || ''}
+              getOptionLabel={(option) => option.name || option.nameAr || option.nameEn || ''}
               groupBy={(option) => option.parentId ? 'تصنيف فرعي' : 'تصنيف رئيسي'}
               renderOption={(props, option) => {
                 const { key, ...otherProps } = props;
@@ -927,7 +999,7 @@ const ProviderContractView = () => {
                   <li key={key} {...otherProps}>
                     <Stack>
                       <Typography variant="body2" fontWeight={option.parentId ? 400 : 600}>
-                        {option.code} - {option.nameAr}
+                        {option.code} - {option.name || option.nameAr}
                       </Typography>
                       {option.nameEn && (
                         <Typography variant="caption" color="text.secondary">
@@ -948,34 +1020,48 @@ const ProviderContractView = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="التصنيف الطبي (اختياري)"
-                  helperText="اختر تصنيفاً مختلفاً عن التصنيف الافتراضي للخدمة"
+                  label="تغيير التصنيف (اختياري)"
+                  placeholder="اختر تصنيفاً مختلفاً عن التصنيف التلقائي"
+                  size="small"
                 />
               )}
             />
 
-            <TextField
-              label="السعر الأساسي"
-              type="number"
-              fullWidth
-              value={pricingForm.basePrice}
-              onChange={(e) => setPricingForm({ ...pricingForm, basePrice: e.target.value })}
-              required
-              helperText="السعر المرجعي للخدمة"
-            />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="السعر الأساسي"
+                  type="number"
+                  fullWidth
+                  value={pricingForm.basePrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, basePrice: e.target.value })}
+                  required
+                  helperText="السعر المرجعي"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="سعر العقد (المتفق عليه)"
+                  type="number"
+                  fullWidth
+                  value={pricingForm.contractPrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, contractPrice: e.target.value })}
+                  required
+                  helperText={
+                    pricingForm.basePrice && pricingForm.contractPrice
+                      ? `خصم: ${Math.round(((pricingForm.basePrice - pricingForm.contractPrice) / pricingForm.basePrice) * 100)}%`
+                      : 'أدخل السعر المتفق عليه'
+                  }
+                />
+              </Grid>
+            </Grid>
 
             <TextField
-              label="سعر العقد (المتفق عليه)"
-              type="number"
+              label="التخصص"
               fullWidth
-              value={pricingForm.contractPrice}
-              onChange={(e) => setPricingForm({ ...pricingForm, contractPrice: e.target.value })}
-              required
-              helperText={
-                pricingForm.basePrice && pricingForm.contractPrice
-                  ? `نسبة الخصم: ${Math.round(((pricingForm.basePrice - pricingForm.contractPrice) / pricingForm.basePrice) * 100)}%`
-                  : ''
-              }
+              value={pricingForm.specialty}
+              onChange={(e) => setPricingForm({ ...pricingForm, specialty: e.target.value })}
+              placeholder="مثال: باطنية، عظام، جلدية..."
             />
 
             <TextField
@@ -988,21 +1074,29 @@ const ProviderContractView = () => {
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddPricingDialogOpen(false)}>إلغاء</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setAddPricingDialogOpen(false)} color="inherit">إلغاء</Button>
+          <Box sx={{ flexGrow: 1 }} />
           <Button
-            onClick={handleAddPricingSubmit}
-            variant="contained"
-            disabled={!pricingForm.medicalServiceId || !pricingForm.contractPrice || addPricingMutation.isLoading}
+            onClick={() => handleAddPricingSubmit(true)}
+            variant="outlined"
+            disabled={(!pricingForm.medicalServiceId && !pricingForm.serviceName) || !pricingForm.contractPrice || addPricingMutation.isLoading}
           >
-            {addPricingMutation.isLoading ? <CircularProgress size={20} /> : 'إضافة'}
+            حفظ وإضافة آخر
+          </Button>
+          <Button
+            onClick={() => handleAddPricingSubmit(false)}
+            variant="contained"
+            disabled={(!pricingForm.medicalServiceId && !pricingForm.serviceName) || !pricingForm.contractPrice || addPricingMutation.isLoading}
+          >
+            {addPricingMutation.isLoading ? <CircularProgress size={20} /> : 'إضافة وإغلاق'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Edit Pricing Item Dialog */}
-      <Dialog open={editPricingDialogOpen} onClose={() => setEditPricingDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>تعديل سعر الخدمة</DialogTitle>
+      < Dialog open={editPricingDialogOpen} onClose={() => setEditPricingDialogOpen(false)} maxWidth="sm" fullWidth >
+        <DialogTitle sx={{ color: cardTitleColor }}>تعديل سعر الخدمة</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 3 }}>
             {selectedPricingItem ? `تعديل السعر للخدمة: ${selectedPricingItem.serviceName || selectedPricingItem.medicalService?.name}` : 'تعديل السعر'}
@@ -1072,6 +1166,14 @@ const ProviderContractView = () => {
             />
 
             <TextField
+              label="التخصص"
+              fullWidth
+              value={pricingForm.specialty}
+              onChange={(e) => setPricingForm({ ...pricingForm, specialty: e.target.value })}
+              placeholder="مثال: باطنية، عظام، جلدية..."
+            />
+
+            <TextField
               label="ملاحظات"
               fullWidth
               multiline
@@ -1091,11 +1193,11 @@ const ProviderContractView = () => {
             {updatePricingMutation.isLoading ? <CircularProgress size={20} /> : 'حفظ التغييرات'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
 
       {/* Delete Pricing Dialog */}
-      <Dialog open={deletePricingDialogOpen} onClose={() => setDeletePricingDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle color="error">حذف الخدمة</DialogTitle>
+      < Dialog open={deletePricingDialogOpen} onClose={() => setDeletePricingDialogOpen(false)} maxWidth="xs" fullWidth >
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 700 }}>حذف الخدمة</DialogTitle>
         <DialogContent>
           <DialogContentText>
             هل أنت متأكد من حذف هذه الخدمة من العقد؟
@@ -1114,7 +1216,15 @@ const ProviderContractView = () => {
             {deletePricingMutation.isLoading ? <CircularProgress size={20} /> : 'حذف'}
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog >
+      {/* Import Wizard */}
+      <DataImportWizard
+        open={importWizardOpen}
+        onClose={() => setImportWizardOpen(false)}
+        baseApiUrl={`/api/provider-contracts/${id}/pricing/import`}
+        entityName="بنود الأسعار"
+        hideContextSelectors={true}
+      />
     </RBACGuard>
   );
 };

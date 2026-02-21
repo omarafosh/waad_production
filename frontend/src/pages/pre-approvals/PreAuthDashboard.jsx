@@ -1,6 +1,7 @@
 import { Box, Grid, Typography, Button, Stack, Alert, Card, CardContent, IconButton, Tooltip } from '@mui/material';
 import { Refresh, Dashboard as DashboardIcon, TrendingUp, CheckCircle, Cancel, AttachMoney } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { getAppLocale, getNumberLocale } from 'utils/locale-helper';
 import { ModernPageHeader } from 'components/tba';
 
 import { usePreAuthDashboard, usePreAuthStats, useHighPriorityQueue, useExpiringSoon } from 'hooks/usePreAuthDashboard';
@@ -159,7 +160,7 @@ const PreAuthDashboard = () => {
                 <Box>
                   <Typography variant="caption" color="text.secondary">إجمالي المبالغ المطلوبة</Typography>
                   <Typography variant="h6" fontWeight="bold">
-                    {(stats?.totalRequestedAmount || 0).toLocaleString('ar-SA')} د.ل
+                    {(stats?.totalRequestedAmount || 0).toLocaleString(getNumberLocale())} د.ل
                   </Typography>
                 </Box>
                 <AttachMoney color="primary" sx={{ fontSize: 32, opacity: 0.7 }} />
@@ -174,7 +175,7 @@ const PreAuthDashboard = () => {
                 <Box>
                   <Typography variant="caption" color="text.secondary">إجمالي المبالغ المعتمدة</Typography>
                   <Typography variant="h6" fontWeight="bold" color="success.main">
-                    {(stats?.totalApprovedAmount || 0).toLocaleString('ar-SA')} د.ل
+                    {(stats?.totalApprovedAmount || 0).toLocaleString(getNumberLocale())} د.ل
                   </Typography>
                 </Box>
                 <AttachMoney color="success" sx={{ fontSize: 32, opacity: 0.7 }} />
@@ -189,7 +190,7 @@ const PreAuthDashboard = () => {
                 <Box>
                   <Typography variant="caption" color="text.secondary">متوسط المبلغ المطلوب</Typography>
                   <Typography variant="h6" fontWeight="bold" color="info.main">
-                    {(stats?.averageRequestedAmount || 0).toLocaleString('ar-SA')} د.ل
+                    {(stats?.averageRequestedAmount || 0).toLocaleString(getNumberLocale())} د.ل
                   </Typography>
                 </Box>
                 <AttachMoney color="info" sx={{ fontSize: 32, opacity: 0.7 }} />
@@ -226,7 +227,7 @@ const PreAuthDashboard = () => {
       {/* Info Footer */}
       <Box sx={{ mt: 2, py: 1, px: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
         <Typography variant="caption" color="text.secondary" textAlign="center" display="block">
-          📊 تحديث تلقائي كل دقيقتين | {new Date().toLocaleTimeString('ar-SA')}
+          📊 تحديث تلقائي كل دقيقتين | {new Date().toLocaleTimeString(getAppLocale())}
         </Typography>
       </Box>
     </Box>

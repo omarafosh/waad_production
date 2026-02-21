@@ -12,5 +12,7 @@ public interface ProviderDocumentRepository extends JpaRepository<ProviderDocume
 
     boolean existsByProviderIdAndActiveTrue(Long providerId);
 
+    boolean existsByProviderIdAndTypeAndActiveTrue(Long providerId, com.waad.tba.modules.provider.entity.ProviderDocument.DocumentType type);
+
     long countByProviderIdAndActiveTrue(Long providerId);
 }

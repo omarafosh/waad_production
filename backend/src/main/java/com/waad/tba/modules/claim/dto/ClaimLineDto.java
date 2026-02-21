@@ -30,7 +30,6 @@ public class ClaimLineDto {
      * OPTIONAL: Medical Service ID (Master Code)
      * If not provided, providerServiceCode MUST be present for resolution.
      */
-    @Positive(message = "Medical Service ID must be positive")
     private Long medicalServiceId;
 
     /**
@@ -61,14 +60,9 @@ public class ClaimLineDto {
     private String serviceName;
     
     /**
-     * Service category ID
+     * Service category (Unified Dictionary)
      */
-    private Long serviceCategoryId;
-    
-    /**
-     * Service category name
-     */
-    private String serviceCategoryName;
+    private String serviceCategory;
     
     /**
      * Unit price from Provider Contract (READ-ONLY)

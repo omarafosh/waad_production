@@ -15,6 +15,9 @@
  * - Creation only via Provider Portal
  */
 
+import { getAppLocale } from 'utils/locale-helper';
+
+// ==============================|| CLAIMS LIST ||============================== //
 import { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -94,7 +97,7 @@ const formatCurrency = (value) => {
  */
 const formatDate = (date) => {
   if (!date) return '-';
-  return new Date(date).toLocaleDateString('ar-SA');
+  return new Date(date).toLocaleDateString(getAppLocale());
 };
 
 // ============================================================================

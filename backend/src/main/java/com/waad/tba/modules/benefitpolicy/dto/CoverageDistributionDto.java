@@ -1,5 +1,6 @@
 package com.waad.tba.modules.benefitpolicy.dto;
 
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +17,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class CoverageDistributionDto {
     private Long id;
-    private Long categoryId;
+    private String categoryId;
     private String categoryName;
     private Long serviceId;
     private String serviceName;
@@ -27,10 +28,10 @@ public class CoverageDistributionDto {
         if (entity == null) return null;
         return CoverageDistributionDto.builder()
             .id(entity.getId())
-            .categoryId(entity.getMedicalCategory() != null ? entity.getMedicalCategory().getId() : null)
-            .categoryName(entity.getMedicalCategory() != null ? entity.getMedicalCategory().getName() : null)
+            .categoryId(entity.getMedicalCategory())
+            .categoryName(entity.getMedicalCategory()) // Using code as name fallback
             .serviceId(entity.getMedicalService() != null ? entity.getMedicalService().getId() : null)
-            .serviceName(entity.getMedicalService() != null ? entity.getMedicalService().getName() : null)
+            .serviceName(entity.getMedicalService() != null ? entity.getMedicalService().getNameEn() : null)
             .limitAmount(entity.getLimitAmount())
             .active(entity.isActive())
             .build();

@@ -44,10 +44,11 @@ function getColorStyle({ variant, color, theme }) {
       };
     case 'outlined':
       return {
+        color: main, // Ensure text and icon are vivid
         borderColor: main,
         '&:hover': {
           color: dark,
-          backgroundColor: 'transparent',
+          backgroundColor: withAlpha(main, 0.04), // Subtle background on hover
           borderColor: dark
         },
         ...commonShadow
@@ -59,16 +60,17 @@ function getColorStyle({ variant, color, theme }) {
         backgroundColor: lighter,
         '&:hover': {
           color: dark,
-          borderColor: dark
+          borderColor: dark,
+          backgroundColor: withAlpha(main, 0.08)
         },
         ...commonShadow
       };
     case 'text':
     default:
       return {
-        color: dark,
+        color: main, // Using main instead of dark for better visibility
         '&:hover': {
-          color: darker,
+          color: dark,
           backgroundColor: lighter
         },
         ...commonShadow
@@ -91,7 +93,7 @@ export default function Button(theme) {
   };
   const iconStyle = {
     '&>*:nth-of-type(1)': {
-      fontSize: '1.2rem'
+      fontSize: '1.4rem' // Increased size to make it pop as requested
     }
   };
 
@@ -102,8 +104,11 @@ export default function Button(theme) {
       },
       styleOverrides: {
         root: {
-          fontWeight: 400,
-          fontSize: '1rem',
+          fontWeight: theme.typography.button.fontWeight,
+          fontSize: theme.typography.button.fontSize,
+          lineHeight: theme.typography.button.lineHeight,
+          padding: theme.spacing(1, 2.5), // Standardized padding using theme spacing
+          borderRadius: theme.shape.borderRadius,
           '&::after': {
             content: '""',
             display: 'block',
@@ -112,7 +117,7 @@ export default function Button(theme) {
             top: 0,
             width: '100%',
             height: '100%',
-            borderRadius: 4,
+            borderRadius: 'inherit',
             opacity: 0,
             transition: 'all 0.5s'
           },

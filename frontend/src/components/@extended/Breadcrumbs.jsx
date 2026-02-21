@@ -153,9 +153,7 @@ export default function Breadcrumbs({
               </MuiBreadcrumbs>
             </Grid>
             {title && titleBottom && (
-              <Grid sx={{ mt: card === false ? 0.25 : 1 }}>
-                <Typography variant="h2">{main.title}</Typography>
-              </Grid>
+              <Typography variant="h4">{main.title}</Typography>
             )}
           </Grid>
           {card === false && divider !== false && <Divider sx={{ mt: 2 }} />}
@@ -229,13 +227,13 @@ export default function Breadcrumbs({
           >
             {title && !titleBottom && (
               <Grid>
-                <Typography variant="h2">{custom ? heading : item?.title}</Typography>
+                <Typography variant="h4">{custom ? heading : item?.title}</Typography>
               </Grid>
             )}
             <Grid>{tempContent}</Grid>
             {title && titleBottom && (
               <Grid sx={{ mt: card === false ? 0.25 : 1 }}>
-                <Typography variant="h2">{custom ? heading : item?.title}</Typography>
+                <Typography variant="h4">{custom ? heading : item?.title}</Typography>
               </Grid>
             )}
           </Grid>

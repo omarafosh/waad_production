@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import axiosClient from 'utils/axios';
 import { useQuery } from '@tanstack/react-query';
 import { useReactToPrint } from 'react-to-print';
+import { getAppLocale } from 'utils/locale-helper';
 import { QRCodeCanvas } from 'qrcode.react';
 import {
     Box,
@@ -62,7 +63,7 @@ import CircularLoader from 'components/CircularLoader';
 import MemberAvatar from 'components/tba/MemberAvatar';
 
 // Company Settings - SINGLE SOURCE OF TRUTH for branding
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+// (Refactored to use SystemSettingsContext where needed, but this component receives data via props or API)
 
 // API
 import { getAllMembers, searchMembers } from 'services/api/unified-members.service';
@@ -826,7 +827,7 @@ const BeneficiariesReports = () => {
                                 تقرير المنتفعين
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA', { dateStyle: 'full' })}
+                                تاريخ الطباعة: {new Date().toLocaleDateString(getAppLocale(), { dateStyle: 'full' })}
                             </Typography>
                             {liveSearch && (
                                 <Typography variant="body2" color="primary">
@@ -984,7 +985,7 @@ const SingleBeneficiaryReport = ({ member, financialStats, loadingStats, onBack 
                 <Box sx={{ borderBottom: '2px solid #eee', mb: 3, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
                         <Typography variant="h4" color="primary.main" fontWeight="bold">تقرير تفاصيل المنتفع</Typography>
-                        <Typography variant="body2" color="text.secondary">تاريخ التقرير: {new Date().toLocaleDateString('ar-SA')}</Typography>
+                        <Typography variant="body2" color="text.secondary">تاريخ التقرير: {new Date().toLocaleDateString(getAppLocale())}</Typography>
                     </Box>
                     {hasLogo() ? (
                         <img src={getLogoSrc()} alt={companyName} style={{ height: 50, opacity: 0.8 }} />

@@ -5,22 +5,25 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import com.waad.tba.common.entity.SoftDeleteEntity;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "roles")
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
-public class Role {
+@EqualsAndHashCode(callSuper = true)
+@SQLDelete(sql = "UPDATE roles SET active = false, deleted = true, deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("active = true")
+public class Role extends SoftDeleteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,8 +31,6 @@ public class Role {
 
     @Column(unique = true, nullable = false)
     private String name;
-
-    public String getName() { return name; }
 
     @Column(name = "name_ar")
     private String nameAr;
@@ -47,11 +48,4 @@ public class Role {
     )
     @Builder.Default
     private Set<Permission> permissions = new HashSet<>();
-
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 }

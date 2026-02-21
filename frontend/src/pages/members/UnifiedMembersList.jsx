@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import {
   Avatar,
   Box,
@@ -47,7 +47,8 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  Switch
+  Switch,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -64,7 +65,8 @@ import {
   Bolt as FlashIcon,
   Star as VIPIcon,
   MedicalServices as MedicalIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 
@@ -95,6 +97,9 @@ import { useAuth } from 'contexts/AuthContext';
 import { useTableRefresh } from 'contexts/TableRefreshContext';
 import { PERMISSIONS } from 'constants/permissions.constants';
 
+// Style Utils
+import { headerButtonStyle } from 'utils/styleUtils';
+
 const DEFAULT_SORT = { field: 'createdAt', direction: 'desc' };
 
 /**
@@ -104,13 +109,13 @@ const UnifiedMembersList = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuth();
-  const { settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
   const { refreshKey } = useTableRefresh();
 
   // Table State Management
   const tableState = useTableState({
-    initialPageSize: 8, // Default to 8 records as requested
-    allowedPageSizes: [8, 16, 24, 32],
+    initialPageSize: 10,
+    allowedPageSizes: [10, 25, 50, 100],
     defaultSort: DEFAULT_SORT,
     storageKey: 'members_table_page_size' // Per-table persistence to avoid conflicts
   });
@@ -159,41 +164,7 @@ const UnifiedMembersList = () => {
   // Lookup Data
   const [employers, setEmployers] = useState([]);
 
-  // Common Header Button Style
-  const headerButtonStyle = (type) => {
-    const isExcel = type === 'excel';
-    const isDelete = type === 'delete';
-    const isAdd = type === 'add';
-    const brandColor = '#008e92';
-    const color = isExcel ? '#1b5e20' : (isDelete ? '#d32f2f' : brandColor);
 
-    return {
-      minWidth: '155px',
-      color: color || '#fff',
-      borderColor: color,
-      '&:hover': {
-        backgroundColor: color ? `${color}10` : undefined,
-        borderColor: color,
-        color: isDelete && showDeleted ? '#fff' : color
-      },
-      '&.MuiButton-contained': {
-        color: '#fff',
-        backgroundColor: isAdd ? brandColor : undefined,
-        '&:hover': {
-          backgroundColor: isAdd ? '#00797c' : undefined
-        }
-      },
-      '& .MuiButton-startIcon': {
-        '& .MuiSvgIcon-root': {
-          fontSize: '1.2rem'
-        }
-      },
-      fontWeight: 700,
-      whiteSpace: 'nowrap',
-      px: 1.5,
-      height: '40px'
-    };
-  };
 
   // EXPORT HANDLERS
   // ========================================
@@ -653,7 +624,7 @@ const UnifiedMembersList = () => {
                   variant="outlined"
                   onClick={handleDownloadTemplate}
                   startIcon={<DownloadIcon />}
-                  sx={headerButtonStyle('excel')}
+                  sx={(theme) => headerButtonStyle('excel', theme)}
                 >
                   تحميل القالب
                 </Button>
@@ -664,7 +635,7 @@ const UnifiedMembersList = () => {
                   variant="outlined"
                   onClick={handleImportClick}
                   startIcon={<UploadFileIcon />}
-                  sx={headerButtonStyle('excel')}
+                  sx={(theme) => headerButtonStyle('excel', theme)}
                 >
                   استيراد من إكسل
                 </Button>
@@ -675,7 +646,7 @@ const UnifiedMembersList = () => {
                   variant="outlined"
                   onClick={() => setExportWizardOpen(true)}
                   startIcon={<FileDownloadIcon />}
-                  sx={headerButtonStyle('excel')}
+                  sx={(theme) => headerButtonStyle('excel', theme)}
                 >
                   تصدير لإكسل
                 </Button>
@@ -687,15 +658,15 @@ const UnifiedMembersList = () => {
                   variant={showDeleted ? "contained" : "outlined"}
                   startIcon={showDeleted ? <VisibilityIcon /> : <DeleteIcon />}
                   onClick={() => setShowDeleted(!showDeleted)}
-                  sx={{
-                    ...headerButtonStyle('delete'),
-                    backgroundColor: showDeleted ? '#d32f2f' : 'transparent',
-                    color: showDeleted ? '#fff' : '#d32f2f',
+                  sx={(theme) => ({
+                    ...headerButtonStyle('delete', theme),
+                    backgroundColor: showDeleted ? theme.palette.error.main : 'transparent',
+                    color: showDeleted ? theme.palette.error.contrastText : theme.palette.error.main,
                     '&:hover': {
-                      backgroundColor: showDeleted ? '#b71c1c' : '#d32f2f10',
-                      color: showDeleted ? '#fff' : '#d32f2f',
+                      backgroundColor: showDeleted ? theme.palette.error.dark : `${theme.palette.error.main}10`,
+                      color: showDeleted ? theme.palette.error.contrastText : theme.palette.error.main,
                     }
-                  }}
+                  })}
                 >
                   {showDeleted ? 'العودة للقائمة النشطة' : 'المحذوفات'}
                 </Button>
@@ -706,7 +677,7 @@ const UnifiedMembersList = () => {
                   variant="contained"
                   startIcon={<AddIcon />}
                   onClick={() => navigate('/members/add')}
-                  sx={headerButtonStyle('add')}
+                  sx={(theme) => headerButtonStyle('add', theme)}
                 >
                   إضافة مستفيد
                 </Button>
@@ -809,7 +780,8 @@ const UnifiedMembersList = () => {
                 cellPadding="dense"
                 enableFiltering={false} // Disable internal column filters
                 onRowClick={(row) => navigate(`/members/${row.id}`)}
-                rowsPerPageOptions={[8, 16, 24, 32]}
+                emptyMessage="لا يوجد مستفيدين"
+                rowsPerPageOptions={[10, 25, 50, 100]}
                 fontSize={settings.fontSize}
               />
             </Box>
@@ -917,9 +889,9 @@ const UnifiedMembersList = () => {
                   fullWidth
                   variant="contained"
                   sx={{
-                    bgcolor: selectedMember.type === 'PRINCIPAL' ? 'primary.main' : 'success.dark',
+                    bgcolor: selectedMember.type === 'PRINCIPAL' ? 'primary.main' : 'success.main',
                     '&:hover': {
-                      bgcolor: selectedMember.type === 'PRINCIPAL' ? 'primary.dark' : '#1b5e20' // Custom dark green for hover
+                      bgcolor: selectedMember.type === 'PRINCIPAL' ? 'primary.dark' : 'success.dark'
                     }
                   }}
                   onClick={() => {

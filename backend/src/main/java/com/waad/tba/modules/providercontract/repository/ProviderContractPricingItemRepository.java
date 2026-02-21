@@ -1,6 +1,7 @@
 package com.waad.tba.modules.providercontract.repository;
 
 import com.waad.tba.modules.providercontract.entity.ProviderContractPricingItem;
+import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,15 +16,7 @@ import java.util.Optional;
 
 /**
  * Repository for Provider Contract Pricing Item entity.
- * 
- * Provides:
- * - CRUD operations for pricing items
- * - Queries by contract, service, category
- * - Effective pricing lookups
- * - Price comparison queries
- * 
- * @version 1.0
- * @since 2024-12-24
+ * (REFACTORED 2026-02-15 - UNIFIED DICTIONARY)
  */
 @Repository
 public interface ProviderContractPricingItemRepository extends JpaRepository<ProviderContractPricingItem, Long> {
@@ -52,7 +45,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Find pricing items by medical service ID
+     * Find pricing items by medical service ID (Long)
      */
     List<ProviderContractPricingItem> findByMedicalServiceIdAndActiveTrue(Long medicalServiceId);
 
@@ -68,7 +61,7 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     @Query("SELECT p FROM ProviderContractPricingItem p WHERE p.contract = :contract AND p.medicalService = :service AND p.active = true")
     Optional<ProviderContractPricingItem> findByContractAndMedicalService(
             @Param("contract") com.waad.tba.modules.providercontract.entity.ProviderContract contract,
-            @Param("service") com.waad.tba.modules.medicaltaxonomy.entity.MedicalService service);
+            @Param("service") MedicalService service);
 
     /**
      * Check if pricing exists for service in contract
@@ -80,21 +73,21 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Find pricing items by category within a contract
+     * Find pricing items by category name within a contract
      */
-    List<ProviderContractPricingItem> findByContractIdAndMedicalCategoryIdAndActiveTrue(
-            Long contractId, Long categoryId);
+    List<ProviderContractPricingItem> findByContractIdAndCategoryNameAndActiveTrue(
+            Long contractId, String categoryName);
 
     /**
-     * Find pricing items by service category within a contract
+     * Find pricing items by service category name within a contract
      */
     @Query("SELECT p FROM ProviderContractPricingItem p " +
            "WHERE p.contract.id = :contractId " +
            "AND p.active = true " +
-           "AND p.medicalService.categoryId = :categoryId")
-    List<ProviderContractPricingItem> findByContractIdAndServiceCategoryId(
+           "AND p.medicalService.categoryName = :category")
+    List<ProviderContractPricingItem> findByContractIdAndServiceCategory(
             @Param("contractId") Long contractId,
-            @Param("categoryId") Long categoryId);
+            @Param("category") String category);
 
     // ═══════════════════════════════════════════════════════════════════════════
     // EFFECTIVE PRICING LOOKUPS
@@ -136,7 +129,8 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "WHERE p.contract.id = :contractId " +
            "AND p.active = true " +
            "AND (LOWER(p.medicalService.code) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "     OR LOWER(p.medicalService.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "     OR LOWER(p.medicalService.name) LIKE LOWER(CONCAT('%', :search, '%'))" +
+           "     OR LOWER(p.medicalService.nameEn) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<ProviderContractPricingItem> searchByServiceCodeOrName(
             @Param("contractId") Long contractId,
             @Param("search") String search,
@@ -216,6 +210,12 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND p.active = true")
     Object[] getPriceRange(@Param("contractId") Long contractId);
 
+    /**
+     * Find by contract and exact service name (case-insensitive)
+     */
+    Optional<ProviderContractPricingItem> findByContractIdAndServiceNameIgnoreCase(
+            Long contractId, String serviceName);
+
     // ═══════════════════════════════════════════════════════════════════════════
     // BULK OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════════
@@ -257,15 +257,15 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
     /**
      * Get distinct categories available in active contracts for a provider
      */
-    @Query("SELECT DISTINCT p.medicalCategory FROM ProviderContractPricingItem p " +
+    @Query("SELECT DISTINCT p.medicalService.categoryName FROM ProviderContractPricingItem p " +
            "WHERE p.contract.provider.id = :providerId " +
            "AND p.active = true " +
            "AND p.contract.active = true " +
            "AND p.contract.status = 'ACTIVE' " +
-           "AND p.medicalCategory IS NOT NULL " +
+           "AND p.medicalService.categoryName IS NOT NULL " +
            "AND p.contract.startDate <= CURRENT_DATE " +
            "AND (p.contract.endDate IS NULL OR p.contract.endDate >= CURRENT_DATE)")
-    List<com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory> findDistinctCategoriesByProvider(
+    List<String> findDistinctCategoriesByProvider(
             @Param("providerId") Long providerId);
 
     /**
@@ -276,12 +276,12 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND p.active = true " +
            "AND p.contract.active = true " +
            "AND p.contract.status = 'ACTIVE' " +
-           "AND p.medicalCategory.id = :categoryId " +
+           "AND p.medicalService.categoryName = :category " +
            "AND p.contract.startDate <= CURRENT_DATE " +
            "AND (p.contract.endDate IS NULL OR p.contract.endDate >= CURRENT_DATE)")
     List<ProviderContractPricingItem> findServicesByProviderAndCategory(
             @Param("providerId") Long providerId,
-            @Param("categoryId") Long categoryId);
+            @Param("category") String category);
 
     /**
      * Get all services available in active contracts for a provider
@@ -291,7 +291,6 @@ public interface ProviderContractPricingItemRepository extends JpaRepository<Pro
            "AND p.active = true " +
            "AND p.contract.active = true " +
            "AND p.contract.status = 'ACTIVE' " +
-           "AND p.medicalService IS NOT NULL " +
            "AND p.contract.startDate <= CURRENT_DATE " +
            "AND (p.contract.endDate IS NULL OR p.contract.endDate >= CURRENT_DATE)")
     List<ProviderContractPricingItem> findAllServicesByProvider(

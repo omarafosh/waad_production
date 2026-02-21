@@ -37,14 +37,16 @@ const ServicesDonutChart = ({ data, loading }) => {
       show: true,
       position: 'bottom',
       horizontalAlign: 'center',
-      fontFamily: fontFamily
+      fontFamily: fontFamily,
+      fontSize: theme.typography.caption.fontSize // Scalable unit
     },
     dataLabels: {
       enabled: true,
       formatter: (val) => val.toFixed(1) + '%',
       style: {
         colors: [theme.palette.background.paper],
-        fontFamily: fontFamily
+        fontFamily: fontFamily,
+        fontSize: theme.typography.caption.fontSize // Scalable unit
       }
     },
     plotOptions: {
@@ -60,7 +62,9 @@ const ServicesDonutChart = ({ data, loading }) => {
                 const total = data?.reduce((sum, item) => sum + (item.count || item.value || 0), 0) || 0;
                 return total.toLocaleString('ar-SA');
               },
-              fontFamily: fontFamily
+              fontFamily: fontFamily,
+              fontSize: theme.typography.h6.fontSize, // Scalable unit
+              fontWeight: 600
             }
           }
         }
@@ -69,7 +73,7 @@ const ServicesDonutChart = ({ data, loading }) => {
     tooltip: {
       theme: colorScheme === ThemeMode.DARK ? 'dark' : 'light',
       y: {
-        formatter: (val) => val.toLocaleString('ar-SA')
+        formatter: (val) => val.toLocaleString('ar-SA-u-nu-latn')
       }
     }
   });

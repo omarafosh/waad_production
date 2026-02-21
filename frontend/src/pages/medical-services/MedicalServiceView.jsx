@@ -16,6 +16,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 
 // MUI Components
 import { Box, Button, Grid, Stack, Skeleton, Typography, Divider, Chip } from '@mui/material';
@@ -45,7 +46,7 @@ const formatPrice = (value) => {
   if (value == null || value === '') return '-';
   const num = parseFloat(value);
   if (isNaN(num)) return '-';
-  return num.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
+  return num.toLocaleString(getAppLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
 };
 
 const formatDate = (value) => {
@@ -53,7 +54,7 @@ const formatDate = (value) => {
   try {
     const date = new Date(value);
     if (isNaN(date.getTime())) return '-';
-    return date.toLocaleDateString('ar-SA', {
+    return date.toLocaleDateString(getAppLocale(), {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -140,8 +141,8 @@ const MedicalServiceView = () => {
   // COMPUTED VALUES
   // ========================================
 
-  const categoryName = useMemo(() => {
-    return service?.categoryName || '-';
+  const categoriesList = useMemo(() => {
+    return Array.isArray(service?.categories) ? service.categories : [];
   }, [service]);
 
   // ========================================
@@ -247,7 +248,26 @@ const MedicalServiceView = () => {
 
         <Grid container spacing={3}>
           <DetailRow label="الرمز" value={service?.code} />
-          <DetailRow label="التصنيف الطبي" value={categoryName} />
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              التصنيفات المرتبطة
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {categoriesList.length === 0 ? (
+                <Typography variant="body1" color="error">- غير مصنف -</Typography>
+              ) : (
+                categoriesList.map((m, idx) => (
+                  <Chip
+                    key={idx}
+                    label={`${m.categoryName} (${m.context})`}
+                    color={m.primary ? "primary" : "secondary"}
+                    variant={m.primary ? "filled" : "outlined"}
+                    size="small"
+                  />
+                ))
+              )}
+            </Stack>
+          </Grid>
           <DetailRow label="الاسم" value={service?.name} />
           <DetailRow label="الوصف" value={service?.description} fullWidth />
         </Grid>

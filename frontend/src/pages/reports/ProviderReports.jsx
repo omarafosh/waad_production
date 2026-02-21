@@ -31,7 +31,7 @@ import CloseCircleOutlined from '@ant-design/icons/CloseCircleOutlined';
 // Project imports
 import MainCard from 'components/MainCard';
 import { providersService } from 'services/api';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import api from 'utils/axios';
 
 // ==============================|| PROVIDER REPORTS ||============================== //
@@ -47,7 +47,7 @@ import api from 'utils/axios';
  * @since 2026-02-04
  */
 export default function ProviderReports() {
-    const { companyName } = useCompanySettings();
+    const { systemName, logoUrl } = useSystemSettings(); // Changed
 
     // Form State
     const [providerId, setProviderId] = useState('');
@@ -114,12 +114,20 @@ export default function ProviderReports() {
             // Create download link
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+
+            // Security: Only allow blob URLs and sanitize filename to prevent DOM XSS
+            if (url && url.startsWith('blob:')) {
+                const link = document.createElement('a');
+                const safeUrl = url.startsWith('blob:') ? url : 'about:blank';
+                link.href = safeUrl;
+
+                const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+                link.download = safeFilename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
             window.URL.revokeObjectURL(url);
 
             setSuccess('تم تنزيل التقرير بنجاح');

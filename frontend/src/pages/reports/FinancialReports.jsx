@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { saveAs } from 'file-saver';
+import { getAppLocale } from 'utils/locale-helper';
 import { useReactToPrint } from 'react-to-print';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -52,7 +54,7 @@ import { ModernPageHeader } from 'components/tba';
 import RBACGuard from 'components/tba/RBACGuard';
 import EmployerFilterSelector from 'components/tba/EmployerFilterSelector';
 import { useEmployerFilter } from 'contexts/EmployerFilterContext';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import { PERMISSIONS, ROLES } from 'constants/permissions.constants';
 import { claimsService, providersService } from 'services/api';
 import { exportToExcel, exportToPDF } from 'utils/exportUtils';
@@ -73,7 +75,7 @@ import { useAuth } from 'contexts/AuthContext';
  */
 const FinancialReports = () => {
   const { selectedEmployer } = useEmployerFilter();
-  const { companyName, primaryColor } = useCompanySettings();
+  const { systemName, primaryColor } = useSystemSettings(); // Changed
   const { user } = useAuth();
   const printRef = useRef(null);
 
@@ -364,13 +366,13 @@ const FinancialReports = () => {
   const handleExportExcel = () => {
     const tabNames = ['Financial_Summary', 'Invoices', 'Payments', 'Settlements'];
     const fileName = `${tabNames[activeTab]}_Report_${new Date().toISOString().split('T')[0]}`;
-    exportToExcel(claims, fileName, { companyName });
+    exportToExcel(claims, fileName, { companyName: systemName }); // Mapped
   };
 
   const handleExportPDF = () => {
     const tabNames = ['الملخص المالي', 'تقرير الفواتير', 'تقرير المدفوعات', 'تقرير التسويات'];
-    const title = `${tabNames[activeTab]} - ${new Date().toLocaleDateString('ar-SA')}`;
-    exportToPDF(claims, title, { companyName, primaryColor });
+    const title = `${tabNames[activeTab]} - ${new Date().toLocaleDateString(getAppLocale())}`;
+    exportToPDF(claims, title, { companyName: systemName, primaryColor }); // Mapped
   };
 
   // Tab change handler
@@ -411,13 +413,13 @@ const FinancialReports = () => {
   // ============================================================================
 
   const formatAmount = (value) => {
-    if (value == null) return '0 د.ل';
-    return `${Number(value).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ل`;
+    if (value == null) return `0 د.ل`;
+    return `${Number(value).toLocaleString(getNumberLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ل`;
   };
 
   const formatDate = (value) => {
     if (!value) return '-';
-    return new Date(value).toLocaleDateString('ar-SA');
+    return new Date(value).toLocaleDateString(getAppLocale());
   };
 
   const summaryColumns = [
@@ -954,7 +956,7 @@ const FinancialReports = () => {
                   {tabNames[activeTab]}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA', { dateStyle: 'full' })}
+                  تاريخ الطباعة: {new Date().toLocaleDateString(getAppLocale(), { dateStyle: 'full' })}
                 </Typography>
                 {selectedEmployer && (
                   <Typography variant="body2" color="text.secondary">

@@ -18,7 +18,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7'; // Sun
 import AuthFooter from 'components/cards/AuthFooter';
 import Logo from 'components/logo';
 import AuthCard from './AuthCard';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 
 // assets
 import AuthBackground from './AuthBackground';
@@ -33,7 +33,7 @@ export default function AuthWrapper({ children }) {
   const currentMode = mode === 'system' ? systemMode : mode;
   const isDarkMode = currentMode === 'dark';
 
-  const { companyName, getLogoSrc, hasLogo, settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
 
   return (
     <Box

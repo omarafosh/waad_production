@@ -59,6 +59,15 @@ public class RbacDataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-password:Admin@123}")
+    private String initialAdminPassword;
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-username:superadmin}")
+    private String initialAdminUsername;
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.initial-admin-email:superadmin@tba.sa}")
+    private String initialAdminEmail;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -112,6 +121,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                 p.setDescription(appPerm.getDescription());
                 p.setNameAr(appPerm.getDisplayNameAr());
                 p.setModule(appPerm.getModule());
+                p.setModuleName(appPerm.getDisplayNameAr()); // Fix: Sync moduleName
                 permissionRepository.save(p);
                 
                 permissionMap.put(permName, p);
@@ -122,6 +132,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                         .nameAr(appPerm.getDisplayNameAr())
                         .description(appPerm.getDescription())
                         .module(appPerm.getModule())
+                        .moduleName(appPerm.getDisplayNameAr()) // Fix: Map to Arabic display name for consistency
                         .build();
                 
                 Permission saved = permissionRepository.save(newPerm);
@@ -349,13 +360,18 @@ public class RbacDataInitializer implements CommandLineRunner {
     private void ensureSuperAdminUser(Map<String, Role> roleMap) {
         log.info("👤 Initializing super admin user...");
         
-        String username = "superadmin";
-        String email = "superadmin@tba.sa";
+        String username = initialAdminUsername;
+        String email = initialAdminEmail;
         
         // Check if superadmin user already exists
         Optional<User> existingUser = userRepository.findByUsername(username);
         
         if (existingUser.isPresent()) {
+            log.info("   👤 User {} already exists. Synchronizing password...", username);
+            User admin = existingUser.get();
+            admin.setPassword(passwordEncoder.encode(initialAdminPassword));
+            admin.setEmail(email); // Also sync email just in case
+            userRepository.save(admin);
             return;
         }
         
@@ -370,7 +386,7 @@ public class RbacDataInitializer implements CommandLineRunner {
                 .username(username)
                 .email(email)
                 .civilId("0000000000") // Default civilId for superadmin
-                .password(passwordEncoder.encode("Admin@123"))
+                .password(passwordEncoder.encode(initialAdminPassword))
                 .fullName("System Super Administrator")
                 .active(true)
                 .roles(new HashSet<>(Collections.singletonList(superAdminRole)))

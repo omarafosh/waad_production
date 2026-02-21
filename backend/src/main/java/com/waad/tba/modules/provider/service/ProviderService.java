@@ -9,6 +9,7 @@ import com.waad.tba.modules.provider.dto.ProviderUpdateDto;
 import com.waad.tba.modules.provider.dto.ProviderViewDto;
 import com.waad.tba.modules.provider.entity.Provider;
 import com.waad.tba.modules.provider.entity.ProviderAllowedEmployer;
+import com.waad.tba.modules.provider.entity.ProviderDocument;
 import com.waad.tba.modules.provider.mapper.ProviderMapper;
 import com.waad.tba.modules.provider.repository.ProviderDocumentRepository;
 import com.waad.tba.modules.provider.repository.ProviderRepository;
@@ -58,7 +59,7 @@ public class ProviderService {
 
     public List<ProviderViewDto> search(String query) {
         return providerRepository.search(query).stream()
-                .map(p -> providerMapper.toViewDto(p, providerDocumentRepository.existsByProviderIdAndActiveTrue(p.getId())))
+                .map(this::mapToViewDto)
                 .collect(Collectors.toList());
     }
 
@@ -111,7 +112,7 @@ public class ProviderService {
         // Sync visibility settings to all linked users
         syncVisibilityToUsers(provider, userRepository.findByProviderId(provider.getId()));
 
-        return providerMapper.toViewDto(provider, providerDocumentRepository.existsByProviderIdAndActiveTrue(id));
+        return mapToViewDto(provider);
     }
 
 
@@ -181,7 +182,7 @@ public class ProviderService {
     public ProviderViewDto getProvider(Long id) {
         Provider provider = providerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Provider not found with id: " + id));
-        return providerMapper.toViewDto(provider, providerDocumentRepository.existsByProviderIdAndActiveTrue(id));
+        return mapToViewDto(provider);
     }
 
     @Transactional(readOnly = true)
@@ -197,7 +198,7 @@ public class ProviderService {
             providers = providerRepository.findAll(pageable);
         }
         
-        return providers.map(p -> providerMapper.toViewDto(p, providerDocumentRepository.existsByProviderIdAndActiveTrue(p.getId())));
+        return providers.map(this::mapToViewDto);
     }
 
     public void deleteProvider(Long id) {
@@ -210,7 +211,7 @@ public class ProviderService {
     @Transactional(readOnly = true)
     public List<ProviderViewDto> getAllActiveProviders() {
         return providerRepository.findAllActive().stream()
-                .map(p -> providerMapper.toViewDto(p, providerDocumentRepository.existsByProviderIdAndActiveTrue(p.getId())))
+                .map(this::mapToViewDto)
                 .collect(Collectors.toList());
     }
 
@@ -325,5 +326,15 @@ public class ProviderService {
         } else {
             log.debug("No other users to sync for provider {}", provider.getId());
         }
+    }
+
+    private ProviderViewDto mapToViewDto(Provider provider) {
+        boolean hasDocs = providerDocumentRepository.existsByProviderIdAndActiveTrue(provider.getId());
+        boolean hasLicense = providerDocumentRepository.existsByProviderIdAndTypeAndActiveTrue(
+                provider.getId(), ProviderDocument.DocumentType.LICENSE);
+        boolean hasCR = providerDocumentRepository.existsByProviderIdAndTypeAndActiveTrue(
+                provider.getId(), ProviderDocument.DocumentType.COMMERCIAL_REGISTER);
+                
+        return providerMapper.toViewDto(provider, hasDocs, hasLicense, hasCR);
     }
 }

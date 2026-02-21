@@ -2,8 +2,8 @@ package com.waad.tba.modules.medicaltaxonomy.service;
 
 import com.waad.tba.common.exception.BusinessRuleException;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.entity.ProviderServiceMapping;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
+import com.waad.tba.modules.medicaltaxonomy.entity.ProviderServiceMapping;
 import com.waad.tba.modules.medicaltaxonomy.repository.ProviderServiceMappingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +19,7 @@ import java.util.Optional;
  * Core Responsibilities:
  * 1. Resolving Provider Service Codes to Master Services.
  * 2. Managing the lifecycle of Master Services vs Mappings.
+ * (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Slf4j
 @Service
@@ -55,7 +56,6 @@ public class MedicalCatalogService {
         }
 
         // 2. FALLBACK: Check if the provider is already using a Master Service Code
-        // Some providers (especially large ones) might already use the system's standard codes.
         Optional<MedicalService> masterService = masterServiceRepository.findByCode(providerServiceCode);
         if (masterService.isPresent()) {
             log.info("ℹ️ No explicit mapping found for code '{}', but it matches a Master Service. Using as direct match.", providerServiceCode);
@@ -74,7 +74,7 @@ public class MedicalCatalogService {
      */
     public boolean isMaster(Long serviceId) {
         return masterServiceRepository.findById(serviceId)
-                .map(MedicalService::isMaster)
+                .map(MedicalService::getIsMaster)
                 .orElse(false);
     }
 

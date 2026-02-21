@@ -56,9 +56,8 @@ public class BenefitPolicyResponseDto {
 
     // Stats
     private Integer coveredMembersCount;
-    // NOTE: rulesCount and activeRulesCount removed to prevent N+1 queries
-    // and avoid 500 errors from corrupted rule data during list operations.
-    // Use a dedicated endpoint or COUNT query if needed.
+    private Integer rulesCount;
+    private Integer activeRulesCount;
 
     // Metadata
     private String notes;
@@ -102,7 +101,8 @@ public class BenefitPolicyResponseDto {
                 .statusDisplay(getStatusDisplay(entity.getStatus()))
                 .effective(entity.isEffective())
                 .coveredMembersCount(entity.getCoveredMembersCount())
-                // rulesCount and activeRulesCount removed - see field declaration comment
+                .rulesCount(entity.getRulesCount())
+                .activeRulesCount(entity.getActiveRulesCount())
                 .notes(entity.getNotes())
                 .active(entity.isActive())
                 .distributionType(entity.getDistributionType())

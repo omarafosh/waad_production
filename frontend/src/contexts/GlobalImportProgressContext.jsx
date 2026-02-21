@@ -8,7 +8,7 @@ const ImportProgressContext = createContext(null);
 export const useImportProgress = () => useContext(ImportProgressContext);
 
 export const GlobalImportProgressProvider = ({ children }) => {
-    const [activeImport, setActiveImport] = useState(null); // { batchId, fileName, status, progress }
+    const [activeImport, setActiveImport] = useState(null); // { batchId, fileName, status, progress, statusUrl }
     const [isMinimized, setIsMinimized] = useState(false);
     const [importHistory, setImportHistory] = useState([]);
     const [errorDetails, setErrorDetails] = useState(null); // { batchId, errors: [] }
@@ -16,14 +16,15 @@ export const GlobalImportProgressProvider = ({ children }) => {
 
     const POLLING_INTERVAL = 2000;
 
-    const startImport = useCallback((batchId, fileName) => {
+    const startImport = useCallback((batchId, fileName, statusUrl = null) => {
         setActiveImport({
             batchId,
             fileName,
             status: 'PROCESSING',
             progress: 0,
             counts: { created: 0, updated: 0, skipped: 0, error: 0 },
-            total: 0
+            total: 0,
+            statusUrl: statusUrl || `unified-members/import/status/${batchId}`
         });
         setIsMinimized(false);
     }, []);
@@ -32,10 +33,11 @@ export const GlobalImportProgressProvider = ({ children }) => {
         if (!activeImport || activeImport.status === 'COMPLETED' || activeImport.status === 'FAILED') return;
 
         try {
-            // Using the endpoint we verified: MemberExcelTemplateController
-            // Using relative path since baseURL handles /api
-            const response = await axios.get(`unified-members/import/status/${activeImport.batchId}`);
-            const log = response.data?.data; // ApiResponse.data contains the MemberImportLog
+            // Use the provided statusUrl or fallback to members import status
+            const url = activeImport.statusUrl;
+            console.log(`[ImportProgress] Polling status from: ${url}`);
+            const response = await axios.get(url);
+            const log = response.data?.data; // ApiResponse.data contains the MemberImportLog or PricingImportLog
 
             if (log) {
                 const total = log.totalRows || 0;

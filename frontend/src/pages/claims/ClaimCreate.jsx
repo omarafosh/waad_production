@@ -15,6 +15,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getAppLocale, getNumberLocale } from '../../utils/locale-helper';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -159,7 +160,7 @@ const ContractPriceDisplay = ({ loading, price, hasContract, error }) => {
   return (
     <Chip
       icon={<ContractIcon />}
-      label={`${price?.toLocaleString('ar-SA')} د.ل`}
+      label={`${price?.toLocaleString(getNumberLocale())} د.ل`}
       color="success"
       size="small"
       variant="filled"
@@ -1005,7 +1006,7 @@ const ClaimCreate = () => {
                               <TableCell align="center">
                                 {line.hasContract && (
                                   <Typography variant="body2" fontWeight="bold">
-                                    {(line.unitPrice * line.quantity).toLocaleString('ar-SA')} د.ل
+                                    {(line.unitPrice * line.quantity).toLocaleString(getNumberLocale())} د.ل
                                   </Typography>
                                 )}
                               </TableCell>
@@ -1053,7 +1054,7 @@ const ClaimCreate = () => {
                         />
                       </Box>
                       <Typography variant="h5" fontWeight="bold" color="success.dark">
-                        {calculateTotal().toLocaleString('ar-SA')} د.ل
+                        {calculateTotal().toLocaleString(getNumberLocale())} د.ل
                       </Typography>
                     </Box>
                   )}

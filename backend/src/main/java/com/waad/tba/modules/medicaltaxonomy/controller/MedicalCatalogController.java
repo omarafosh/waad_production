@@ -29,7 +29,7 @@ public class MedicalCatalogController {
     public ResponseEntity<ApiResponse<MedicalService>> resolveMapping(
             @RequestParam Long providerId,
             @RequestParam String providerServiceCode) {
-        MedicalService service = catalogService.resolveService(providerId, providerServiceCode);
+        MedicalService service = (MedicalService) catalogService.resolveService(providerId, providerServiceCode);
         return ResponseEntity.ok(ApiResponse.success(service));
     }
 

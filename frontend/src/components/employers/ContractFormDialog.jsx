@@ -23,8 +23,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import benefitPolicyService from '../../services/benefitPolicyService';
-import organizationService from '../../services/organizationService';
+import { createBenefitPolicy, updateBenefitPolicy } from '../../services/api/benefit-policies.service';
+import employersService from '../../services/api/employers.service';
 
 /**
  * Contract Form Dialog
@@ -43,7 +43,6 @@ import organizationService from '../../services/organizationService';
 const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 'create' }) => {
   const [loading, setLoading] = useState(false);
   const [employers, setEmployers] = useState([]);
-  const [insuranceOrgs, setInsuranceOrgs] = useState([]);
   const [error, setError] = useState(null);
 
   const isEditMode = mode === 'edit' && contract !== null;
@@ -60,9 +59,6 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
     employerOrgId: Yup.number()
       .required('الشريك مطلوب')
       .positive('يجب اختيار شريك صحيح'),
-    insuranceOrgId: Yup.number()
-      .nullable()
-      .positive('يجب اختيار شركة تأمين صحيحة'),
     startDate: Yup.date()
       .required('تاريخ البدء مطلوب')
       .typeError('تاريخ البدء غير صحيح'),
@@ -102,7 +98,6 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
       policyCode: contract?.policyCode || '',
       description: contract?.description || '',
       employerOrgId: contract?.employerOrgId || '',
-      insuranceOrgId: contract?.insuranceOrgId || '',
       startDate: contract?.startDate ? dayjs(contract.startDate) : null,
       endDate: contract?.endDate ? dayjs(contract.endDate) : null,
       annualLimit: contract?.annualLimit || '',
@@ -125,7 +120,7 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
           policyCode: values.policyCode || null,
           description: values.description || null,
           employerOrgId: values.employerOrgId,
-          insuranceOrgId: values.insuranceOrgId || null,
+          insuranceOrgId: null, // System is the insurer (TPA)
           startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
           endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : null,
           annualLimit: parseFloat(values.annualLimit),
@@ -139,9 +134,9 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
         // Submit
         let response;
         if (isEditMode) {
-          response = await benefitPolicyService.update(contract.id, data);
+          response = await updateBenefitPolicy(contract.id, data);
         } else {
-          response = await benefitPolicyService.create(data);
+          response = await createBenefitPolicy(data);
         }
 
         // Success
@@ -156,24 +151,20 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
     }
   });
 
-  // Load employers and insurance organizations
+  // Load employers only
   useEffect(() => {
-    const loadOrganizations = async () => {
+    const loadEmployers = async () => {
       try {
-        // Load employers (type EMPLOYER)
-        const employerResponse = await organizationService.getByType('EMPLOYER');
-        setEmployers(employerResponse.data || []);
-
-        // Load insurance organizations (type INSURANCE)
-        const insuranceResponse = await organizationService.getByType('INSURANCE');
-        setInsuranceOrgs(insuranceResponse.data || []);
+        const response = await employersService.getEmployerSelectors();
+        const orgs = Array.isArray(response) ? response : (response?.data || []);
+        setEmployers(orgs);
       } catch (err) {
-        console.error('Error loading organizations:', err);
+        console.error('Error loading employers:', err);
       }
     };
 
     if (open) {
-      loadOrganizations();
+      loadEmployers();
     }
   }, [open]);
 
@@ -246,18 +237,18 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
             </Grid>
 
             {/* Employer Organization */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={12}>
               <FormControl fullWidth required error={formik.touched.employerOrgId && Boolean(formik.errors.employerOrgId)}>
-                <InputLabel>الشريك</InputLabel>
+                <InputLabel>جهة العمل المتعاقدة (Employer)</InputLabel>
                 <Select
-                  label="الشريك"
+                  label="جهة العمل المتعاقدة (Employer)"
                   name="employerOrgId"
                   value={formik.values.employerOrgId}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 >
                   <MenuItem value="">
-                    <em>اختر الشريك</em>
+                    <em>اختر جهة العمل</em>
                   </MenuItem>
                   {Array.isArray(employers) && employers.map((employer) => (
                     <MenuItem key={employer.id} value={employer.id}>
@@ -270,29 +261,6 @@ const ContractFormDialog = ({ open, onClose, onSuccess, contract = null, mode = 
                     {formik.errors.employerOrgId}
                   </Box>
                 )}
-              </FormControl>
-            </Grid>
-
-            {/* Insurance Organization (Optional) */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>شركة التأمين (اختياري)</InputLabel>
-                <Select
-                  label="شركة التأمين (اختياري)"
-                  name="insuranceOrgId"
-                  value={formik.values.insuranceOrgId}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                >
-                  <MenuItem value="">
-                    <em>لا يوجد</em>
-                  </MenuItem>
-                  {insuranceOrgs.map((insurance) => (
-                    <MenuItem key={insurance.id} value={insurance.id}>
-                      {insurance.nameAr || insurance.name}
-                    </MenuItem>
-                  ))}
-                </Select>
               </FormControl>
             </Grid>
 

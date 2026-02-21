@@ -62,7 +62,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints - Authentication & Branding
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/companies/default").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/settings").permitAll()
                         // Diagnostic Endpoint REMOVED for Security
 
                         // Swagger / OpenAPI endpoints

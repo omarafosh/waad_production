@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getNumberLocale, getAppLocale } from 'utils/locale-helper';
 import {
   Box,
   Button,
@@ -41,7 +43,13 @@ import MainCard from '../../components/MainCard';
 import ModernPageHeader from '../../components/tba/ModernPageHeader';
 import ContractStatusChip from '../../components/employers/ContractStatusChip';
 import ContractFormDialog from '../../components/employers/ContractFormDialog';
-import benefitPolicyService from '../../services/benefitPolicyService';
+import {
+  getBenefitPolicies,
+  activateBenefitPolicy,
+  suspendBenefitPolicy,
+  cancelBenefitPolicy,
+  deleteBenefitPolicy
+} from '../../services/api/benefit-policies.service';
 import { getEmployers } from '../../services/api/employers.service';
 import { exportToExcel } from '../../utils/exportToExcel';
 import { exportToPDF } from '../../utils/exportToPDF';
@@ -123,7 +131,7 @@ const EmployerContracts = () => {
         params.employerId = filters.employerId;
       }
 
-      const response = await benefitPolicyService.list(params);
+      const response = await getBenefitPolicies(params);
 
       let data = response.data?.content || [];
 
@@ -234,19 +242,19 @@ const EmployerContracts = () => {
     try {
       switch (confirmAction) {
         case 'activate':
-          await benefitPolicyService.activate(selectedContract.id);
+          await activateBenefitPolicy(selectedContract.id);
           showSnackbar('تم تفعيل العقد بنجاح', 'success');
           break;
         case 'suspend':
-          await benefitPolicyService.suspend(selectedContract.id);
+          await suspendBenefitPolicy(selectedContract.id);
           showSnackbar('تم تعليق العقد بنجاح', 'success');
           break;
         case 'cancel':
-          await benefitPolicyService.cancel(selectedContract.id);
+          await cancelBenefitPolicy(selectedContract.id);
           showSnackbar('تم إلغاء العقد بنجاح', 'success');
           break;
         case 'delete':
-          await benefitPolicyService.delete(selectedContract.id);
+          await deleteBenefitPolicy(selectedContract.id);
           showSnackbar('تم حذف العقد بنجاح', 'success');
           break;
         default:
@@ -271,7 +279,7 @@ const EmployerContracts = () => {
       'الشريك': contract.employerName || '-',
       'تاريخ البدء': dayjs(contract.startDate).format('YYYY-MM-DD'),
       'تاريخ الانتهاء': dayjs(contract.endDate).format('YYYY-MM-DD'),
-      'الحد السنوي': contract.annualLimit?.toLocaleString('ar-SA') || '-',
+      'الحد السنوي': contract.annualLimit?.toLocaleString(getNumberLocale()) || '-',
       'نسبة التغطية': `${contract.defaultCoveragePercent}%`,
       'عدد المنتفعين': contract.coveredMembersCount || 0,
       'الحالة': getStatusLabel(contract.status)
@@ -288,7 +296,7 @@ const EmployerContracts = () => {
       contract.name,
       contract.employerName || '-',
       `${dayjs(contract.startDate).format('YYYY-MM-DD')} - ${dayjs(contract.endDate).format('YYYY-MM-DD')}`,
-      contract.annualLimit?.toLocaleString('ar-SA') || '-',
+      contract.annualLimit?.toLocaleString(getNumberLocale()) || '-',
       getStatusLabel(contract.status)
     ]);
 
@@ -358,7 +366,7 @@ const EmployerContracts = () => {
       accessorKey: 'annualLimit',
       header: 'الحد السنوي',
       size: 150,
-      cell: ({ row }) => row.original.annualLimit ? `${row.original.annualLimit.toLocaleString('ar-SA')} ر.س` : '-'
+      cell: ({ row }) => row.original.annualLimit ? `${row.original.annualLimit.toLocaleString(getNumberLocale())} ر.س` : '-'
     },
     {
       accessorKey: 'defaultCoveragePercent',

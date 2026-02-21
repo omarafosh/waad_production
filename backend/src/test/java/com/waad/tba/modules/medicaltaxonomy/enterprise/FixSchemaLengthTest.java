@@ -1,0 +1,26 @@
+package com.waad.tba.modules.medicaltaxonomy.enterprise;
+
+import org.junit.jupiter.api.Test;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
+public class FixSchemaLengthTest {
+    @Test
+    public void fixLength() {
+        String url = "jdbc:postgresql://localhost:5432/tba_waad_system";
+        String user = "postgres";
+        String password = "postgres";
+
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             Statement stmt = conn.createStatement()) {
+            
+            System.out.println("Increasing medical_categories.code length...");
+            stmt.execute("ALTER TABLE medical_categories ALTER COLUMN code TYPE VARCHAR(100)");
+            System.out.println("✅ Schema updated successfully.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

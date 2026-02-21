@@ -11,6 +11,8 @@
  */
 
 import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getAppLocale } from 'utils/locale-helper';
 import {
   Box,
   Grid,
@@ -245,7 +247,7 @@ export default function ProfileOverview() {
               <InfoRow label="جهة الارتباط" value={getLinkedEntity()} />
 
               {/* Last Login (optional) */}
-              {user?.lastLogin && <InfoRow label="آخر تسجيل دخول" value={new Date(user.lastLogin).toLocaleString('ar-SA')} />}
+              {user?.lastLogin && <InfoRow label="آخر تسجيل دخول" value={new Date(user.lastLogin).toLocaleString(getAppLocale())} />}
             </Stack>
           </MainCard>
         </Grid>

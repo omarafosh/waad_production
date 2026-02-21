@@ -230,6 +230,7 @@ public enum AppPermission {
     MEDICAL_SERVICE_DELETE("حذف خدمة طبية", "Delete service"),
     MEDICAL_SERVICE_PRINT("طباعة الخدمات", "Print services list"),
     MEDICAL_SERVICE_EXPORT("تصدير الخدمات", "Export services data"),
+    MANAGE_TAXONOMY("إدارة التصنيف الطبي", "Manage medical taxonomy and catalog mapping"),
 
     // ============================================
     // Reports and Analytics

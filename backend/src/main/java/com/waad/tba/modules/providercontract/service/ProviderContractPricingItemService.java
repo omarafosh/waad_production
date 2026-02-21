@@ -1,9 +1,7 @@
 package com.waad.tba.modules.providercontract.service;
 
 import com.waad.tba.common.exception.BusinessRuleException;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import com.waad.tba.modules.providercontract.dto.*;
 import com.waad.tba.modules.providercontract.entity.ProviderContract;
@@ -41,7 +39,6 @@ public class ProviderContractPricingItemService {
     private final ProviderContractPricingItemRepository pricingRepository;
     private final ProviderContractRepository contractRepository;
     private final MedicalServiceRepository medicalServiceRepository;
-    private final MedicalCategoryRepository medicalCategoryRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // READ OPERATIONS
@@ -59,11 +56,8 @@ public class ProviderContractPricingItemService {
 
         List<ProviderContractPricingItem> items = pricingRepository.findByContractIdAndActiveTrue(contractId);
 
-        // Build category map for resolving service categories
-        Map<Long, MedicalCategory> categoryMap = buildCategoryMap(items);
-
         return items.stream()
-                .map(item -> ProviderContractPricingItemResponseDto.fromEntity(item, categoryMap))
+                .map(item -> ProviderContractPricingItemResponseDto.fromEntity(item))
                 .collect(Collectors.toList());
     }
 
@@ -79,30 +73,10 @@ public class ProviderContractPricingItemService {
 
         Page<ProviderContractPricingItem> page = pricingRepository.findByContractIdAndActiveTrue(contractId, pageable);
 
-        // Build category map for resolving service categories
-        Map<Long, MedicalCategory> categoryMap = buildCategoryMap(page.getContent());
-
-        return page.map(item -> ProviderContractPricingItemResponseDto.fromEntity(item, categoryMap));
+        return page.map(item -> ProviderContractPricingItemResponseDto.fromEntity(item));
     }
 
-    /**
-     * Build a map of categoryId -> MedicalCategory for resolving service categories
-     */
-    private Map<Long, MedicalCategory> buildCategoryMap(List<ProviderContractPricingItem> items) {
-        // Collect all unique category IDs from services
-        Set<Long> categoryIds = items.stream()
-                .filter(item -> item.getMedicalService() != null && item.getMedicalService().getCategoryId() != null)
-                .map(item -> item.getMedicalService().getCategoryId())
-                .collect(Collectors.toSet());
 
-        if (categoryIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        // Fetch all categories in one query
-        return medicalCategoryRepository.findAllById(categoryIds).stream()
-                .collect(Collectors.toMap(MedicalCategory::getId, cat -> cat));
-    }
 
     /**
      * Get pricing item by ID
@@ -194,15 +168,44 @@ public class ProviderContractPricingItemService {
             throw new BusinessRuleException("Cannot modify pricing for contract with status: " + contract.getStatus());
         }
 
-        // Get medical service
-        MedicalService service = medicalServiceRepository.findById(dto.getMedicalServiceId())
-                .orElseThrow(
-                        () -> new BusinessRuleException("Medical service not found: " + dto.getMedicalServiceId()));
+        // 1. Resolve Medical Service (if provided) or validate Custom Service
+        MedicalService service = null;
+        String serviceName;
+        String serviceCode;
 
-        // Check if pricing already exists for this service
-        if (pricingRepository.existsByContractIdAndMedicalServiceIdAndActiveTrue(contractId,
-                dto.getMedicalServiceId())) {
-            throw new BusinessRuleException("Pricing already exists for this service in contract. Update instead.");
+        if (dto.getMedicalServiceId() != null) {
+            // Case A: Standard System Service
+            service = medicalServiceRepository.findById(dto.getMedicalServiceId())
+                    .orElseThrow(() -> new BusinessRuleException(
+                            "Medical service not found: " + dto.getMedicalServiceId()));
+
+            // Check duplicate
+            if (pricingRepository.existsByContractIdAndMedicalServiceIdAndActiveTrue(contractId,
+                    dto.getMedicalServiceId())) {
+                throw new BusinessRuleException(
+                        "Pricing already exists for this service in contract. Update instead.");
+            }
+
+            serviceName = service.getName();
+            serviceCode = service.getCode();
+            
+            // Auto-populate specialty if not provided and service has it
+            if (dto.getSpecialty() == null || dto.getSpecialty().isBlank()) {
+                dto.setSpecialty(service.getSpecialty());
+            }
+        } else {
+            // Case B: Custom Service (Free Text)
+            if (dto.getServiceName() == null || dto.getServiceName().isBlank()) {
+                throw new BusinessRuleException("Service Name is required for custom services");
+            }
+            if (dto.getCategoryName() == null || dto.getCategoryName().isBlank()) {
+                throw new BusinessRuleException("Category Name is required for custom services");
+            }
+
+            serviceName = dto.getServiceName();
+            serviceCode = dto.getServiceCode() != null && !dto.getServiceCode().isBlank()
+                    ? dto.getServiceCode()
+                    : "CUST-" + System.currentTimeMillis(); // Auto-generate code if missing
         }
 
         // Validate prices
@@ -216,32 +219,26 @@ public class ProviderContractPricingItemService {
             throw new BusinessRuleException("Contract price must be greater than zero");
         }
 
-        // Resolve category (DTO override -> Service category)
-        Long categoryId = dto.getMedicalCategoryId();
-        if (categoryId == null) {
-            categoryId = service.getCategoryId();
-        }
-
-        MedicalCategory category = null;
-        if (categoryId != null) {
-            category = medicalCategoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new BusinessRuleException(
-                            "Medical category not found: " + dto.getMedicalCategoryId()));
+        // Resolve category
+        String category = dto.getCategoryName();
+        if ((category == null || category.isBlank()) && service != null) {
+            category = service.getCategoryName();
         }
 
         // ARCHITECTURAL ENFORCEMENT: Pricing items MUST have a category
-        // If service has no category (e.g. DRAFT) and no override provided, we cannot
-        // price it safely
-        if (category == null) {
-            throw new BusinessRuleException("Cannot create pricing: Service '" + service.getName()
+        if (category == null || category.isBlank()) {
+            throw new BusinessRuleException("Cannot create pricing: Service '" + serviceName
                     + "' has no assigned category. Please provide a Category Override.");
         }
 
         // Build entity
         ProviderContractPricingItem item = ProviderContractPricingItem.builder()
                 .contract(contract)
-                .medicalService(service)
-                .medicalCategory(category) // Set the category relation
+                .medicalService(service) // Can be null for custom services
+                .serviceCode(serviceCode)
+                .serviceName(serviceName)
+                .categoryName(category)
+                .specialty(dto.getSpecialty())
                 .basePrice(basePrice)
                 .contractPrice(contractPrice)
                 .effectiveFrom(dto.getEffectiveFrom() != null ? dto.getEffectiveFrom() : java.time.LocalDate.now())
@@ -250,7 +247,6 @@ public class ProviderContractPricingItemService {
                 .active(true)
                 .build();
 
-        // Discount is calculated in @PrePersist
         // Discount is calculated in @PrePersist
         try {
             item = pricingRepository.save(item);
@@ -318,11 +314,11 @@ public class ProviderContractPricingItemService {
         if (dto.getEffectiveTo() != null) {
             item.setEffectiveTo(dto.getEffectiveTo());
         }
-        if (dto.getMedicalCategoryId() != null) {
-            MedicalCategory category = medicalCategoryRepository.findById(dto.getMedicalCategoryId())
-                    .orElseThrow(() -> new BusinessRuleException(
-                            "Medical category not found: " + dto.getMedicalCategoryId()));
-            item.setMedicalCategory(category);
+        if (dto.getCategoryName() != null) {
+            item.setCategoryName(dto.getCategoryName());
+        }
+        if (dto.getSpecialty() != null) {
+            item.setSpecialty(dto.getSpecialty());
         }
         if (dto.getNotes() != null) {
             item.setNotes(dto.getNotes());
@@ -484,13 +480,10 @@ public class ProviderContractPricingItemService {
     public List<ContractCategoryDto> findCategoriesByProvider(Long providerId) {
         log.debug("Finding contracted categories for provider: {}", providerId);
 
-        var categories = pricingRepository.findDistinctCategoriesByProvider(providerId);
-        return categories.stream()
-                .map(cat -> ContractCategoryDto.builder()
-                        .id(cat.getId())
-                        .code(cat.getCode())
-                        .name(cat.getName())
-                        .parentId(cat.getParentId())
+        List<String> categoryNames = pricingRepository.findDistinctCategoriesByProvider(providerId);
+        return categoryNames.stream()
+                .map(name -> ContractCategoryDto.builder()
+                        .name(name)
                         .build())
                 .collect(Collectors.toList());
     }
@@ -501,21 +494,21 @@ public class ProviderContractPricingItemService {
      * Used when creating claims/preauth to show only contracted services
      */
     @Transactional(readOnly = true)
-    public List<ContractServiceDto> findServicesByProviderAndCategory(Long providerId, Long categoryId) {
-        log.debug("Finding contracted services for provider: {}, category: {}", providerId, categoryId);
+    public List<ContractServiceDto> findServicesByProviderAndCategory(Long providerId, String categoryName) {
+        log.debug("Finding contracted services for provider: {}, category: {}", providerId, categoryName);
 
-        var pricingItems = pricingRepository.findServicesByProviderAndCategory(providerId, categoryId);
+        var pricingItems = pricingRepository.findServicesByProviderAndCategory(providerId, categoryName);
         return pricingItems.stream()
                 .filter(p -> p.getMedicalService() != null)
                 .map(p -> ContractServiceDto.builder()
                         .id(p.getMedicalService().getId())
                         .code(p.getMedicalService().getCode())
                         .name(p.getMedicalService().getName())
-                        .categoryId(categoryId)
+                        .categoryName(categoryName)
                         .contractPrice(p.getContractPrice())
                         .basePrice(p.getBasePrice())
                         .discountPercent(p.getDiscountPercent())
-                        .requiresPreAuth(p.getMedicalService().isRequiresPA())
+                        .requiresPreAuth(false)
                         .build())
                 .collect(Collectors.toList());
     }
@@ -534,13 +527,11 @@ public class ProviderContractPricingItemService {
                         .id(p.getMedicalService().getId())
                         .code(p.getMedicalService().getCode())
                         .name(p.getMedicalService().getName())
-                        .categoryId(p.getMedicalCategory() != null ? p.getMedicalCategory().getId() : null)
-                        .categoryName(
-                                p.getMedicalCategory() != null ? p.getMedicalCategory().getName() : p.getCategoryName())
+                        .categoryName(p.getMedicalService().getCategoryName() != null ? p.getMedicalService().getCategoryName() : p.getCategoryName())
                         .contractPrice(p.getContractPrice())
                         .basePrice(p.getBasePrice())
                         .discountPercent(p.getDiscountPercent())
-                        .requiresPreAuth(p.getMedicalService().isRequiresPA())
+                        .requiresPreAuth(false) // PA requirement now in BenefitPolicyRule
                         .build())
                 .collect(Collectors.toList());
     }
@@ -585,10 +576,7 @@ public class ProviderContractPricingItemService {
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     public static class ContractCategoryDto {
-        private Long id;
-        private String code;
         private String name;
-        private Long parentId;
     }
 
     /**
@@ -603,7 +591,6 @@ public class ProviderContractPricingItemService {
         private Long id;
         private String code;
         private String name;
-        private Long categoryId;
         private String categoryName;
         private BigDecimal contractPrice;
         private BigDecimal basePrice;

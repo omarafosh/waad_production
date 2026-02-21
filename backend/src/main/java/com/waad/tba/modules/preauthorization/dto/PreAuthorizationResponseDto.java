@@ -48,7 +48,7 @@ public class PreAuthorizationResponseDto {
     private Long medicalServiceId;
     private String serviceCode;
     private String serviceName;
-    private Long serviceCategoryId;
+    private String serviceCategory;
     private String serviceCategoryName;
     private Boolean requiresPA;
     

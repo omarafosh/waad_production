@@ -1,5 +1,6 @@
 package com.waad.tba.modules.workflow.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.waad.tba.common.exception.BusinessRuleException;
 import com.waad.tba.common.exception.ResourceNotFoundException;
@@ -12,6 +13,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +129,7 @@ public class WorkflowService {
         Map<String, Object> proposedChanges = new HashMap<>();
         try {
             if (request.getPayload() != null) {
-                proposedChanges = objectMapper.readValue(request.getPayload(), Map.class);
+            proposedChanges = objectMapper.readValue(request.getPayload(), new TypeReference<Map<String, Object>>() {});
             }
         } catch (Exception e) {
             log.error("Error parsing payload JSON", e);

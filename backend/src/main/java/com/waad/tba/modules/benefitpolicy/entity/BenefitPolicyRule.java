@@ -1,7 +1,6 @@
 package com.waad.tba.modules.benefitpolicy.entity;
 
 import com.waad.tba.modules.benefitpolicy.enums.ApplyOnType;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.visit.entity.VisitType;
 import jakarta.persistence.*;
@@ -14,21 +13,10 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * BenefitPolicyRule Entity - defines coverage rules within a Benefit Policy.
- * 
- * Each rule specifies coverage for either:
- * - A specific Medical Service (e.g., "X-Ray Chest" at 100% coverage)
- * - An entire Medical Category (e.g., "All Lab Tests" at 80% coverage)
- * 
- * Business Rules:
- * - A rule must target EITHER a category OR a service, NOT both
- * - No duplicate rules (same category or service) within one policy
- * - If coveragePercent is null, inherits from parent BenefitPolicy.defaultCoveragePercent
- * - If no rule exists for a service/category, the benefit is NOT covered
+ * BenefitPolicyRule Entity (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "benefit_policy_rules", indexes = {
@@ -38,12 +26,10 @@ import java.time.LocalDateTime;
     @Index(name = "idx_bpr_active", columnList = "active"),
     @Index(name = "idx_bpr_encounter_type", columnList = "encounter_type")
 }, uniqueConstraints = {
-    // Prevent duplicate category rules within same policy + context
     @UniqueConstraint(
         name = "uk_bpr_policy_category_context",
         columnNames = {"benefit_policy_id", "medical_category_id", "encounter_type"}
     ),
-    // Prevent duplicate service rules within same policy + context
     @UniqueConstraint(
         name = "uk_bpr_policy_service_context",
         columnNames = {"benefit_policy_id", "medical_service_id", "encounter_type"}
@@ -54,35 +40,47 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@lombok.ToString(exclude = {"benefitPolicy", "medicalCategoryRef"})
+@lombok.EqualsAndHashCode(exclude = {"benefitPolicy", "medicalCategoryRef"})
 public class BenefitPolicyRule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // RELATIONSHIPS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * The parent Benefit Policy this rule belongs to
-     */
     @NotNull(message = "Benefit Policy is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "benefit_policy_id", nullable = false)
     private BenefitPolicy benefitPolicy;
 
     /**
-     * Optional: Target Medical Category (e.g., "All Lab Tests")
-     * If set, this rule applies to ALL services in this category
+     * Category Code (String) - Transient helper, not a DB column
+     * REFACTORED 2026-02-18: This column does NOT exist in DB V04.
+     * We use it as a transient property that delegates to medicalCategoryRef.
+     */
+    @Transient
+    private String medicalCategory;
+
+    public String getMedicalCategory() {
+        if (medicalCategoryRef != null) {
+            return medicalCategoryRef.getCode();
+        }
+        return medicalCategory;
+    }
+
+    public void setMedicalCategory(String medicalCategory) {
+        this.medicalCategory = medicalCategory;
+    }
+
+    /**
+     * Target Medical Category (FK-based - REFACTORED 2026-02-18)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_category_id")
-    private MedicalCategory medicalCategory;
+    private com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory medicalCategoryRef;
 
     /**
-     * Optional: Target Medical Service (e.g., "X-Ray Chest")
-     * If set, this rule applies only to this specific service
+     * Target Unified Medical Service (FK)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id")
@@ -96,9 +94,7 @@ public class BenefitPolicyRule {
     @Column(name = "apply_on", length = 20)
     private ApplyOnType applyOn;
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // COVERAGE SETTINGS
-    // ═══════════════════════════════════════════════════════════════════════════
+
 
     /**
      * Coverage percentage (0-100).
@@ -111,15 +107,7 @@ public class BenefitPolicyRule {
     @Column(name = "coverage_percent")
     private Integer coveragePercent;
 
-    /**
-     * Maximum amount limit per claim/service (in LYD)
-     * If null, no specific amount limit (policy limit applies)
-     * 
-     * Example: 500.00 means max 500 LYD per service claim
-     */
-    @DecimalMin(value = "0.00", message = "Amount limit must be >= 0")
-    @Column(name = "amount_limit", precision = 15, scale = 2)
-    private BigDecimal amountLimit;
+
 
     /**
      * Maximum number of times this benefit can be used per period
@@ -155,11 +143,13 @@ public class BenefitPolicyRule {
     private String notes;
 
     /**
-     * The type of encounter this rule applies to (OPD, ER, IPD, etc.)
-     * If null, the rule applies to ALL encounter types.
+     * MANDATORY: The coverage type this rule applies to.
+     * Values: OUTPATIENT, INPATIENT, EMERGENCY, LABORATORY,
+     *         RADIOLOGY, PHARMACY, DENTAL, PHYSIOTHERAPY
      */
+    @NotNull(message = "نوع التغطية إلزامي")
     @Enumerated(EnumType.STRING)
-    @Column(name = "encounter_type", length = 30)
+    @Column(name = "encounter_type", length = 30, nullable = false)
     private VisitType encounterType;
 
     /**
@@ -172,7 +162,7 @@ public class BenefitPolicyRule {
     /**
      * Whether this rule is soft-deleted (System status)
      */
-    @Column(name = "is_deleted", nullable = false)
+    @Column(name = "deleted", nullable = false)
     @Builder.Default
     private boolean deleted = false;
 
@@ -206,7 +196,9 @@ public class BenefitPolicyRule {
      * Check if this rule targets a category
      */
     public boolean isCategoryRule() {
-        return medicalCategory != null && medicalService == null && medicalPackage == null;
+        boolean hasCategoryStr = medicalCategory != null && !medicalCategory.isBlank();
+        boolean hasCategoryRef = medicalCategoryRef != null;
+        return (hasCategoryStr || hasCategoryRef) && medicalService == null && medicalPackage == null;
     }
 
     /**
@@ -220,7 +212,14 @@ public class BenefitPolicyRule {
      * Check if this rule targets a medical package
      */
     public boolean isPackageRule() {
-        return medicalPackage != null && medicalCategory == null && medicalService == null;
+        return medicalPackage != null && (medicalCategory == null || medicalCategory.isBlank()) && medicalService == null;
+    }
+
+    /**
+     * Check if this rule is a general/global rule (targets only encounter type)
+     */
+    public boolean isGeneralRule() {
+        return !isCategoryRule() && !isServiceRule() && !isPackageRule();
     }
 
     public boolean appliesToPackage(com.waad.tba.modules.medicalpackage.MedicalPackage pkg) {
@@ -238,10 +237,21 @@ public class BenefitPolicyRule {
         if (medicalPackage != null) {
             return medicalPackage.getName();
         }
-        if (medicalCategory != null) {
-            return medicalCategory.getName();
+        if (medicalCategoryRef != null) {
+            return medicalCategoryRef.getName();
         }
-        return "Rule #" + id;
+        if (medicalCategory != null && !medicalCategory.isBlank()) {
+            return medicalCategory;
+        }
+        
+        // Final fallback for Global Rules (Encounter type only)
+        if (encounterType != null) {
+            String suffix = " (عام)";
+            // Special case for outpatient/inpatient to make them sound more generic
+            return "تغطية " + encounterType.getArabicLabel() + suffix;
+        }
+        
+        return "Rule #" + (id != null ? id : "NEW");
     }
 
     /**
@@ -251,23 +261,28 @@ public class BenefitPolicyRule {
     @PreUpdate
     public void validateTarget() {
         // Skip validation if we are soft-deleting the rule
-        // This allows removing rules that might have invalid state/corruption
         if (deleted) return;
 
-        boolean hasCategory = medicalCategory != null;
+        // Validate encounterType is mandatory
+        if (encounterType == null) {
+            throw new IllegalStateException("نوع التغطية إلزامي — يجب تحديد نوع التغطية لكل قاعدة");
+        }
+
+        boolean hasCategory = (medicalCategory != null && !medicalCategory.isBlank()) || medicalCategoryRef != null;
         boolean hasService = medicalService != null;
         boolean hasPackage = medicalPackage != null;
-        
+
         int count = (hasCategory ? 1 : 0) + (hasService ? 1 : 0) + (hasPackage ? 1 : 0);
-        
-        if (count != 1) {
-            throw new IllegalStateException("Rule must target exactly ONE of: category, service, or package");
+
+        if (count > 1) {
+            throw new IllegalStateException("Rule must target exactly ONE of: category or service (or be a global encounter rule)");
         }
 
         // Set the applyOn type automatically
         if (hasService) this.applyOn = ApplyOnType.SERVICE;
         else if (hasPackage) this.applyOn = ApplyOnType.PACKAGE;
         else if (hasCategory) this.applyOn = ApplyOnType.CATEGORY;
+        else this.applyOn = ApplyOnType.GENERAL; // New: Global encounter rule
     }
 
     /**

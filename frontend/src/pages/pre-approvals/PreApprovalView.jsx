@@ -112,12 +112,21 @@ const PreApprovalView = () => {
       const blob = await downloadPreAuthAttachment(id, attachmentId);
       const attachment = attachments.find(a => a.id === attachmentId);
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = attachment?.fileName || attachment?.originalFileName || 'attachment';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+
+      // Security: Only allow blob URLs and sanitize filename to prevent DOM XSS
+      if (url && url.startsWith('blob:')) {
+        const link = document.createElement('a');
+        const safeUrl = url.startsWith('blob:') ? url : 'about:blank';
+        link.href = safeUrl;
+
+        const rawFileName = attachment?.fileName || attachment?.originalFileName || 'attachment';
+        const safeFileName = rawFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+        link.download = safeFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error downloading attachment:', err);

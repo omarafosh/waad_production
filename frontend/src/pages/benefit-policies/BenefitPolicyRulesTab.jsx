@@ -44,7 +44,9 @@ import {
   RestoreFromTrash as RestoreIcon,
   DeleteForever as DeleteForeverIcon,
   History as HistoryIcon,
-  ArrowBack as BackIcon
+  ArrowBack as BackIcon,
+  Inventory as PackageIcon,
+  Language as GlobalIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
@@ -54,6 +56,7 @@ import RBACGuard from 'components/tba/RBACGuard';
 import MedicalServiceSelector from 'components/tba/MedicalServiceSelector';
 import GenericDataTable from 'components/GenericDataTable/GenericDataTable';
 import ConfirmDialog from 'components/common/ConfirmDialog';
+import ApplyTemplateDialog from './ApplyTemplateDialog';
 
 import {
   getPolicyRulesPaged,
@@ -76,21 +79,28 @@ import { ListAlt as ListIcon } from '@mui/icons-material';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const INITIAL_FORM_STATE = {
-  targetType: '', // 'CATEGORY' or 'SERVICE'
+  targetType: '',        // 'CATEGORY' | 'SERVICE'
   medicalCategoryId: '',
   medicalServiceId: '',
   coveragePercent: '',
-  amountLimit: '',
-  opdPercent: '',
-  erPercent: '',
-  ipdPercent: '',
   timesLimit: '',
   waitingPeriodDays: '0',
   requiresPreApproval: false,
   notes: '',
-  encounterType: '', // Default: '' means 'All Visit Types' (sends null to backend)
-  isMultiContext: false
+  encounterType: '',     // MANDATORY — must be one of 8 coverage types
 };
+
+
+const STANDARD_CONTEXTS = [
+  { code: 'OUTPATIENT', label: 'عيادات خارجية (OPD)' },
+  { code: 'INPATIENT', label: 'إيواء (IPD)' },
+  { code: 'EMERGENCY', label: 'طوارئ (ER)' },
+  { code: 'LABORATORY', label: 'مختبر (Lab)' },
+  { code: 'RADIOLOGY', label: 'أشعة (Rad)' },
+  { code: 'PHARMACY', label: 'صيدلية (Pharm)' },
+  { code: 'DENTAL', label: 'أسنان (Dental)' },
+  { code: 'PHYSIOTHERAPY', label: 'علاج طبيعي (Physio)' }
+];
 
 /**
  * Rule Form Modal
@@ -120,16 +130,11 @@ const RuleFormModal = ({
           medicalCategoryId: initialData.medicalCategoryId || '',
           medicalServiceId: initialData.medicalServiceId || '',
           coveragePercent: initialData.coveragePercent ?? '',
-          amountLimit: initialData.amountLimit ?? '',
           timesLimit: initialData.timesLimit ?? '',
           waitingPeriodDays: initialData.waitingPeriodDays ?? '0',
           requiresPreApproval: initialData.requiresPreApproval || false,
           notes: initialData.notes || '',
           encounterType: initialData.encounterType || '',
-          isMultiContext: false,
-          opdPercent: '',
-          erPercent: '',
-          ipdPercent: ''
         });
       } else {
         setFormData(INITIAL_FORM_STATE);
@@ -200,12 +205,9 @@ const RuleFormModal = ({
       }
     }
 
-    // Amount limit validation
-    if (formData.amountLimit !== '' && formData.amountLimit !== null) {
-      const amount = Number(formData.amountLimit);
-      if (isNaN(amount) || amount < 0) {
-        newErrors.amountLimit = 'حد المبلغ يجب أن يكون رقم موجب';
-      }
+    // encounterType is MANDATORY
+    if (!formData.encounterType) {
+      newErrors.encounterType = 'نوع التغطية إلزامي';
     }
 
     // Times limit validation
@@ -231,51 +233,19 @@ const RuleFormModal = ({
   const handleSubmit = useCallback(() => {
     if (!validate()) return;
 
-    if (formData.isMultiContext) {
-      const payloads = [];
-      const contexts = [
-        { type: 'OUTPATIENT', percent: formData.opdPercent },
-        { type: 'EMERGENCY', percent: formData.erPercent },
-        { type: 'INPATIENT', percent: formData.ipdPercent }
-      ];
-
-      contexts.forEach(ctx => {
-        if (ctx.percent !== '' && ctx.percent !== null) {
-          payloads.push({
-            medicalCategoryId: formData.targetType === 'CATEGORY' ? Number(formData.medicalCategoryId) : null,
-            medicalServiceId: formData.targetType === 'SERVICE' ? Number(formData.medicalServiceId) : null,
-            coveragePercent: Number(ctx.percent),
-            amountLimit: formData.amountLimit !== '' ? Number(formData.amountLimit) : null,
-            timesLimit: formData.timesLimit !== '' ? Number(formData.timesLimit) : null,
-            waitingPeriodDays: formData.waitingPeriodDays !== '' ? Number(formData.waitingPeriodDays) : 0,
-            requiresPreApproval: formData.requiresPreApproval,
-            notes: formData.notes || null,
-            encounterType: ctx.type
-          });
-        }
-      });
-
-      if (payloads.length === 0) {
-        setErrors(prev => ({ ...prev, coveragePercent: 'يجب إدخال نسبة تغطية لواحد على الأقل من أنواع الزيارات' }));
-        return;
-      }
-
-      onSubmit(payloads);
-    } else {
-      const payload = {
-        medicalCategoryId: formData.targetType === 'CATEGORY' ? Number(formData.medicalCategoryId) : null,
-        medicalServiceId: formData.targetType === 'SERVICE' ? Number(formData.medicalServiceId) : null,
-        coveragePercent: formData.coveragePercent !== '' ? Number(formData.coveragePercent) : null,
-        amountLimit: formData.amountLimit !== '' ? Number(formData.amountLimit) : null,
-        timesLimit: formData.timesLimit !== '' ? Number(formData.timesLimit) : null,
-        waitingPeriodDays: formData.waitingPeriodDays !== '' ? Number(formData.waitingPeriodDays) : 0,
-        requiresPreApproval: formData.requiresPreApproval,
-        notes: formData.notes || null,
-        encounterType: formData.encounterType || null
-      };
-      onSubmit(payload);
-    }
+    const payload = {
+      medicalCategoryId: formData.targetType === 'CATEGORY' ? Number(formData.medicalCategoryId) : null,
+      medicalServiceId: formData.targetType === 'SERVICE' ? Number(formData.medicalServiceId) : null,
+      coveragePercent: formData.coveragePercent !== '' ? Number(formData.coveragePercent) : null,
+      timesLimit: formData.timesLimit !== '' ? Number(formData.timesLimit) : null,
+      waitingPeriodDays: formData.waitingPeriodDays !== '' ? Number(formData.waitingPeriodDays) : 0,
+      requiresPreApproval: formData.requiresPreApproval,
+      notes: formData.notes || null,
+      encounterType: formData.encounterType  // Always sent — mandatory
+    };
+    onSubmit(payload);
   }, [formData, validate, onSubmit]);
+
 
   const handleClose = useCallback(() => {
     setFormData(INITIAL_FORM_STATE);
@@ -286,7 +256,7 @@ const RuleFormModal = ({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <Box sx={{
-        bgcolor: 'primary.main',
+        bgcolor: isEdit ? 'secondary.main' : 'primary.main',
         color: 'primary.contrastText',
         px: 2,
         py: 1.5,
@@ -294,7 +264,7 @@ const RuleFormModal = ({
         alignItems: 'center',
         gap: 1.5,
         borderBottom: '1px solid',
-        borderColor: 'primary.dark'
+        borderColor: isEdit ? 'secondary.dark' : 'primary.dark'
       }}>
         <ListIcon />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -303,8 +273,12 @@ const RuleFormModal = ({
       </Box>
       <DialogContent sx={{ p: 2 }}>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {/* Target Type Selection */}
+
+          {/* Step 1: Target Type */}
+          <Box>
+            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+              خطوة ١ — ما نوع العنصر المصمّم له هذه القاعدة؟
+            </Typography>
             <FormControl fullWidth error={!!errors.targetType} disabled={isEdit} size="small">
               <InputLabel>نوع العنصر المغطى *</InputLabel>
               <Select value={formData.targetType} onChange={handleChange('targetType')} label="نوع العنصر المغطى *">
@@ -317,171 +291,107 @@ const RuleFormModal = ({
                 <MenuItem value="SERVICE">
                   <Stack direction="row" spacing={1} alignItems="center">
                     <ServiceIcon fontSize="small" />
-                    <span>خدمة طبية</span>
+                    <span>خدمة طبية محددة</span>
                   </Stack>
                 </MenuItem>
               </Select>
+              {errors.targetType && <FormHelperText>{errors.targetType}</FormHelperText>}
             </FormControl>
-
-            {/* Toggle for Multi-Context */}
-            {!isEdit && (
-              <Box sx={{ minWidth: 200, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      size="small"
-                      checked={formData.isMultiContext}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setFormData(prev => ({
-                          ...prev,
-                          isMultiContext: checked,
-                          encounterType: ''
-                        }));
-                      }}
-                    />
-                  }
-                  label={<Typography variant="caption" fontWeight={700}>تقسيم حسب الزيارة</Typography>}
-                />
-              </Box>
-            )}
           </Box>
 
-          {/* Combined Selectors Row */}
+
+          {/* Step 2: Category or Service Selector */}
           <Box>
             {formData.targetType === 'CATEGORY' && (
-              <FormControl fullWidth error={!!errors.medicalCategoryId} disabled={isEdit} size="small">
-                <InputLabel>التصنيف الطبي *</InputLabel>
-                <Select
-                  value={(!loadingCategories && availableCategories.some(c => c.id === formData.medicalCategoryId)) ? formData.medicalCategoryId : ''}
-                  onChange={handleChange('medicalCategoryId')}
-                  label="التصنيف الطبي *"
-                  disabled={loadingCategories}
-                >
-                  {loadingCategories ? (
-                    <MenuItem disabled value="">جاري التحميل...</MenuItem>
-                  ) : (
-                    availableCategories.map((cat) => (
-                      <MenuItem key={cat.id} value={cat.id}>
-                        {cat.name} ({cat.code})
-                      </MenuItem>
-                    ))
-                  )}
-                  {availableCategories.length === 0 && !loadingCategories && (
-                    <MenuItem disabled value="">لا توجد تصنيفات متبقية (تمت تغطية الجميع)</MenuItem>
-                  )}
-                </Select>
-              </FormControl>
+              <>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+                  خطوة ٢ — اختر التصنيف الطبي
+                </Typography>
+                <FormControl fullWidth error={!!errors.medicalCategoryId} disabled={isEdit} size="small">
+                  <InputLabel>التصنيف الطبي *</InputLabel>
+                  <Select
+                    value={(!loadingCategories && availableCategories.some(c => c.id === formData.medicalCategoryId)) ? formData.medicalCategoryId : ''}
+                    onChange={handleChange('medicalCategoryId')}
+                    label="التصنيف الطبي *"
+                    disabled={loadingCategories}
+                  >
+                    {loadingCategories ? (
+                      <MenuItem disabled value="">جاري التحميل...</MenuItem>
+                    ) : (
+                      availableCategories.map((cat) => (
+                        <MenuItem key={cat.id} value={cat.id}>
+                          {cat.name} ({cat.code})
+                        </MenuItem>
+                      ))
+                    )}
+                    {availableCategories.length === 0 && !loadingCategories && (
+                      <MenuItem disabled value="">لا توجد تصنيفات متبقية (تمت تغطية الجميع)</MenuItem>
+                    )}
+                  </Select>
+                  {errors.medicalCategoryId && <FormHelperText>{errors.medicalCategoryId}</FormHelperText>}
+                </FormControl>
+              </>
             )}
 
             {formData.targetType === 'SERVICE' && (
-              <MedicalServiceSelector
-                value={formData.medicalServiceId || null}
-                onChange={(s) => setFormData((prev) => ({ ...prev, medicalServiceId: s?.id || '' }))}
-                error={!!errors.medicalServiceId}
-                helperText={errors.medicalServiceId}
-                label="الخدمة الطبية *"
-                fullWidth
-                size="small"
-              />
+              <>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+                  خطوة ٢ — ابحث عن الخدمة الطبية
+                </Typography>
+                <MedicalServiceSelector
+                  value={formData.medicalServiceId || null}
+                  onChange={(s) => setFormData((prev) => ({ ...prev, medicalServiceId: s?.id || '' }))}
+                  error={!!errors.medicalServiceId}
+                  helperText={errors.medicalServiceId}
+                  label="الخدمة الطبية *"
+                  fullWidth
+                  size="small"
+                />
+              </>
             )}
           </Box>
 
-          {/* Custom Multi-Context Section */}
-          {formData.isMultiContext ? (
-            <Box sx={{
-              p: 1.5,
-              borderRadius: 1,
-              bgcolor: 'primary.lighter',
-              border: '1px dashed',
-              borderColor: 'primary.main',
-              position: 'relative'
-            }}>
-              <Typography variant="caption" sx={{ position: 'absolute', top: -10, right: 10, bgcolor: 'background.paper', px: 1, color: 'primary.main', fontWeight: 700 }}>
-                نسب التغطية حسب نوع الزيارة (%)
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                <TextField
-                  label="خارجية OPD"
-                  type="number"
-                  size="small"
-                  value={formData.opdPercent}
-                  onChange={handleChange('opdPercent')}
-                  error={!!errors.opdPercent}
-                  helperText={errors.opdPercent}
-                  InputProps={{ inputProps: { min: 0, max: 100 } }}
-                  fullWidth
-                />
-                <TextField
-                  label="طوارئ ER"
-                  type="number"
-                  size="small"
-                  value={formData.erPercent}
-                  onChange={handleChange('erPercent')}
-                  error={!!errors.erPercent}
-                  helperText={errors.erPercent}
-                  InputProps={{ inputProps: { min: 0, max: 100 } }}
-                  fullWidth
-                />
-                <TextField
-                  label="إيواء IPD"
-                  type="number"
-                  size="small"
-                  value={formData.ipdPercent}
-                  onChange={handleChange('ipdPercent')}
-                  error={!!errors.ipdPercent}
-                  helperText={errors.ipdPercent}
-                  InputProps={{ inputProps: { min: 0, max: 100 } }}
-                  fullWidth
-                />
-              </Box>
+          {/* Step 3: Coverage Percent + Coverage Type (mandatory) */}
+          <Box>
+            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, mb: 0.5, display: 'block' }}>
+              خطوة ٣ — نسبة التغطية وسياق التغطية
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="نسبة التغطية %"
+                type="number"
+                size="small"
+                value={formData.coveragePercent}
+                onChange={handleChange('coveragePercent')}
+                error={!!errors.coveragePercent}
+                helperText={errors.coveragePercent || 'اتركه فارغاً للافتراضي'}
+                InputProps={{
+                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                  inputProps: { min: 0, max: 100 }
+                }}
+                fullWidth
+              />
+              <FormControl size="small" fullWidth required error={!!errors.encounterType}>
+                <InputLabel>سياق التغطية *</InputLabel>
+                <Select
+                  value={formData.encounterType}
+                  label="سياق التغطية *"
+                  onChange={handleChange('encounterType')}
+                >
+                  <MenuItem value="OUTPATIENT">عيادات خارجية (OPD)</MenuItem>
+                  <MenuItem value="INPATIENT">إيواء (IPD)</MenuItem>
+                  <MenuItem value="EMERGENCY">طوارئ (ER)</MenuItem>
+                  <MenuItem value="LABORATORY">مختبر (Lab)</MenuItem>
+                  <MenuItem value="RADIOLOGY">أشعة (Rad)</MenuItem>
+                  <MenuItem value="PHARMACY">صيدلية (Pharm)</MenuItem>
+                  <MenuItem value="DENTAL">أسنان (Dental)</MenuItem>
+                  <MenuItem value="PHYSIOTHERAPY">علاج طبيعي (Physio)</MenuItem>
+                </Select>
+                {errors.encounterType && <FormHelperText>{errors.encounterType}</FormHelperText>}
+              </FormControl>
             </Box>
-          ) : (
-            <>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="نسبة التغطية الأساسية"
-                  type="number"
-                  size="small"
-                  value={formData.coveragePercent}
-                  onChange={handleChange('coveragePercent')}
-                  error={!!errors.coveragePercent}
-                  helperText={errors.coveragePercent || 'اتركه فارغاً للافتراضي'}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    inputProps: { min: 0, max: 100 }
-                  }}
-                  fullWidth
-                />
-                <FormControl size="small" fullWidth>
-                  <InputLabel>نوع الزيارة</InputLabel>
-                  <Select
-                    value={formData.encounterType}
-                    label="نوع الزيارة"
-                    onChange={handleChange('encounterType')}
-                  >
-                    <MenuItem value="">جميع أنواع الزيارات</MenuItem>
-                    <MenuItem value="OUTPATIENT">عيادات خارجية (OPD)</MenuItem>
-                    <MenuItem value="EMERGENCY">الطوارئ (ER)</MenuItem>
-                    <MenuItem value="INPATIENT">الإيواء (IPD)</MenuItem>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label={distributionType === 'DISTRIBUTED' ? "الحد الأقصى للمطالبة" : "حد الزيارة"}
-                  type="number"
-                  size="small"
-                  value={formData.amountLimit}
-                  onChange={handleChange('amountLimit')}
-                  error={!!errors.amountLimit}
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">د.ل</InputAdornment>,
-                    inputProps: { min: 0 }
-                  }}
-                  fullWidth
-                />
-              </Box>
-            </>
-          )}
+          </Box>
+
 
           {/* Common Limits Row */}
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -530,6 +440,67 @@ const RuleFormModal = ({
               sx={{ flexGrow: 1, ml: 2 }}
             />
           </Box>
+          {/* Impact Preview — shown when category is selected */}
+          {formData.targetType === 'CATEGORY' && formData.medicalCategoryId && (() => {
+            const selectedCat = categories?.find(c => c.id === Number(formData.medicalCategoryId));
+            const affectedServices = selectedCat?.serviceCount ?? 0;
+            const overriddenRules = existingRules.filter(
+              r => r.ruleType === 'SERVICE' &&
+                r.medicalCategoryCode === selectedCat?.code &&
+                (!formData.encounterType || r.encounterType === formData.encounterType)
+            ).length;
+            return (
+              <Box sx={{
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: 'info.lighter',
+                border: '1px solid',
+                borderColor: 'info.light',
+                display: 'flex',
+                gap: 3,
+                alignItems: 'center'
+              }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: 'info.dark' }}>معاينة التأثير:</Typography>
+                <Stack direction="row" spacing={2}>
+                  {affectedServices > 0 ? (
+                    <Chip
+                      size="small"
+                      label={`${affectedServices} خدمة متأثرة`}
+                      color="info"
+                      variant="outlined"
+                      sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                    />
+                  ) : (
+                    <Chip
+                      size="small"
+                      label="لا توجد خدمات في هذا التصنيف"
+                      color="default"
+                      variant="outlined"
+                      sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                    />
+                  )}
+                  {overriddenRules > 0 ? (
+                    <Chip
+                      size="small"
+                      label={`${overriddenRules} قاعدة خدمة ستُتجاوز`}
+                      color="warning"
+                      variant="outlined"
+                      sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                    />
+                  ) : (
+                    <Chip
+                      size="small"
+                      label="لا تعارض مع قواعد الخدمات"
+                      color="success"
+                      variant="outlined"
+                      sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                    />
+                  )}
+                </Stack>
+              </Box>
+            );
+          })()}
+
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -560,6 +531,205 @@ RuleFormModal.propTypes = {
   categories: PropTypes.array,
   loadingCategories: PropTypes.bool,
   existingRules: PropTypes.array
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// QUICK RULES WIZARD COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+const QuickRulesWizard = ({ open, onClose, onSubmit, categories, loading }) => {
+  const [wizardData, setWizardData] = useState({});
+
+  // Initialize wizard data with defaults for 8 standard contexts
+  useEffect(() => {
+    if (open) {
+      const initial = {};
+      STANDARD_CONTEXTS.forEach(ctx => {
+        initial[ctx.code] = {
+          enabled: true,
+          coveragePercent: 80,
+          waitingPeriodDays: 0,
+          amountLimit: '',
+          timesLimit: ''
+        };
+      });
+      setWizardData(initial);
+    }
+  }, [open]);
+
+  // Helper to find category CODE for a context
+  const getCategoryCodeForContext = useCallback((contextCode) => {
+    if (!categories) return null;
+    // Mapping contexts to probable category codes (based on V39 migration)
+    // Mapping contexts to probable category codes (based on V39 migration & V13 Seed)
+    const mapping = {
+      'OUTPATIENT': ['CAT-050', 'CAT-OPD', 'CAT-OUT'], // خدمات العيادات الخارجية
+      'INPATIENT': ['CAT-040', 'CAT-IPD', 'CAT-IN'],   // خدمات الايواء
+      'EMERGENCY': ['CAT-046', 'CAT-ER'],              // خدمات الطوارئ
+      'LABORATORY': ['CAT-064', 'CAT-065', 'CAT-LAB'], // معامل / معمل التحاليل
+      'RADIOLOGY': ['CAT-010', 'CAT-045', 'CAT-RAD'],  // اشعة / خدمات الصور التشخيصية
+      'PHARMACY': ['CAT-PHARM'],                       // صيدلية (Added in V39)
+      'DENTAL': ['CAT-037', 'CAT-011', 'CAT-DENT'],    // خدمات الأسنان / الأسنان
+      'PHYSIOTHERAPY': ['CAT-048', 'CAT-PHYS'],        // خدمات العلاج الطبيعي
+      'OPTICAL': ['CAT-OPT']                           // بصريات (Added in V39)
+    };
+
+    const targetCodes = mapping[contextCode] || [];
+    const cat = categories.find(c => targetCodes.some(code => c.code.includes(code) || c.code === code));
+    return cat ? cat.code : null;
+  }, [categories]);
+
+  const handleSubmit = useCallback(() => {
+    const payloads = [];
+
+    Object.entries(wizardData).forEach(([contextCode, data]) => {
+      if (data.enabled) {
+        const catCode = getCategoryCodeForContext(contextCode);
+
+        // Ideally we should have a category, but if not found, we send the context code as a fallback if acceptable,
+        // or we relying on the encounterType.
+        // However, backend REQUIRES one of category/service/package.
+        // If catCode is null, this will FAIL validation unless we provide a fallback string or ensure categories exist.
+        // Since we fixed V39 migration, categories SHOULD exist.
+
+        if (catCode) {
+          payloads.push({
+            medicalCategory: catCode, // Send CODE (String) to match DTO
+            medicalServiceId: null,
+            coveragePercent: Number(data.coveragePercent),
+            waitingPeriodDays: Number(data.waitingPeriodDays),
+            amountLimit: data.amountLimit ? Number(data.amountLimit) : null,
+            timesLimit: data.timesLimit ? Number(data.timesLimit) : null,
+            encounterType: contextCode,
+            requiresPreApproval: false,
+            notes: 'Auto-generated via Quick Wizard',
+            active: true
+          });
+        } else {
+          console.warn(`Skipping rule for ${contextCode} because no matching category found.`);
+        }
+      }
+    });
+
+    if (payloads.length > 0) {
+      onSubmit(payloads);
+    }
+  }, [wizardData, getCategoryCodeForContext, onSubmit]);
+
+  const updateItem = (code, field, value) => {
+    setWizardData(prev => ({
+      ...prev,
+      [code]: { ...prev[code], [field]: value }
+    }));
+  };
+
+  const toggleItem = (code) => {
+    setWizardData(prev => ({
+      ...prev,
+      [code]: { ...prev[code], enabled: !prev[code].enabled }
+    }));
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ bgcolor: 'secondary.main', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <ListIcon /> معالج الإعداد السريع للقواعد (Quick Setup)
+      </DialogTitle>
+      <DialogContent sx={{ p: 2 }}>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          قم بضبط التغطية الأساسية للتصنيفات الرئيسية دفعة واحدة. سيتم إنشاء قاعدة منفصلة لكل تصنيف.
+        </Alert>
+
+        <TableContainer sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
+          <Table size="small">
+            <TableHead sx={{ bgcolor: 'grey.100' }}>
+              <TableRow>
+                <TableCell padding="checkbox">تفعيل</TableCell>
+                <TableCell>التصنيف / السياق</TableCell>
+                <TableCell width="120px">نسبة التغطية %</TableCell>
+                <TableCell width="120px">فترة الانتظار (يوم)</TableCell>
+                <TableCell width="140px">الحد الأقصى (د.ل)</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {STANDARD_CONTEXTS.map((ctx) => {
+                const row = wizardData[ctx.code] || {};
+                const catCode = getCategoryCodeForContext(ctx.code);
+
+                return (
+                  <TableRow key={ctx.code} hover selected={row.enabled}>
+                    <TableCell padding="checkbox">
+                      <Switch
+                        checked={!!row.enabled}
+                        onChange={() => toggleItem(ctx.code)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="subtitle2">{ctx.label}</Typography>
+                      {!catCode && (
+                        <Typography variant="caption" color="error">
+                          (غير مرتبط بتصنيف - سيتم استخدام السياق فقط)
+                        </Typography>
+                      )}
+                      {catCode && (
+                        <Typography variant="caption" color="textSecondary">
+                          {catCode}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={row.coveragePercent}
+                        onChange={(e) => updateItem(ctx.code, 'coveragePercent', e.target.value)}
+                        disabled={!row.enabled}
+                        InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={row.waitingPeriodDays}
+                        onChange={(e) => updateItem(ctx.code, 'waitingPeriodDays', e.target.value)}
+                        disabled={!row.enabled}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        type="number"
+                        value={row.amountLimit}
+                        onChange={(e) => updateItem(ctx.code, 'amountLimit', e.target.value)}
+                        disabled={!row.enabled}
+                        placeholder="لا يوجد"
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>إلغاء</Button>
+        <Button onClick={handleSubmit} variant="contained" color="secondary">
+          حفظ وإنشاء القواعد
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+QuickRulesWizard.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  onSubmit: PropTypes.func,
+  categories: PropTypes.array,
+  loading: PropTypes.bool
 };
 
 
@@ -618,6 +788,8 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
   // Modal states
   const [formModal, setFormModal] = useState({ open: false, data: null, isEdit: false });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, rule: null, isHard: false });
+  const [quickWizardOpen, setQuickWizardOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DATA FETCHING
@@ -808,6 +980,26 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
     setFormModal({ open: false, data: null, isEdit: false });
   }, []);
 
+  const handleQuickWizardOpen = useCallback(() => {
+    setQuickWizardOpen(true);
+  }, []);
+
+  const handleQuickWizardClose = useCallback(() => {
+    setQuickWizardOpen(false);
+  }, []);
+
+  const handleQuickWizardSubmit = useCallback(
+    async (payloads) => {
+      try {
+        await bulkCreateMutation.mutateAsync(payloads);
+        setQuickWizardOpen(false);
+      } catch (error) {
+        console.error('Quick Wizard Submit error:', error);
+      }
+    },
+    [bulkCreateMutation]
+  );
+
   const handleDeleteConfirm = useCallback(() => {
     if (deleteDialog.rule) {
       if (deleteDialog.isHard) {
@@ -855,7 +1047,7 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
       minWidth: 90,
       cell: ({ row }) => {
         const rule = row.original;
-        const Icon = rule.ruleType === 'CATEGORY' ? CategoryIcon : ServiceIcon;
+        const Icon = rule.ruleType === 'CATEGORY' ? CategoryIcon : rule.ruleType === 'GENERAL' ? GlobalIcon : ServiceIcon;
         const code = rule.ruleType === 'CATEGORY' ? rule.medicalCategoryCode : rule.medicalServiceCode;
 
         return (
@@ -863,8 +1055,8 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
             <Box sx={{
               p: 0.75,
               borderRadius: 1,
-              bgcolor: rule.ruleType === 'CATEGORY' ? 'primary.lighter' : 'secondary.lighter',
-              color: rule.ruleType === 'CATEGORY' ? 'primary.main' : 'secondary.main',
+              bgcolor: rule.ruleType === 'CATEGORY' ? 'primary.lighter' : rule.ruleType === 'GENERAL' ? 'warning.lighter' : 'secondary.lighter',
+              color: rule.ruleType === 'CATEGORY' ? 'primary.main' : rule.ruleType === 'GENERAL' ? 'warning.main' : 'secondary.main',
               display: 'flex'
             }}>
               <Icon fontSize="small" />
@@ -874,11 +1066,15 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
                 {rule.label}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {rule.ruleType === 'CATEGORY' ? 'تصنيف' : 'خدمة'}
-                <Box component="span" sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'text.disabled' }} />
-                <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                  {code || '-'}
-                </Typography>
+                {rule.ruleType === 'CATEGORY' ? 'تصنيف' : rule.ruleType === 'GENERAL' ? 'تغطية شاملة' : 'خدمة'}
+                {rule.ruleType !== 'GENERAL' && (
+                  <>
+                    <Box component="span" sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'text.disabled' }} />
+                    <Typography component="span" variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                      {code || '-'}
+                    </Typography>
+                  </>
+                )}
               </Typography>
             </Box>
           </Stack>
@@ -887,24 +1083,22 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
     },
     {
       id: 'encounterType',
-      header: 'نوع الزيارة',
+      header: 'نوع التغطية',
       accessorKey: 'encounterType',
-      width: 140,
-      cell: ({ value }) => {
+      width: 150,
+      cell: ({ row }) => {
+        const value = row.original.encounterType;
         const config = {
-          'OUTPATIENT': { label: 'عيادات (OPD)', color: 'primary', variant: 'light' },
-          'EMERGENCY': { label: 'طوارئ (ER)', color: 'error', variant: 'light' },
-          'INPATIENT': { label: 'إيواء (IPD)', color: 'warning', variant: 'light' },
-          'ROUTINE': { label: 'روتينية', color: 'success', variant: 'light' },
-          'FOLLOW_UP': { label: 'متابعة', color: 'info', variant: 'light' },
-          'PREVENTIVE': { label: 'وقائية', color: 'success', variant: 'outlined' },
-          'SPECIALIZED': { label: 'تخصصية', color: 'secondary', variant: 'light' },
-          'HOME_CARE': { label: 'منزلي', color: 'primary', variant: 'outlined' },
-          'TELECONSULTATION': { label: 'عن بُعد', color: 'info', variant: 'outlined' },
-          'DAY_SURGERY': { label: 'جراحة يوم', color: 'error', variant: 'outlined' }
+          'OUTPATIENT': { label: 'عيادات خارجية (OPD)', color: 'primary' },
+          'INPATIENT': { label: 'إيواء (IPD)', color: 'warning' },
+          'EMERGENCY': { label: 'طوارئ (ER)', color: 'error' },
+          'LABORATORY': { label: 'مختبر (Lab)', color: 'info' },
+          'RADIOLOGY': { label: 'أشعة (Rad)', color: 'secondary' },
+          'PHARMACY': { label: 'صيدلية (Pharm)', color: 'success' },
+          'DENTAL': { label: 'أسنان (Dental)', color: 'warning' },
+          'PHYSIOTHERAPY': { label: 'علاج طبيعي (Physio)', color: 'info' },
         };
 
-        // If value is null/undefined, it applies to ALL types
         if (!value) {
           return (
             <Chip
@@ -922,14 +1116,13 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
           );
         }
 
-        const item = config[value] || { label: value, color: 'default', variant: 'outlined' };
+        const item = config[value] || { label: value, color: 'default' };
 
         return (
           <Chip
             size="small"
             label={item.label}
             color={item.color}
-            variant={item.variant || 'filled'}
             sx={{
               fontWeight: 700,
               fontSize: '0.75rem',
@@ -979,18 +1172,22 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
       id: 'status',
       header: 'الحالة',
       accessorKey: 'active',
-      width: 80,
+      width: 100,
       enableSorting: false, // Disable sorting to prevent row jumps on toggle
       cell: ({ row }) => {
         const rule = row.original;
         if (showDeleted) return null;
         return (
-          <Switch
-            size="small"
-            checked={rule.active}
-            onChange={() => handleToggleActive(rule)}
-            disabled={!canEdit || toggleMutation.isPending}
-          />
+          <Tooltip title={rule.active ? 'نشطة — انقر لتعطيل' : 'معطّلة — انقر لتفعيل'}>
+            <span>
+              <Switch
+                size="small"
+                checked={rule.active}
+                onChange={() => handleToggleActive(rule)}
+                disabled={!canEdit || toggleMutation.isPending}
+              />
+            </span>
+          </Tooltip>
         );
       }
     },
@@ -1004,12 +1201,14 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         if (showDeleted) {
           return (
             <Stack direction="row" spacing={0.5} justifyContent="center">
-              <Tooltip title="استعادة">
-                <IconButton size="small" color="success" onClick={() => handleRestoreRule(rule)} disabled={restoreMutation.isPending}>
-                  <RestoreIcon fontSize="small" />
-                </IconButton>
+              <Tooltip title="استعادة القاعدة">
+                <span>
+                  <IconButton size="small" color="success" onClick={() => handleRestoreRule(rule)} disabled={restoreMutation.isPending}>
+                    <RestoreIcon fontSize="small" />
+                  </IconButton>
+                </span>
               </Tooltip>
-              <Tooltip title="حذف نهائي">
+              <Tooltip title="حذف نهائياً (لا يمكن التراجع)">
                 <IconButton size="small" color="error" onClick={() => handleDeleteForever(rule)}>
                   <DeleteForeverIcon fontSize="small" />
                 </IconButton>
@@ -1019,12 +1218,24 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         }
         return (
           <Stack direction="row" spacing={0.5} justifyContent="center">
-            <IconButton size="small" onClick={() => handleEditRule(rule)} disabled={!canEdit}>
-              <EditIcon sx={{ fontSize: '1.1rem' }} />
-            </IconButton>
-            <IconButton size="small" color="error" onClick={() => handleDeleteRule(rule)} disabled={!canEdit}>
-              <DeleteIcon sx={{ fontSize: '1.1rem' }} />
-            </IconButton>
+            <Tooltip title={!canEdit ? 'لا يمكن التعديل على وثيقة ملغاة' : 'تعديل القاعدة'}>
+              <span>
+                <IconButton size="small" onClick={() => handleEditRule(rule)} disabled={!canEdit}
+                  sx={{ '&:hover': { bgcolor: 'primary.lighter', color: 'primary.main' } }}
+                >
+                  <EditIcon sx={{ fontSize: '1.1rem' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={!canEdit ? 'لا يمكن الحذف على وثيقة ملغاة' : 'نقل القاعدة للسلة'}>
+              <span>
+                <IconButton size="small" color="error" onClick={() => handleDeleteRule(rule)} disabled={!canEdit}
+                  sx={{ '&:hover': { bgcolor: 'error.lighter' } }}
+                >
+                  <DeleteIcon sx={{ fontSize: '1.1rem' }} />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Stack>
         );
       }
@@ -1101,17 +1312,22 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
                   }}
                 />
 
-                <FormControl size="small" sx={{ width: { xs: 120, md: 160 }, bgcolor: 'background.paper' }}>
-                  <InputLabel>نوع الزيارة</InputLabel>
+                <FormControl size="small" sx={{ width: { xs: 120, md: 180 }, bgcolor: 'background.paper' }}>
+                  <InputLabel>نوع التغطية</InputLabel>
                   <Select
-                    label="نوع الزيارة"
+                    label="نوع التغطية"
                     value={columnFilters.encounterType || ''}
                     onChange={(e) => setFilter('encounterType', e.target.value)}
                   >
                     <MenuItem value="">الكل</MenuItem>
-                    <MenuItem value="OUTPATIENT">OPD</MenuItem>
-                    <MenuItem value="EMERGENCY">ER</MenuItem>
-                    <MenuItem value="INPATIENT">IPD</MenuItem>
+                    <MenuItem value="OUTPATIENT">عيادات (OPD)</MenuItem>
+                    <MenuItem value="INPATIENT">إيواء (IPD)</MenuItem>
+                    <MenuItem value="EMERGENCY">طوارئ (ER)</MenuItem>
+                    <MenuItem value="LABORATORY">مختبر (Lab)</MenuItem>
+                    <MenuItem value="RADIOLOGY">أشعة (Rad)</MenuItem>
+                    <MenuItem value="PHARMACY">صيدلية (Pharm)</MenuItem>
+                    <MenuItem value="DENTAL">أسنان (Dental)</MenuItem>
+                    <MenuItem value="PHYSIOTHERAPY">علاج طبيعي (Physio)</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -1127,14 +1343,56 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
 
             {!showDeleted && canEdit && (
               <RBACGuard requiredPermissions={['benefit_policies.update']}>
-                <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAddRule} size="small" sx={{ height: 40 }}>
-                  إضافة قاعدة
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="تطبيق قالب قواعد جاهز (Standard / VIP / Pharmacy)">
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<PackageIcon />}
+                      onClick={() => setTemplateDialogOpen(true)}
+                      size="small"
+                      sx={{ height: 40 }}
+                    >
+                      تطبيق باقة
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="إنشاء قواعد للتصنيفات الرئيسية دفعة واحدة">
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      startIcon={<ListIcon />}
+                      onClick={handleQuickWizardOpen}
+                      size="small"
+                      sx={{ height: 40 }}
+                    >
+                      معالج القواعد
+                    </Button>
+                  </Tooltip>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddRule}
+                    size="small"
+                    sx={{ height: 40, whiteSpace: 'nowrap' }}
+                  >
+                    إضافة قاعدة
+                  </Button>
+                </Stack>
               </RBACGuard>
             )}
           </Stack>
         }
         contentSX={{ p: 0 }}
+        sx={{
+          '& .MuiTableRow-root': {
+            transition: 'opacity 0.2s ease, background-color 0.2s ease'
+          },
+          // Dim inactive rows visually
+          '& tr[data-inactive="true"]': {
+            opacity: 0.55,
+            bgcolor: 'action.hover'
+          }
+        }}
       >
 
         <GenericDataTable
@@ -1147,6 +1405,9 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
           enableFiltering={false}
           maxHeight="none"
           cellPadding="dense"
+          getRowProps={(row) => ({
+            'data-inactive': row.original.active === false ? 'true' : 'false'
+          })}
         />
       </MainCard>
 
@@ -1157,11 +1418,29 @@ const BenefitPolicyRulesTab = ({ policyId, policyStatus, distributionType }) => 
         isEdit={formModal.isEdit}
         initialData={formModal.data}
         onSubmit={handleFormSubmit}
-        loading={createMutation.isPending || updateMutation.isPending}
+        loading={isLoading}
         categories={categories}
         loadingCategories={loadingCategories}
         distributionType={distributionType}
         existingRules={rules}
+      />
+
+      <QuickRulesWizard
+        open={quickWizardOpen}
+        onClose={handleQuickWizardClose}
+        onSubmit={handleQuickWizardSubmit}
+        categories={categories}
+        loading={bulkCreateMutation.isPending}
+      />
+
+      <ApplyTemplateDialog
+        open={templateDialogOpen}
+        onClose={() => setTemplateDialogOpen(false)}
+        policyId={policyId}
+        onApplied={() => {
+          queryClient.invalidateQueries(['benefit-policy-rules', policyId]);
+          queryClient.invalidateQueries(['benefit-policy-rules-count', policyId]);
+        }}
       />
 
       {/* Unified Confirm Dialog */}

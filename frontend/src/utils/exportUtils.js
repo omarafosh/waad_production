@@ -15,11 +15,11 @@
  * ✅ REQUIRED: What user sees = What user exports
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
- * COMPANY BRANDING - SINGLE SOURCE OF TRUTH
+ * SYSTEM BRANDING - SINGLE SOURCE OF TRUTH
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * All exports include company branding (name, logo) from CompanySettingsContext.
- * To use branding, pass companySettings object to export functions.
+ * All exports include system branding (name, logo) from SystemSettingsContext.
+ * To use branding, pass settings object (mapped to expected keys) to export functions.
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
  */
@@ -43,24 +43,24 @@ export const exportToExcel = (data, filename = 'export', options = {}) => {
 
   // Get headers from first object
   const headers = Object.keys(data[0]);
-  
+
   // Create CSV content with BOM for Arabic support
   const BOM = '\uFEFF';
   let csvContent = BOM;
-  
+
   // Add company name header if provided
   if (companyName) {
     csvContent += `"${companyName}"\n`;
     if (reportTitle) {
       csvContent += `"${reportTitle}"\n`;
     }
-    csvContent += `"تاريخ التصدير: ${new Date().toLocaleDateString('ar-SA')}"\n`;
+    csvContent += `"تاريخ التصدير: ${new Date().toLocaleDateString(getAppLocale())}"\n`;
     csvContent += '\n'; // Empty row before data
   }
-  
+
   // Add column headers
   csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
-  
+
   // Add rows
   data.forEach(row => {
     const rowData = headers.map(header => {
@@ -75,7 +75,7 @@ export const exportToExcel = (data, filename = 'export', options = {}) => {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  
+
   link.setAttribute('href', url);
   link.setAttribute('download', `${filename}.csv`);
   link.style.visibility = 'hidden';
@@ -110,20 +110,20 @@ export const exportToPDF = (arg1, arg2, arg3, arg4, arg5) => {
 
   // Determine signature: if arg1 is array of objects (not array of arrays)
   if (Array.isArray(arg1) && arg1.length > 0 && typeof arg1[0] === 'object' && !Array.isArray(arg1[0])) {
-      // Signature 1: (data, title, filename, options)
-      const data = arg1;
-      columns = Object.keys(data[0]);
-      rows = data.map(obj => Object.values(obj));
-      title = arg2 || 'Export';
-      filename = arg3 || 'export';
-      options = arg4 || {};
+    // Signature 1: (data, title, filename, options)
+    const data = arg1;
+    columns = Object.keys(data[0]);
+    rows = data.map(obj => Object.values(obj));
+    title = arg2 || 'Export';
+    filename = arg3 || 'export';
+    options = arg4 || {};
   } else {
-      // Signature 2: (columns, rows, title, filename, options)
-      columns = arg1 || [];
-      rows = arg2 || [];
-      title = arg3 || 'Export';
-      filename = arg4 || 'export';
-      options = arg5 || {};
+    // Signature 2: (columns, rows, title, filename, options)
+    columns = arg1 || [];
+    rows = arg2 || [];
+    title = arg3 || 'Export';
+    filename = arg4 || 'export';
+    options = arg5 || {};
   }
 
   if (!rows || rows.length === 0) {
@@ -136,7 +136,7 @@ export const exportToPDF = (arg1, arg2, arg3, arg4, arg5) => {
 
   // Ensure columns is defined
   if (!columns || columns.length === 0 && rows.length > 0) {
-      columns = Array.from({length: rows[0].length}, (_, i) => `Column ${i+1}`);
+    columns = Array.from({ length: rows[0].length }, (_, i) => `Column ${i + 1}`);
   }
 
   // Build header with company branding
@@ -225,7 +225,7 @@ export const exportToPDF = (arg1, arg2, arg3, arg4, arg5) => {
         </tbody>
       </table>
       <div class="footer">
-        ${footerText || (companyName ? `${companyName} - ` : '')}تم الإنشاء: ${new Date().toLocaleDateString('ar-SA')} ${new Date().toLocaleTimeString('ar-SA')}
+        ${footerText || (companyName ? `${companyName} - ` : '')}تم الإنشاء: ${new Date().toLocaleDateString(getAppLocale())} ${new Date().toLocaleTimeString(getAppLocale())}
       </div>
     </body>
     </html>

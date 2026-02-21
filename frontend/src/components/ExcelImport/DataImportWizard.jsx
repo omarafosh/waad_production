@@ -31,8 +31,8 @@ import axios from 'utils/axios';
 import { useImportProgress } from 'contexts/GlobalImportProgressContext';
 import employersService from 'services/api/employers.service';
 
-// Steps
-const steps = ['رفع الملف', 'التحليل والمطابقة', 'التنفيذ'];
+// Steps - Removed progress step, import runs in background
+const steps = ['رفع الملف', 'التحليل والمطابقة'];
 
 const DataImportWizard = ({
     open,
@@ -51,8 +51,11 @@ const DataImportWizard = ({
     const [allEmployers, setAllEmployers] = useState([]);
     const [selectedEmployer, setSelectedEmployer] = useState(null); // { id, nameAr }
     const [selectedPolicy, setSelectedPolicy] = useState(null); // { id, policyNumber }
+    const [batchId, setBatchId] = useState(null);
 
-    const { startImport } = useImportProgress();
+    const { startImport, activeImport: contextActiveImport } = useImportProgress();
+    // Use contextActiveImport only if it matches our batchId
+    const activeImport = (batchId && contextActiveImport?.batchId === batchId) ? contextActiveImport : null;
 
     // Reset on open
     useEffect(() => {
@@ -62,6 +65,7 @@ const DataImportWizard = ({
             setPreviewData(null);
             setSelectedEmployer(null);
             setSelectedPolicy(null);
+            setBatchId(null);
             setError(null);
             setLoading(false);
             fetchEmployers();
@@ -70,16 +74,29 @@ const DataImportWizard = ({
 
     const fetchEmployers = async () => {
         try {
+            console.log('[DataImportWizard] Fetching employers...');
             const selectors = await employersService.getEmployerSelectors();
+            console.log('[DataImportWizard] Received selectors:', selectors);
+
             // Map selector labels to nameAr for component compatibility
-            const mapped = (selectors || []).map(s => ({
-                id: s.id,
-                nameAr: s.label || s.nameAr,
-                code: s.code
-            }));
+            const mapped = (selectors || []).map((s, index) => {
+                console.log(`[DataImportWizard] Processing selector ${index}:`, s);
+                return {
+                    id: s?.id || null,
+                    nameAr: s?.label || s?.nameAr || '',
+                    code: s?.code || ''
+                };
+            }).filter(item => {
+                const hasId = !!item.id;
+                if (!hasId) console.warn('[DataImportWizard] Filtered out item without ID:', item);
+                return hasId;
+            });
+
+            console.log('[DataImportWizard] Mapped employers:', mapped);
             setAllEmployers(mapped);
         } catch (err) {
-            console.error("Failed to fetch employers list", err);
+            console.error('[DataImportWizard] Failed to fetch employers list', err);
+            setAllEmployers([]); // Set empty array on error
         }
     };
 
@@ -103,6 +120,7 @@ const DataImportWizard = ({
     // Actions
     const handleAnalyze = async () => {
         if (!file) return;
+        console.log('[DataImportWizard] Starting analysis for file:', file?.name);
         setLoading(true);
         setError(null);
 
@@ -111,15 +129,21 @@ const DataImportWizard = ({
 
         try {
             // Using parameterized baseApiUrl
+            console.log('[DataImportWizard] Sending preview request to:', `${baseApiUrl}/preview`);
             const response = await axios.post(`${baseApiUrl}/preview`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+            console.log('[DataImportWizard] Preview response:', response.data);
+
             // NEW: Extract data from ApiResponse wrapper correctly
             const data = response.data?.data || response.data?.result || response.data;
+            console.log('[DataImportWizard] Extracted preview data:', data);
+            console.log('[DataImportWizard] Preview rows:', data?.previewRows);
+
             setPreviewData(data);
             setActiveStep(1);
         } catch (err) {
-            console.error(err);
+            console.error('[DataImportWizard] Analysis error:', err);
             setError(err.response?.data?.message || err.message || "فشل تحليل الملف");
         } finally {
             setLoading(false);
@@ -129,32 +153,36 @@ const DataImportWizard = ({
     const handleExecute = async () => {
         if (!file || !previewData) return;
 
-        // Smart Context Validation
-        // Smart Context Validation
-        const hasEmployerColumn =
-            (previewData?.columnMappings && Object.values(previewData.columnMappings).includes('employer')) ||
-            (previewData?.detectedColumns?.some(c => {
-                if (!c) return false;
-                // NEW: Handle newlines and multiple spaces more aggressively
-                const normalized = c.toLowerCase()
-                    .replace(/[\r\n]+/g, ' ')
-                    .replace(/\u00A0/g, ' ')
-                    .replace(/\u200B/g, ' ')
-                    .replace(/\*/g, '')
-                    .trim();
-                return normalized.includes('employer') || normalized.includes('جهة العمل');
-            }));
-        if (!selectedEmployer && !hasEmployerColumn) {
-            setError("يرجى اختيار جهة العمل (أو التأكد من وجود عمود 'جهة العمل' في الملف)");
-            return;
+        // Smart Context Validation - Skip for pricing imports (hideContextSelectors = true)
+        if (!hideContextSelectors) {
+            const contextLabel = entityName === 'بنود الأسعار' ? 'مقدم الخدمة' : 'جهة العمل';
+            const hasContextColumn =
+                (previewData?.columnMappings && Object.values(previewData.columnMappings).includes('employer')) ||
+                (previewData?.detectedColumns?.some(c => {
+                    if (!c) return false;
+                    const normalized = c.toLowerCase()
+                        .replace(/[\r\n]+/g, ' ')
+                        .replace(/\u00A0/g, ' ')
+                        .replace(/\u200B/g, ' ')
+                        .replace(/\*/g, '')
+                        .trim();
+                    const searchTerms = entityName === 'بنود الأسعار'
+                        ? ['provider', 'مقدم الخدمة']
+                        : ['employer', 'جهة العمل'];
+                    return searchTerms.some(term => normalized.includes(term));
+                }));
+            if (!selectedEmployer && !hasContextColumn) {
+                setError(`يرجى اختيار ${contextLabel} (أو التأكد من وجود عمود '${contextLabel}' في الملف)`);
+                return;
+            }
         }
 
         setLoading(true);
         const formData = new FormData();
         formData.append('file', file);
-        if (selectedEmployer) formData.append('employerId', selectedEmployer.id);
-        if (selectedPolicy) formData.append('benefitPolicyId', selectedPolicy.id);
-        if (previewData.batchId) formData.append('batchId', previewData.batchId);
+        if (selectedEmployer?.id) formData.append('employerId', selectedEmployer.id);
+        if (selectedPolicy?.id) formData.append('benefitPolicyId', selectedPolicy.id);
+        if (previewData?.batchId) formData.append('batchId', previewData.batchId);
 
         // Default Policy
         formData.append('importPolicy', 'UPDATE');
@@ -165,23 +193,24 @@ const DataImportWizard = ({
             });
             const result = response.data?.data || response.data?.result || response.data;
 
-            if (result.batchId) {
-                // Start Background Monitoring for long-running imports
-                startImport(result.batchId, file.name);
+            if (result?.batchId) {
+                // Start Background Monitoring with the specific pricing status endpoint
+                startImport(
+                    result.batchId,
+                    file?.name || 'import.xlsx',
+                    `provider-contracts/pricing/import/status/${result.batchId}`
+                );
+                // Close dialog and let background widget handle progress
+                if (onClose) onClose();
             } else {
-                // For simple imports (like employers), just show success and close
-                enqueueSnackbar(result.message || 'تم الاستيراد بنجاح', { variant: 'success' });
-            }
-
-            // Refresh screen to see updates
-            setTimeout(() => {
+                // For simple imports without batchId
+                if (onClose) onClose();
                 window.location.reload();
-            }, 1500);
-
-            onClose(); // Close Wizard
+            }
         } catch (err) {
             console.error(err);
             setError(err.response?.data?.message || err.message || "فشل بدء الاستيراد");
+        } finally {
             setLoading(false);
         }
     };
@@ -253,8 +282,12 @@ const DataImportWizard = ({
                             .replace(/\u200B/g, ' ')
                             .replace(/\*/g, '')
                             .trim();
-                        return normalized.includes('employer') || normalized.includes('جهة العمل');
-                    }));
+                        const searchTerms = entityName === 'بنود الأسعار'
+                            ? ['provider', 'مقدم الخدمة']
+                            : ['employer', 'جهة العمل'];
+                        return searchTerms?.some(term => normalized.includes(term)) || false;
+                    })) || false;
+
 
                 return (
                     <Box sx={{ mt: 2 }}>
@@ -271,11 +304,11 @@ const DataImportWizard = ({
                                         </Alert>
                                     ) : hasEmployerCol ? (
                                         <Alert severity="info" icon={<CheckCircle fontSize="inherit" />}>
-                                            تم اكتشاف عمود <b>جهة العمل</b>. سيتم تحديد جهة العمل لكل صف تلقائياً من الملف (Multi-tenant).
+                                            تم اكتشاف عمود <b>{entityName === 'بنود الأسعار' ? 'مقدم الخدمة' : 'جهة العمل'}</b>. سيتم تحديد البيانات لكل صف تلقائياً من الملف.
                                         </Alert>
                                     ) : (
                                         <Alert severity="warning" icon={<Warning fontSize="inherit" />}>
-                                            لم يتم العثور على عمود <b>جهة العمل</b>. يرجى تحديد جهة عمل موحدة لجميع السجلات أدناه.
+                                            لم يتم العثور على عمود <b>{entityName === 'بنود الأسعار' ? 'مقدم الخدمة' : 'جهة العمل'}</b>. يرجى التحديد للجميع أدناه.
                                         </Alert>
                                     )}
                                 </Paper>
@@ -294,10 +327,12 @@ const DataImportWizard = ({
                                             renderInput={(params) => (
                                                 <TextField
                                                     {...params}
-                                                    label="جهة العمل الموحدة (اختياري)"
+                                                    label={entityName === 'بنود الأسعار' ? 'مقدم الخدمة الموحد (اختياري)' : 'جهة العمل الموحدة (اختياري)'}
                                                     size="small"
                                                     fullWidth
-                                                    helperText="اختر جهة فقط إذا كان الملف لا يحتوي على عمود 'جهة العمل'"
+                                                    helperText={entityName === 'بنود الأسعار'
+                                                        ? "اختر مقدم خدمة فقط إذا كان الملف لا يحتوي على عمود 'مقدم الخدمة'"
+                                                        : "اختر جهة فقط إذا كان الملف لا يحتوي على عمود 'جهة العمل'"}
                                                 />
                                             )}
                                         />
@@ -313,40 +348,63 @@ const DataImportWizard = ({
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>#</TableCell>
-                                        <TableCell>{entityName === 'جهات العمل' ? 'الكود' : 'الاسم'}</TableCell>
-                                        <TableCell>{entityName === 'جهات العمل' ? 'الاسم' : 'رقم الهوية'}</TableCell>
-                                        {!hideContextSelectors && <TableCell>جهة العمل</TableCell>}
+                                        <TableCell>
+                                            {entityName === 'جهات العمل' ? 'الكود' :
+                                                entityName === 'بنود الأسعار' ? 'كود الخدمة' : 'الاسم'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {entityName === 'جهات العمل' ? 'الاسم' :
+                                                entityName === 'بنود الأسعار' ? 'اسم الخدمة' : 'رقم الهوية'}
+                                        </TableCell>
+                                        {entityName === 'بنود الأسعار' && <TableCell>السعر</TableCell>}
+                                        {!hideContextSelectors && entityName !== 'بنود الأسعار' && <TableCell>جهة العمل</TableCell>}
                                         <TableCell>الحالة</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {previewData?.previewRows?.map((row) => (
-                                        <TableRow key={row.rowNumber} hover>
-                                            <TableCell>{row.rowNumber}</TableCell>
-                                            <TableCell>{entityName === 'جهات العمل' ? (row.code || '-') : row.fullName}</TableCell>
-                                            <TableCell>{entityName === 'جهات العمل' ? row.name : (row.nationalNumber || '-')}</TableCell>
-                                            {!hideContextSelectors && <TableCell>{row.employerName || row.attributes?.employer || '-'}</TableCell>}
-                                            <TableCell>
-                                                <Chip
-                                                    label={row.status === 'NEW' ? 'جديد' : row.status === 'WARNING' ? 'تنبيه' : row.status === 'ERROR' ? 'خطأ' : row.status}
-                                                    size="small"
-                                                    color={row.status === 'ERROR' ? 'error' : row.status === 'NEW' ? 'success' : 'warning'}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {(() => {
+                                        const rows = previewData?.previewRows || [];
+                                        console.log('[DataImportWizard] Rendering preview rows. Total:', rows.length);
+
+                                        return rows.map((row, index) => {
+                                            console.log(`[DataImportWizard] Rendering row ${index}:`, row);
+
+                                            if (!row) {
+                                                console.error(`[DataImportWizard] Row ${index} is null/undefined!`);
+                                                return null;
+                                            }
+
+                                            return (
+                                                <TableRow key={row?.rowNumber || index} hover>
+                                                    <TableCell>{row?.rowNumber || index + 1}</TableCell>
+                                                    <TableCell>
+                                                        {entityName === 'جهات العمل' ? (row?.code || '-') :
+                                                            entityName === 'بنود الأسعار' ? (row?.serviceCode || '-') : (row?.fullName || '-')}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {entityName === 'جهات العمل' ? (row?.name || '-') :
+                                                            entityName === 'بنود الأسعار' ? (row?.serviceName || '-') : (row?.nationalNumber || '-')}
+                                                    </TableCell>
+                                                    {entityName === 'بنود الأسعار' && <TableCell>{row?.unitPrice || 0}</TableCell>}
+                                                    {!hideContextSelectors && entityName !== 'بنود الأسعار' && (
+                                                        <TableCell>{row?.employerName || row?.attributes?.employer || '-'}</TableCell>
+                                                    )}
+                                                    <TableCell>
+                                                        <Chip
+                                                            label={row?.status === 'NEW' ? 'جديد' : row?.status === 'WARNING' ? 'تنبيه' : row?.status === 'ERROR' ? 'خطأ' : (row?.status || 'غير معروف')}
+                                                            size="small"
+                                                            color={row?.status === 'ERROR' ? 'error' : row?.status === 'NEW' ? 'success' : 'warning'}
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        });
+                                    })()}
                                 </TableBody>
                             </Table>
                         </TableContainer>
 
                         {/* Errors Summary */}
-                        {previewData?.errorCount > 0 && (
-                            <Box sx={{ mt: 2 }}>
-                                <Typography color="error" variant="caption">
-                                    يوجد {previewData.errorCount} صفوف بها أخطاء حرجة لن يتم استيرادها.
-                                </Typography>
-                            </Box>
-                        )}
                     </Box>
                 );
             default:
@@ -395,7 +453,7 @@ const DataImportWizard = ({
                         disabled={loading}
                         startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                     >
-                        {loading ? 'جاري التحضير...' : 'بدء الاستيراد'}
+                        {loading ? 'جاري التحضير...' : 'تأكيد وبدء الاستيراد'}
                     </Button>
                 )}
             </DialogActions>

@@ -5,28 +5,26 @@ import com.waad.tba.common.exception.ResourceNotFoundException;
 import com.waad.tba.modules.benefitpolicy.dto.*;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicyRule;
-import org.springframework.cache.annotation.CacheEvict;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRuleRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
+import com.waad.tba.modules.medicalpackage.MedicalPackage;
+import com.waad.tba.modules.medicalpackage.MedicalPackageRepository;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
- * Service for managing Benefit Policy Rules.
- * Handles CRUD operations and coverage lookups for claims/eligibility.
+ * Service for managing Benefit Policy Rules (REFACTORED for Unified Dictionary).
  */
 @Slf4j
 @Service
@@ -36,9 +34,10 @@ public class BenefitPolicyRuleService {
 
     private final BenefitPolicyRuleRepository ruleRepository;
     private final BenefitPolicyRepository policyRepository;
-    private final MedicalCategoryRepository categoryRepository;
     private final MedicalServiceRepository serviceRepository;
+    private final MedicalPackageRepository packageRepository;
     private final CoveragePriorityService priorityService;
+    private final com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository categoryRepository;
 
     // ═══════════════════════════════════════════════════════════════════════════
     // READ OPERATIONS
@@ -174,27 +173,21 @@ public class BenefitPolicyRuleService {
      */
     @Transactional(readOnly = true)
     public Optional<BenefitPolicyRuleResponseDto> findCoverageForService(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
-        // Get the service to find its category
         MedicalService service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", serviceId));
         
-        // MedicalService has categoryId, not category entity
-        Long categoryId = service.getCategoryId();
+        String category = service.getCategoryName();
 
-        // Find best matching rule (prioritized based on config weights)
-        return findBestMatchingRule(policyId, serviceId, categoryId, encounterType)
+        return findBestMatchingRule(policyId, serviceId, category, encounterType)
                 .map(BenefitPolicyRuleResponseDto::fromEntity);
     }
 
-    /**
-     * Internal helper to find best matching rule using dynamic priorities.
-     */
     private Optional<BenefitPolicyRule> findBestMatchingRule(
-            Long policyId, Long serviceId, Long categoryId, 
+            Long policyId, Long serviceId, String category, 
             com.waad.tba.modules.visit.entity.VisitType encounterType) {
         
         List<BenefitPolicyRule> applicableRules = ruleRepository.findApplicableRulesForService(
-            policyId, serviceId, java.util.Collections.emptyList(), categoryId, encounterType);
+            policyId, serviceId, java.util.Collections.emptyList(), category, encounterType);
         
         if (applicableRules.isEmpty()) {
             return Optional.empty();
@@ -208,41 +201,35 @@ public class BenefitPolicyRuleService {
             });
     }
 
-    /**
-     * Calculates the weight of a rule based on how well it matches the request and its config weight.
-     */
     private Integer calculateRuleWeight(BenefitPolicyRule rule, Long requestedServiceId, com.waad.tba.modules.visit.entity.VisitType requestedEncounterType) {
         boolean isServiceMatch = rule.getMedicalService() != null && rule.getMedicalService().getId().equals(requestedServiceId);
         boolean isPackageMatch = rule.getMedicalPackage() != null;
-        boolean isCategoryMatch = rule.getMedicalCategory() != null && rule.getMedicalService() == null && rule.getMedicalPackage() == null;
+        // FIX: Use medicalCategoryRef (FK) instead of medicalCategory (Transient) to avoid Lazy Loading null
+        boolean isCategoryMatch = rule.getMedicalCategoryRef() != null
+                && rule.getMedicalService() == null
+                && rule.getMedicalPackage() == null;
         boolean isEncounterMatch = rule.getEncounterType() != null && rule.getEncounterType().equals(requestedEncounterType);
-        
+
         String ruleKey = priorityService.resolveRuleKey(isServiceMatch, isPackageMatch, isCategoryMatch, isEncounterMatch);
-        
+
         int fallback = switch (ruleKey) {
             case "SERVICE_ENCOUNTER_MATCH" -> 0;
-            case "SERVICE_ANY_ENCOUNTER" -> 10;
+            case "SERVICE_ANY_ENCOUNTER"   -> 10;
             case "PACKAGE_ENCOUNTER_MATCH" -> 15;
-            case "PACKAGE_ANY_ENCOUNTER" -> 25;
+            case "PACKAGE_ANY_ENCOUNTER"   -> 25;
             case "CATEGORY_ENCOUNTER_MATCH" -> 20;
-            case "CATEGORY_ANY_ENCOUNTER" -> 30;
+            case "CATEGORY_ANY_ENCOUNTER"  -> 30;
             default -> 100;
         };
-        
+
         return priorityService.getWeight(ruleKey, fallback);
     }
 
-    /**
-     * Check if a service is covered under a policy
-     */
     @Transactional(readOnly = true)
     public boolean isServiceCovered(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType).isPresent();
     }
 
-    /**
-     * Check if a service requires pre-approval under a policy
-     */
     @Transactional(readOnly = true)
     public boolean requiresPreApproval(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType)
@@ -250,10 +237,6 @@ public class BenefitPolicyRuleService {
                 .orElse(false);
     }
 
-    /**
-     * Get coverage percentage for a service under a policy
-     * Returns 0 if not covered
-     */
     @Transactional(readOnly = true)
     public int getCoveragePercent(Long policyId, Long serviceId, com.waad.tba.modules.visit.entity.VisitType encounterType) {
         return findCoverageForService(policyId, serviceId, encounterType)
@@ -270,21 +253,17 @@ public class BenefitPolicyRuleService {
      */
     @CacheEvict(value = "coverageResolution", allEntries = true)
     public BenefitPolicyRuleResponseDto create(Long policyId, BenefitPolicyRuleCreateDto dto) {
-        log.info("Creating rule for policy {} - category: {}, service: {}", 
-                policyId, dto.getMedicalCategoryId(), dto.getMedicalServiceId());
+        log.info("Creating rule for policy {} - category: {}, categoryId: {}, service: {}",
+                policyId, dto.getMedicalCategory(), dto.getMedicalCategoryId(), dto.getMedicalServiceId());
 
-        // Validate policy exists
         BenefitPolicy policy = policyRepository.findById(policyId)
                 .orElseThrow(() -> new ResourceNotFoundException("BenefitPolicy", "id", policyId));
 
-        // Validate category XOR service (exactly one must be set)
-        validateTargetXor(dto.getMedicalCategoryId(), dto.getMedicalServiceId());
+        validateTargetAtLeastOne(dto);
 
-        // Build the rule
         BenefitPolicyRule rule = BenefitPolicyRule.builder()
                 .benefitPolicy(policy)
                 .coveragePercent(dto.getCoveragePercent())
-                .amountLimit(dto.getAmountLimit())
                 .timesLimit(dto.getTimesLimit())
                 .waitingPeriodDays(dto.getWaitingPeriodDays() != null ? dto.getWaitingPeriodDays() : 0)
                 .requiresPreApproval(dto.getRequiresPreApproval() != null ? dto.getRequiresPreApproval() : false)
@@ -293,45 +272,124 @@ public class BenefitPolicyRuleService {
                 .active(dto.getActive() != null ? dto.getActive() : true)
                 .build();
 
-        // Set category or service
-        if (dto.getMedicalCategoryId() != null) {
-            MedicalCategory category = categoryRepository.findById(dto.getMedicalCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "id", dto.getMedicalCategoryId()));
-            
-            // Check for duplicate category rule
-            if (ruleRepository.existsCategoryRule(policyId, dto.getMedicalCategoryId(), dto.getEncounterType(), null)) {
-                throw new BusinessRuleException("A rule for this category already exists in this policy for the specified encounter type");
-            }
-            
-            rule.setMedicalCategory(category);
-        } else {
+        if (dto.getMedicalServiceId() != null) {
             MedicalService service = serviceRepository.findById(dto.getMedicalServiceId())
                     .orElseThrow(() -> new ResourceNotFoundException("MedicalService", "id", dto.getMedicalServiceId()));
-            
-            // Check for duplicate service rule
+
             if (ruleRepository.existsServiceRule(policyId, dto.getMedicalServiceId(), dto.getEncounterType(), null)) {
-                throw new BusinessRuleException("A rule for this service already exists in this policy for the specified encounter type");
+                throw new BusinessRuleException("A rule for this service already exists in this policy for the specified coverage type");
             }
-            
             rule.setMedicalService(service);
+        } else if (dto.getMedicalCategoryId() != null) {
+            // Preferred: category by ID (FK-based)
+            com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory catRef = categoryRepository.findById(dto.getMedicalCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "id", dto.getMedicalCategoryId()));
+
+            if (ruleRepository.findActiveByCategoryAndEncounter(policyId, catRef.getCode(), dto.getEncounterType()).isPresent()) {
+                throw new BusinessRuleException("A rule for this category already exists in this policy for the specified coverage type");
+            }
+            rule.setMedicalCategoryRef(catRef);
+            rule.setMedicalCategory(catRef.getCode());
+        } else if (dto.getMedicalCategory() != null) {
+            // Legacy: category by code string
+            if (ruleRepository.findActiveByCategoryAndEncounter(policyId, dto.getMedicalCategory(), dto.getEncounterType()).isPresent()) {
+                throw new BusinessRuleException("A rule for this category already exists in this policy for the specified coverage type");
+            }
+            rule.setMedicalCategory(dto.getMedicalCategory());
+
+            // Set FK Field (Required by DB Constraint chk_bpr_target)
+            com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory catRef = categoryRepository.findByCode(dto.getMedicalCategory())
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "code", dto.getMedicalCategory()));
+
+            rule.setMedicalCategoryRef(catRef);
         }
 
         BenefitPolicyRule saved = ruleRepository.save(rule);
         log.info("Created rule {} for policy {}", saved.getId(), policyId);
-        
+
         return BenefitPolicyRuleResponseDto.fromEntity(saved);
     }
 
     /**
      * Bulk create rules for a policy
      */
+    /**
+     * Bulk create or update rules for a policy (Upsert)
+     */
     public List<BenefitPolicyRuleResponseDto> createBulk(Long policyId, List<BenefitPolicyRuleCreateDto> dtos) {
-        log.info("Bulk creating {} rules for policy {}", dtos.size(), policyId);
-        
-        return dtos.stream()
-                .map(dto -> create(policyId, dto))
-                .toList();
+        log.info("Bulk upserting {} rules for policy {}", dtos.size(), policyId);
+
+        List<BenefitPolicyRuleResponseDto> results = new java.util.ArrayList<>();
+        for (BenefitPolicyRuleCreateDto dto : dtos) {
+            try {
+                BenefitPolicyRuleResponseDto result = createOrUpdate(policyId, dto);
+                if (result != null) results.add(result);
+            } catch (BusinessRuleException e) {
+                // Skip duplicate rules gracefully (idempotent bulk-create)
+                log.warn("Skipping duplicate/invalid rule for policy {} [{}]: {}",
+                        policyId, dto.getEncounterType(), e.getMessage());
+            } catch (Exception e) {
+                // Log with full detail so we can debug, but bubble up so the transaction rolls back
+                log.error("Fatal error while upserting rule for policy {}: {}", policyId, e.getMessage(), e);
+                throw new BusinessRuleException("خطأ في إنشاء القاعدة: " + e.getMessage());
+            }
+        }
+        log.info("✅ Bulk upsert complete: {}/{} rules saved for policy {}",
+                results.size(), dtos.size(), policyId);
+        return results;
     }
+
+    private BenefitPolicyRuleResponseDto createOrUpdate(Long policyId, BenefitPolicyRuleCreateDto dto) {
+        Optional<BenefitPolicyRule> existing = Optional.empty();
+
+        // 1. Try to find existing active rule for deduplication
+        if (dto.getMedicalServiceId() != null) {
+            if (dto.getEncounterType() != null) {
+                existing = ruleRepository.findActiveByServiceAndEncounter(policyId, dto.getMedicalServiceId(), dto.getEncounterType());
+            } else {
+                existing = ruleRepository.findActiveByServiceGeneral(policyId, dto.getMedicalServiceId());
+            }
+        } else if (dto.getMedicalCategoryId() != null) {
+            // Preferred: lookup by category ID
+            com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory catRef = categoryRepository.findById(dto.getMedicalCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("MedicalCategory", "id", dto.getMedicalCategoryId()));
+            if (dto.getEncounterType() != null) {
+                existing = ruleRepository.findActiveByCategoryAndEncounter(policyId, catRef.getCode(), dto.getEncounterType());
+            } else {
+                existing = ruleRepository.findActiveByCategoryGeneral(policyId, catRef.getCode());
+            }
+        } else if (dto.getMedicalCategory() != null) {
+            // Legacy: lookup by category code
+            if (dto.getEncounterType() != null) {
+                existing = ruleRepository.findActiveByCategoryAndEncounter(policyId, dto.getMedicalCategory(), dto.getEncounterType());
+            } else {
+                existing = ruleRepository.findActiveByCategoryGeneral(policyId, dto.getMedicalCategory());
+            }
+        } else if (dto.getEncounterType() != null) {
+            // NEW: Global rule (encounterType only — no category, no service)
+            existing = ruleRepository.findActiveGlobalByEncounter(policyId, dto.getEncounterType());
+        }
+
+        if (existing.isPresent()) {
+            // 2. Update existing
+            BenefitPolicyRule rule = existing.get();
+            log.info("Updating existing rule {} for policy {}", rule.getId(), policyId);
+
+            if (dto.getCoveragePercent() != null) rule.setCoveragePercent(dto.getCoveragePercent());
+            if (dto.getTimesLimit() != null) rule.setTimesLimit(dto.getTimesLimit());
+            if (dto.getWaitingPeriodDays() != null) rule.setWaitingPeriodDays(dto.getWaitingPeriodDays());
+            if (dto.getRequiresPreApproval() != null) rule.setRequiresPreApproval(dto.getRequiresPreApproval());
+            if (dto.getNotes() != null) rule.setNotes(dto.getNotes());
+
+            BenefitPolicyRule saved = ruleRepository.save(rule);
+            return BenefitPolicyRuleResponseDto.fromEntity(saved);
+        } else {
+            // 3. Create new
+            return create(policyId, dto);
+        }
+    }
+
+
 
     // ═══════════════════════════════════════════════════════════════════════════
     // UPDATE OPERATIONS
@@ -352,9 +410,6 @@ public class BenefitPolicyRuleService {
         if (dto.getCoveragePercent() != null) {
             rule.setCoveragePercent(dto.getCoveragePercent());
         }
-        if (dto.getAmountLimit() != null) {
-            rule.setAmountLimit(dto.getAmountLimit());
-        }
         if (dto.getTimesLimit() != null) {
             rule.setTimesLimit(dto.getTimesLimit());
         }
@@ -373,7 +428,7 @@ public class BenefitPolicyRuleService {
 
         BenefitPolicyRule saved = ruleRepository.save(rule);
         log.info("Updated rule {}", ruleId);
-        
+
         return BenefitPolicyRuleResponseDto.fromEntity(saved);
     }
 
@@ -480,20 +535,13 @@ public class BenefitPolicyRuleService {
         }
     }
 
-    private void validateTargetXor(Long categoryId, Long serviceId) {
-        boolean hasCategory = categoryId != null;
-        boolean hasService = serviceId != null;
+    private void validateTargetAtLeastOne(BenefitPolicyRuleCreateDto dto) {
+        boolean hasCategory = dto.getMedicalCategory() != null || dto.getMedicalCategoryId() != null;
+        boolean hasService = dto.getMedicalServiceId() != null;
+        boolean hasEncounter = dto.getEncounterType() != null;
 
-        if (hasCategory && hasService) {
-            throw new BusinessRuleException(
-                "Rule must target either a category OR a service, not both. " +
-                "Remove one of: medicalCategoryId or medicalServiceId");
-        }
-
-        if (!hasCategory && !hasService) {
-            throw new BusinessRuleException(
-                "Rule must target at least a category or a service. " +
-                "Provide either medicalCategoryId or medicalServiceId");
+        if (!hasCategory && !hasService && !hasEncounter) {
+            throw new BusinessRuleException("Rule must target at least a category, service, or encounter type.");
         }
     }
 

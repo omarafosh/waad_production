@@ -53,7 +53,8 @@ const MembersAreaChart = ({ data, loading }) => {
       labels: {
         style: {
           colors: theme.palette.text.secondary,
-          fontFamily: fontFamily
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize // Scalable unit
         }
       }
     },
@@ -61,23 +62,25 @@ const MembersAreaChart = ({ data, loading }) => {
       labels: {
         style: {
           colors: theme.palette.text.secondary,
-          fontFamily: fontFamily
+          fontFamily: fontFamily,
+          fontSize: theme.typography.caption.fontSize // Scalable unit
         },
-        formatter: (val) => val.toLocaleString('ar-SA')
+        formatter: (val) => val.toLocaleString('ar-SA-u-nu-latn')
       }
     },
     colors: [theme.palette.success.main],
     tooltip: {
       theme: colorScheme === ThemeMode.DARK ? 'dark' : 'light',
       y: {
-        formatter: (val) => val.toLocaleString('ar-SA')
+        formatter: (val) => val.toLocaleString('ar-SA-u-nu-latn')
       }
     },
     legend: {
       show: true,
       position: 'top',
       horizontalAlign: 'right',
-      fontFamily: fontFamily
+      fontFamily: fontFamily,
+      fontSize: theme.typography.body2.fontSize // Scalable unit
     }
   });
 
@@ -92,7 +95,7 @@ const MembersAreaChart = ({ data, loading }) => {
     if (data && data.length > 0) {
       const categories = data.map((item) => {
         const date = new Date(item.date || item.month);
-        return date.toLocaleDateString('ar-SA', { month: 'short', year: 'numeric' });
+        return date.toLocaleDateString('ar-SA-u-nu-latn', { month: 'short', year: 'numeric' });
       });
       const values = data.map((item) => item.count || item.value || 0);
 

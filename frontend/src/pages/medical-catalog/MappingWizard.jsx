@@ -29,7 +29,7 @@ import { useSnackbar } from 'notistack';
 
 // Services
 import { lookupMedicalServices } from 'services/api/medical-services.service';
-import { medicalCatalogService } from 'services/medicalCatalog.service';
+import { medicalCatalogService } from 'services/api/medical-catalog.service';
 
 const ReasonCodes = [
     { code: 'MSG_ERROR', label: 'خطأ في إدخال المزود (Message Error)' },

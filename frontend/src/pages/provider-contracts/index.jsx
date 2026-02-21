@@ -29,3 +29,5 @@ export { default } from './ProviderContractsList';
 // Named exports for explicit imports
 export { default as ProviderContractsList } from './ProviderContractsList';
 export { default as ProviderContractView } from './ProviderContractView';
+export { default as ProviderContractEdit } from './ProviderContractEdit';
+export { default as ProviderContractCreate } from './ProviderContractCreate';

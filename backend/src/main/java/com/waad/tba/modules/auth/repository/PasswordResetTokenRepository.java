@@ -8,5 +8,6 @@ import org.springframework.stereotype.Repository;
  * This stub remains only to prevent compilation errors if the file cannot be deleted.
  */
 @Repository("authPasswordResetTokenRepositoryStub")
+@Deprecated
 public interface PasswordResetTokenRepository {
 }

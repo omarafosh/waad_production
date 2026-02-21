@@ -813,7 +813,9 @@ const ProviderEdit = () => {
             <Dialog open={previewDialog.open} onClose={() => setPreviewDialog({ ...previewDialog, open: false })} maxWidth="lg" fullWidth>
                 <DialogTitle>{previewDialog.title}</DialogTitle>
                 <DialogContent sx={{ height: '80vh' }}>
-                    {previewDialog.url && <iframe src={previewDialog.url} style={{ width: '100%', height: '100%', border: 'none' }} title="preview" />}
+                    {previewDialog.url && previewDialog.url.startsWith('blob:') && (
+                        <iframe src={previewDialog.url.startsWith('blob:') ? previewDialog.url : 'about:blank'} style={{ width: '100%', height: '100%', border: 'none' }} title="preview" />
+                    )}
                 </DialogContent>
                 <DialogActions><Button onClick={() => setPreviewDialog({ ...previewDialog, open: false })}>إغلاق</Button></DialogActions>
             </Dialog>

@@ -4,7 +4,7 @@ import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.modules.medicaltaxonomy.dto.CatalogStatsDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.MappingRequestDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.ProviderRawServiceDto;
-import com.waad.tba.modules.medicaltaxonomy.entity.MappingAuditLog;
+import com.waad.tba.modules.medicaltaxonomy.entity.ProviderMappingAudit;
 import com.waad.tba.modules.medicaltaxonomy.service.ProviderMappingService;
 import com.waad.tba.security.UserPrincipal;
 import jakarta.validation.Valid;
@@ -17,11 +17,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/catalog")
@@ -31,17 +30,28 @@ public class ProviderMappingController {
 
     private final ProviderMappingService mappingService;
 
+    @GetMapping("/services")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<Page<ProviderRawServiceDto>> getFilteredServices(
+            @RequestParam Long providerId,
+            @RequestParam(required = false) Boolean mapped,
+            @RequestParam(required = false) String searchTerm,
+            Pageable pageable) {
+        return ResponseEntity.ok(mappingService.getFilteredServices(providerId, mapped, searchTerm, pageable));
+    }
+
     @GetMapping("/unmapped")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
     public ResponseEntity<Page<ProviderRawServiceDto>> getUnmappedServices(
             @RequestParam Long providerId,
+            @RequestParam(required = false) Long employerId,
             Pageable pageable) {
-        return ResponseEntity.ok(mappingService.getUnmappedServices(providerId, pageable));
+        return ResponseEntity.ok(mappingService.getUnmappedServices(providerId, employerId, pageable));
     }
 
     @GetMapping("/audit")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<Page<MappingAuditLog>> getMappingAuditLogs(Pageable pageable) {
+    public ResponseEntity<Page<ProviderMappingAudit>> getMappingAuditLogs(Pageable pageable) {
         return ResponseEntity.ok(mappingService.getMappingAuditLogs(pageable));
     }
 
@@ -58,6 +68,24 @@ public class ProviderMappingController {
             @AuthenticationPrincipal UserPrincipal currentUser) {
         mappingService.mapService(request, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Service mapped successfully", null));
+    }
+
+    @PostMapping("/unmap")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<ApiResponse> unmapService(
+            @RequestBody java.util.List<Long> rawServiceIds,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        mappingService.unmapService(rawServiceIds, currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Services unmapped successfully", null));
+    }
+
+    @PostMapping("/raw/{id}/category")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<ApiResponse> assignCategory(
+            @PathVariable Long id,
+            @RequestParam String categoryName) {
+        mappingService.assignCategory(id, categoryName);
+        return ResponseEntity.ok(ApiResponse.success("تم تحديد التصنيف بنجاح", null));
     }
 
     @PostMapping("/upload-raw")
@@ -98,6 +126,28 @@ public class ProviderMappingController {
         } catch (Exception e) {
             log.error("Failed to upload raw services", e);
             return ResponseEntity.badRequest().body(ApiResponse.error("Failed to process file: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Import services from provider contract pricing items (price list)
+     * This allows mapping services from insurance documents/contracts
+     */
+    @PostMapping("/import-from-contract")
+    @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
+    public ResponseEntity<ApiResponse> importFromContractPricing(
+            @RequestParam("providerId") Long providerId,
+            @RequestParam(value = "contractId", required = false) Long contractId) {
+        
+        try {
+            int count = mappingService.importFromContractPricing(providerId, contractId);
+            return ResponseEntity.ok(ApiResponse.success(
+                "تم استيراد " + count + " خدمة من قائمة أسعار العقد", 
+                count));
+        } catch (Exception e) {
+            log.error("Failed to import from contract pricing", e);
+            return ResponseEntity.badRequest().body(ApiResponse.error(
+                "فشل استيراد الخدمات من العقد: " + e.getMessage()));
         }
     }
 }

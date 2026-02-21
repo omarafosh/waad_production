@@ -1,21 +1,6 @@
-/**
- * Currency Formatter Utility
- * تنسيق العملات بالدينار الليبي
- *
- * @version 2026.1
- */
+import { getNumberLocale } from './locale-helper';
 
-/**
- * Format number as LYD currency (Libyan Dinar)
- * @param {number} amount - Amount to format
- * @param {string} locale - Locale (default: en-US)
- * @returns {string} Formatted currency string
- *
- * @example
- * formatCurrency(1500.50) // "1,500.50 د.ل"
- * formatCurrency(1500) // "1,500.00 د.ل"
- */
-export const formatCurrency = (amount, locale = 'ar-SA') => {
+export const formatCurrency = (amount, locale = getNumberLocale()) => {
   if (amount === null || amount === undefined || isNaN(amount)) {
     return '0.00 د.ل';
   }
@@ -37,7 +22,7 @@ export const formatCurrency = (amount, locale = 'ar-SA') => {
  * @example
  * formatNumber(1500.50) // "1,500.500"
  */
-export const formatNumber = (amount, locale = 'ar-SA') => {
+export const formatNumber = (amount, locale = getLocale()) => {
   if (amount === null || amount === undefined || isNaN(amount)) {
     return '0.000';
   }

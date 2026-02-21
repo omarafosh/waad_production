@@ -22,13 +22,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class LifecycleManagerService {
 
-    private final List<LifecycleAdapter> adapters;
+    private final List<LifecycleAdapter<?>> adapters;
     private final LifecycleLogRepository auditRepository;
     private final LifecycleReasonCodeRepository reasonCodeRepository;
     private final com.waad.tba.common.lifecycle.LifecycleStateMachine stateMachine;
     private final com.waad.tba.common.audit.service.AuditService auditService;
 
-    private LifecycleAdapter getAdapter(String entityType) {
+    private LifecycleAdapter<?> getAdapter(String entityType) {
         return adapters.stream()
                 .filter(a -> a.supports(entityType))
                 .findFirst()
@@ -37,7 +37,7 @@ public class LifecycleManagerService {
 
     @Transactional(readOnly = true)
     public LifecyclePreviewDto preview(String entityType, Long entityId) {
-        LifecycleAdapter adapter = getAdapter(entityType);
+        LifecycleAdapter<?> adapter = getAdapter(entityType);
         
         String currentStatus = adapter.getCurrentStatus(entityId);
         List<LifecycleAction> allowed = adapter.getAllowedActions(entityId);
@@ -75,7 +75,7 @@ public class LifecycleManagerService {
     public LifecycleResult execute(String entityType, Long entityId, LifecycleAction action, LifecycleContext context) {
         log.info("Executing lifecycle action {} on {}/{} by {}", action, entityType, entityId, context.getCurrentUser().getUsername());
         
-        LifecycleAdapter adapter = getAdapter(entityType);
+        LifecycleAdapter<?> adapter = getAdapter(entityType);
         String oldStatus = adapter.getCurrentStatus(entityId);
         Object beforeState = adapter.getEntity(entityId);
 

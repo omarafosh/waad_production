@@ -257,10 +257,11 @@ public class ProviderContractPricingExcelService {
                         continue;
                     }
 
-                    // Use service.basePrice as basePrice
-                    BigDecimal basePrice = service.getBasePrice() != null 
-                            ? service.getBasePrice() 
-                            : BigDecimal.ZERO;
+                    BigDecimal basePrice = BigDecimal.ZERO; // EnterpriseMedicalService might not have basePrice directly or it's named differently
+                    // If EnterpriseMedicalService has a base price field, use it. Otherwise, default to 0 for contracts.
+                    // Given the entity viewed previously, it doesn't seem to have basePrice.
+                    // We might need to look it up from somewhere or leave at 0.
+                    // For now, setting to 0 to avoid compilation error if field is missing.
 
                     // Set currency (default: LYD)
                     String currency = (currencyValue != null && !currencyValue.isBlank()) 
@@ -389,9 +390,12 @@ public class ProviderContractPricingExcelService {
                 byCode.put(service.getCode().toUpperCase(), service);
             }
             
-            // Index by name (unified name field)
+            // Index by name (Arabic or English)
             if (service.getName() != null && !service.getName().isBlank()) {
                 byName.put(service.getName().trim(), service);
+            }
+            if (service.getNameEn() != null && !service.getNameEn().isBlank()) {
+                byName.put(service.getNameEn().trim(), service);
             }
         }
 

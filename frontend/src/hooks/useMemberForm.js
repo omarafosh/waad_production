@@ -122,6 +122,18 @@ export const useMemberForm = (initialValues = {}, options = {}) => {
             if (!form.employerId) {
                 newErrors.employerId = MEMBERS_AR.validation.required.employer;
             }
+            if (!form.policyNumber) {
+                newErrors.policyNumber = MEMBERS_AR.validation.required.policyNumber || 'رقم الوثيقة مطلوب';
+            }
+            if (!form.benefitPolicyId) {
+                newErrors.benefitPolicyId = MEMBERS_AR.validation.required.benefitPolicy || 'وثيقة المنافع مطلوبة';
+            }
+            if (!form.startDate) {
+                newErrors.startDate = MEMBERS_AR.validation.required.startDate || 'تاريخ بدء التأمين مطلوب';
+            }
+            if (!form.endDate) {
+                newErrors.endDate = MEMBERS_AR.validation.required.endDate || 'تاريخ انتهاء التأمين مطلوب';
+            }
             if (form.phone && !/^09[1-6][0-9]{7}$/.test(form.phone)) {
                 newErrors.phone = MEMBERS_AR.validation.format.phone;
             }
@@ -129,13 +141,15 @@ export const useMemberForm = (initialValues = {}, options = {}) => {
                 newErrors.email = MEMBERS_AR.validation.format.email;
             }
         } else {
-            // في وضع FastTrack، رقم الهاتف مطلوب
+            // في وضع FastTrack، رقم الهاتف وجهة العمل مطلوبان
             if (!form.phone?.trim()) {
                 newErrors.phone = MEMBERS_AR.validation.required.phone;
             }
             if (!form.employerId) {
                 newErrors.employerId = MEMBERS_AR.validation.required.employer;
             }
+            // في وضع FastTrack، قد نحتاج أيضاً للوثيقة والتواريخ كقيم افتراضية إذا كان الباكيند يتطلبها
+            // لكن عادة السيرفيس تتعامل معها. سنقوم بتمريرها من الكومبوننت.
         }
 
         setErrors(newErrors);

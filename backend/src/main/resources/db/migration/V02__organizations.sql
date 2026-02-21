@@ -1,146 +1,141 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- 02. Organizations & Settings (Consolidated)
+-- 02. المنظمات والإعدادات الموحدة (Simplified Organizations & Settings)
 -- ═══════════════════════════════════════════════════════════════════════════
--- Sources: V1.02, V9010, V9022
+-- الغرض: إدارة جهات العمل (Employers) وإعدادات النظام الموحدة (Settings)
+-- الاستخدام: تم تبسيط هذا الملف ليشمل فقط ما هو ضروري لمنظومة شركة واحدة
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- 1. ORGANIZATIONS (Unified Principal companies/Employers)
-CREATE TABLE organizations (
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 1. جدول المنظمات (Organizations)
+-- ═══════════════════════════════════════════════════════════════════════════
+-- الغرض: تخزين بيانات جهات العمل (Employers) المتعاقدة مع النظام
+-- الاستخدام: يُستخدم لربط المستفيدين (Members) بجهة العمل الخاصة بهم
+-- العلاقات:
+--   - يرتبط بـ members (One-to-Many)
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS organizations (
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- المعرف الأساسي (Primary Key)
+    -- ═══════════════════════════════════════════════════════════════════════
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    code VARCHAR(50) NOT NULL UNIQUE,
     
-    -- Contact Info
-    address VARCHAR(255),
-    phone VARCHAR(20),
-    email VARCHAR(100),
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- البيانات الأساسية (Core Data)
+    -- ═══════════════════════════════════════════════════════════════════════
+    name VARCHAR(255) NOT NULL,                 -- اسم جهة العمل (الشركة المتعاقدة)
+    code VARCHAR(50) UNIQUE NOT NULL,           -- كود فريد لجهة العمل
+    tax_number VARCHAR(50),                     -- الرقم الضريبي
     
-    -- Status
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    archived BOOLEAN NOT NULL DEFAULT FALSE,
+    -- بيانات الاتصال (Contact Data)
+    address VARCHAR(255),                       -- العنوان الفعلي
+    phone VARCHAR(20),                          -- رقم الهاتف
+    email VARCHAR(100),                         -- البريد الإلكتروني للتواصل
     
-    -- Audit
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- الحالة والصلاحية (Status & Validity)
+    -- ═══════════════════════════════════════════════════════════════════════
+    active BOOLEAN NOT NULL DEFAULT TRUE,       -- نشط/غير نشط
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- التدقيق والإصدارات (Audit & Versioning)
+    -- ═══════════════════════════════════════════════════════════════════════
+    version BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100),
+    
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- الحذف الناعم (Soft Delete)
+    -- ═══════════════════════════════════════════════════════════════════════
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(100)
 );
 
-CREATE INDEX idx_organizations_code ON organizations(code);
-COMMENT ON TABLE organizations IS 'Unified organizations table matching Organization.java entity';
+-- الفهارس (Indexes)
+CREATE INDEX IF NOT EXISTS idx_organizations_code ON organizations(code);
+-- الغرض: تسريع البحث بكود المنظمة
 
--- 2. COMPANIES (System Settings Hub / Tenants)
-CREATE TABLE companies (
+CREATE INDEX IF NOT EXISTS idx_organizations_active ON organizations(active);
+-- الغرض: تسريع البحث عن المنظمات النشطة
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 2. جدول إعدادات النظام (System Settings)
+-- ═══════════════════════════════════════════════════════════════════════════
+-- الغرض: تخزين إعدادات الهوية والتنسيق والـ SLAs للمنظومة ككل
+-- الاستخدام: يحتوي على سجل واحد فقط (ID: 1) يمثل إعدادات المنظومة
+-- ملاحظة: هذا الجدول بديل لجدول companies المعقد
+-- ═══════════════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS settings (
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- المعرف الأساسي (Primary Key)
+    -- ═══════════════════════════════════════════════════════════════════════
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     
-    -- Branding
-    logo_url TEXT,
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- هوية المنظومة (System Identity)
+    -- ═══════════════════════════════════════════════════════════════════════
+    system_name VARCHAR(200) NOT NULL,          -- اسم المنظومة (مثلاً: Top Doctors TPA)
+    system_code VARCHAR(50) UNIQUE NOT NULL,    -- كود المنظومة
+    logo_url TEXT,                              -- رابط الشعار
+    favicon_url TEXT,                           -- رابط أيقونة المتصفح
+    business_type VARCHAR(100),
+    
+    -- بيانات التواصل الأساسية للمنظومة
     phone VARCHAR(50),
     email VARCHAR(100),
     address TEXT,
     website VARCHAR(200),
-    business_type VARCHAR(100),
-    tax_number VARCHAR(50),
-    currency VARCHAR(10) DEFAULT 'LYD',
+    tax_number VARCHAR(50),                     -- الرقم الضريبي للمنظومة
     
-    -- Settings
-    card_number_format VARCHAR(200),
-    font_family VARCHAR(50) DEFAULT 'Tajawal',
-    font_size INTEGER DEFAULT 12,
-    barcode_prefix VARCHAR(20) DEFAULT 'WAAD',
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- إعدادات التشغيل (Operation Settings)
+    -- ═══════════════════════════════════════════════════════════════════════
+    currency VARCHAR(10) DEFAULT 'LYD',         -- العملة الافتراضية
+    claim_sla_days INTEGER NOT NULL DEFAULT 10, -- مدة معالجة المطالبات (أيام)
+    pre_approval_sla_days INTEGER NOT NULL DEFAULT 3, -- مدة معالجة الموافقات المسبقة
+    card_number_format VARCHAR(100) DEFAULT '[MP_NO]-[YEAR]-[PRO]', -- تنسيق رقم البطاقة
+    dependent_suffixes TEXT,                    -- زوائد أرقام التابعين (JSON)
     
-    -- SLA Configuration
-    claim_sla_days INTEGER NOT NULL DEFAULT 10,
-    pre_approval_sla_days INTEGER NOT NULL DEFAULT 3,
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- إعدادات المظهر والطباعة (Theme & Print Settings)
+    -- ═══════════════════════════════════════════════════════════════════════
+    primary_color VARCHAR(20) DEFAULT '#06935d', -- اللون الأساسي للهوية
+    font_family VARCHAR(50) DEFAULT 'Tajawal',   -- الخط المستخدم
+    font_size DOUBLE PRECISION DEFAULT 12.0,    -- حجم الخط الافتراضي (px)
+    date_calendar VARCHAR(20) DEFAULT 'gregory', -- نوع التقويم (ميلادي/هجري)
+    barcode_prefix VARCHAR(20) DEFAULT 'WAAD',  -- بادئة الباركود للكروت
     
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 3. USER_PERMITTED_ORGANIZATIONS
-CREATE TABLE user_permitted_organizations (
-    user_id BIGINT NOT NULL,
-    organization_id BIGINT NOT NULL,
-    PRIMARY KEY (user_id, organization_id),
-    CONSTRAINT fk_upo_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_upo_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
-);
-
--- 4. COMPANY SETTINGS (From V9010/V9022)
-CREATE TABLE company_settings (
-    id BIGSERIAL PRIMARY KEY,
-    company_id BIGINT NOT NULL,
-    employer_id BIGINT NOT NULL,
-    can_view_claims BOOLEAN NOT NULL DEFAULT false,
-    can_view_visits BOOLEAN NOT NULL DEFAULT false,
-    can_edit_members BOOLEAN NOT NULL DEFAULT true,
-    can_download_attachments BOOLEAN NOT NULL DEFAULT true,
-    ui_visibility JSONB,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    CONSTRAINT uk_company_employer_settings UNIQUE (company_id, employer_id)
-);
-
-CREATE INDEX idx_company_settings_employer ON company_settings(employer_id);
-CREATE INDEX idx_company_settings_company ON company_settings(company_id);
-
--- 5. PDF SETTINGS (From V9010)
-CREATE TABLE pdf_company_settings (
-    id BIGSERIAL PRIMARY KEY,
-    company_name VARCHAR(255) NOT NULL,
-    logo_url VARCHAR(512),
-    logo_data BYTEA,
-    address TEXT,
-    phone VARCHAR(50),
-    email VARCHAR(100),
-    website VARCHAR(255),
-    footer_text TEXT,
-    footer_text_en TEXT,
-    header_color VARCHAR(7),
-    footer_color VARCHAR(7),
-    page_size VARCHAR(20),
-    margin_top INTEGER,
-    margin_bottom INTEGER,
-    margin_left INTEGER,
-    margin_right INTEGER,
-    is_active BOOLEAN,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(100),
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- التدقيق (Audit)
+    -- ═══════════════════════════════════════════════════════════════════════
+    version BIGINT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_by VARCHAR(100)
 );
 
--- 6. SYSTEM ADMIN (From V9010)
-CREATE TABLE feature_flags (
-    id BIGSERIAL PRIMARY KEY,
-    flag_key VARCHAR(100) UNIQUE NOT NULL,
-    flag_name VARCHAR(255) NOT NULL,
-    description TEXT,
-    enabled BOOLEAN NOT NULL DEFAULT true,
-    role_filters JSON,
-    created_by VARCHAR(50),
-    updated_by VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- ═══════════════════════════════════════════════════════════════════════════
+-- البيانات الأولية (Default Global Settings)
+-- ═══════════════════════════════════════════════════════════════════════════
+INSERT INTO settings (
+    system_name, system_code, currency, barcode_prefix, 
+    claim_sla_days, pre_approval_sla_days, primary_color,
+    card_number_format, dependent_suffixes, font_size
+) 
+VALUES (
+    'Top Doctors TPA', 'TOP_DOCS', 'LYD', 'WAAD', 
+    10, 3, '#1890ff',
+    '[MP_NO]-[YEAR]-[PRO]', 
+    '{"WIFE":"W","HUSBAND":"H","SON":"S","DAUGHTER":"D","FATHER":"F","MOTHER":"M","BROTHER":"B","SISTER":"I"}',
+    14.0
+) 
+ON CONFLICT (system_code) DO NOTHING;
 
-CREATE TABLE module_access (
-    id BIGSERIAL PRIMARY KEY,
-    module_name VARCHAR(100) NOT NULL,
-    module_key VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    allowed_roles JSON NOT NULL,
-    required_permissions JSON,
-    feature_flag_key VARCHAR(100),
-    active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 7. SEED DATA
--- Default TPA (Central Settings)
-INSERT INTO companies (name, code, active, is_default, currency, barcode_prefix, claim_sla_days, pre_approval_sla_days) 
-VALUES ('Top Doctors TPA', 'TOP_DOCS', true, true, 'LYD', 'TD', 10, 3) 
-ON CONFLICT (code) DO NOTHING;
+-- ═══════════════════════════════════════════════════════════════════════════
+-- ملاحظات هامة:
+-- 1. تم حذف جداول تعدد الشركات (user_permitted_organizations, company_settings)
+-- 2. تم حذف جداول الإعدادات الزائدة (pdf_company_settings, feature_flags, module_access)
+-- 3. سجل الإعدادات (Settings) يجب أن يُقرأ مرة واحدة عند بدء النظام ويُخزن في الذاكرة.
+-- ═══════════════════════════════════════════════════════════════════════════

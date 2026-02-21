@@ -1,3 +1,5 @@
+import { getAppLocale } from './locale-helper';
+
 /**
  * Date Formatter Utility
  * تنسيق التواريخ بالإنجليزية
@@ -16,6 +18,7 @@
  * formatDate('2026-01-04', 'short') // "01/04/2026"
  * formatDate('2026-01-04', 'medium') // "Jan 4, 2026"
  */
+
 export const formatDate = (date, format = 'medium') => {
   if (!date) return '-';
 
@@ -30,7 +33,8 @@ export const formatDate = (date, format = 'medium') => {
     short: { year: 'numeric', month: '2-digit', day: '2-digit' }
   };
 
-  const locale = 'ar-SA';
+  // Force Western digits (1, 2, 3) using -u-nu-latn extension
+  const locale = getAppLocale();
   const selectedOptions = options[format] || options.medium;
 
   return dateObj.toLocaleDateString(locale, selectedOptions);
@@ -75,7 +79,7 @@ export const formatDateTime = (datetime, includeSeconds = false) => {
     ? { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }
     : { hour: '2-digit', minute: '2-digit', hour12: true };
 
-  const locale = 'ar-SA';
+  const locale = getLocale();
 
   const datePart = dateObj.toLocaleDateString(locale, dateOptions);
   const timePart = dateObj.toLocaleTimeString(locale, timeOptions);
@@ -103,7 +107,7 @@ export const formatTime = (datetime, includeSeconds = false) => {
     ? { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }
     : { hour: '2-digit', minute: '2-digit', hour12: true };
 
-  const locale = 'ar-SA';
+  const locale = getLocale();
 
   return dateObj.toLocaleTimeString(locale, timeOptions);
 };

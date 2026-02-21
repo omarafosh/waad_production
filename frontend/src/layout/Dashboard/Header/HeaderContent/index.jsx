@@ -28,7 +28,7 @@ import ThemeModeToggle from './ThemeModeToggle';
 
 import useConfig from 'hooks/useConfig';
 import useAuth from 'hooks/useAuth';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed from CompanySettingsContext
 import { MenuOrientation } from 'config';
 import DrawerHeader from 'layout/Dashboard/Drawer/DrawerHeader';
 import { useLocation } from 'react-router-dom';
@@ -41,7 +41,7 @@ import waadLogoFallback from 'assets/images/waad-logo.png';
 export default function HeaderContent() {
   const { state } = useConfig();
   const { user } = useAuth();
-  const { companyName, companyNameEn, primaryColor, getLogoSrc, hasLogo, getInitials, settings } = useCompanySettings();
+  const { systemName, logoUrl, businessType } = useSystemSettings(); // Destructure new fields
   const { pathname } = useLocation();// Force HMR Update
 
   const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));
@@ -148,7 +148,7 @@ export default function HeaderContent() {
   const localization = useMemo(() => <Localization />, []);
 
   // Display name: Arabic for RTL, English for LTR
-  const displayName = companyName || companyNameEn || 'TBA';
+  const displayName = systemName || 'System';
 
   return (
     <>
@@ -159,10 +159,10 @@ export default function HeaderContent() {
         <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
           <Stack direction="row" spacing={1} alignItems="center">
             {/* Always show logo - uses fallback if no custom logo */}
-            {hasLogo() || waadLogoFallback ? (
+            {logoUrl || waadLogoFallback ? (
               <Box
                 component="img"
-                src={getLogoSrc()}
+                src={logoUrl || waadLogoFallback}
                 alt={displayName}
                 sx={{
                   height: 32,
@@ -177,33 +177,37 @@ export default function HeaderContent() {
               />
             ) : null}
 
-            {/* Fallback initials avatar */}
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                width: 32,
-                height: 32,
-                fontSize: '1rem',
-                display: hasLogo() || waadLogoFallback ? 'none' : 'flex'
-              }}
-            >
-              {getInitials()}
-            </Avatar>
+            {/* Show initials avatar only IF no logo (custom or fallback) is available */}
+            {!(logoUrl || waadLogoFallback) && (
+              <Avatar
+                sx={{
+                  bgcolor: 'primary.main',
+                  width: 32,
+                  height: 32,
+                  fontSize: '1rem'
+                }}
+              >
+                {systemName ? systemName.charAt(0).toUpperCase() : 'S'}
+              </Avatar>
+            )}
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography
                 variant="subtitle2"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 600,
                   lineHeight: 1.1,
                   color: 'primary.main',
-                  fontSize: '1rem',
+                  fontSize: '0.95rem',
                   whiteSpace: 'nowrap'
                 }}
               >
                 {displayName}
               </Typography>
-
-
+              {businessType && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.85rem', lineHeight: 1, mt: 0.2 }}>
+                  {businessType || settings?.businessType || 'Health Insurance'}
+                </Typography>
+              )}
             </Box>
 
 

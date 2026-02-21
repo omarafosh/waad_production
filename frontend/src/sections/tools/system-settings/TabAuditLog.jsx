@@ -19,6 +19,8 @@ import {
 
 // project imports
 import MainCard from 'components/MainCard';
+import PropTypes from 'prop-types';
+import { getAppLocale } from 'utils/locale-helper';
 import ScrollX from 'components/ScrollX';
 import { CSVExport } from 'components/third-party/react-table';
 
@@ -78,8 +80,8 @@ export default function TabAuditLog() {
           const date = new Date(getValue());
           return (
             <Stack>
-              <span>{date.toLocaleDateString('ar-SA')}</span>
-              <span style={{ fontSize: '1rem', color: '#666' }}>{date.toLocaleTimeString('ar-SA')}</span>
+              <span>{date.toLocaleDateString(getAppLocale())}</span>
+              <span style={{ fontSize: '1rem', color: '#666' }}>{date.toLocaleTimeString(getAppLocale())}</span>
             </Stack>
           );
         }

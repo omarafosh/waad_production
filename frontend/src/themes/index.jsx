@@ -10,7 +10,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 // project imports
 import { CSS_VAR_PREFIX, DEFAULT_THEME_MODE, ThemeMode } from 'config';
 import useConfig from 'hooks/useConfig';
-import { useCompanySettings } from 'contexts/CompanySettingsContext';
+import { useSystemSettings } from 'contexts/SystemSettingsContext'; // Changed
 import CustomShadows from './custom-shadows';
 import componentsOverride from './overrides';
 import { buildPalette } from './palette';
@@ -22,14 +22,18 @@ export default function ThemeCustomization({ children }) {
   const { state: configState } = useConfig();
   const state = configState || {};
   // Get Company Settings to access primaryColor
-  const { settings } = useCompanySettings();
+  const { settings } = useSystemSettings(); // Changed
 
-  // Prioritize local user preference (state), then company settings, then default
-  const fontFamily = state.fontFamily || settings?.fontFamily;
-  const fontSize = state.fontSize || settings?.fontSize || 12;
+  // BRANDING STRATEGY (2026-02-18): 
+  // Prioritize system-wide settings (from database) over local session config.
+  // Sanity check: Ensure fontSize is reasonable (min 8px, default 14px)
+  const fontFamily = settings?.fontFamily || state.fontFamily;
+  let fontSize = settings?.fontSize || state.fontSize || 14;
+  if (fontSize < 8) fontSize = 14;
+  if (fontSize > 30) fontSize = 14; // Upper sanity check
 
-  // Use company primary color if available
-  const primaryColor = settings?.primaryColor;
+  // Use company primary color if available, fallback to preset
+  const primaryColor = settings?.primaryColor || null;
 
   // Apply Font and Scaling to document root for global rem consistency
   useMemo(() => {

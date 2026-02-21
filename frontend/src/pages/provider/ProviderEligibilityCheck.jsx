@@ -216,7 +216,6 @@ export default function ProviderEligibilityCheck() {
       flexDirection: 'column',
       overflow: 'hidden',
       mx: 'auto',
-      mx: 'auto',
       p: 3, // Keep padding
       pt: 1 // Reduce top padding explicitly to move content up
     }}>

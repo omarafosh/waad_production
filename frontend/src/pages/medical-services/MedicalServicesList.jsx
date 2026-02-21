@@ -47,8 +47,6 @@ import {
 } from '@mui/material';
 
 // MUI Icons - Always as Component, NEVER as JSX
-import AddIcon from '@mui/icons-material/Add';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 // MUI Icons
 import {
   MedicalServices as MedicalServicesIcon,

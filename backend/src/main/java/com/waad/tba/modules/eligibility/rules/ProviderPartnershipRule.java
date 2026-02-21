@@ -8,7 +8,6 @@ import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.provider.entity.Provider;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @Order(50) // High priority - check partnership early
-@RequiredArgsConstructor
 public class ProviderPartnershipRule implements EligibilityRule {
 
     @PersistenceContext
@@ -47,9 +45,9 @@ public class ProviderPartnershipRule implements EligibilityRule {
 
         // Check active partnership in provider_insurance_partnerships table
         String query = "SELECT COUNT(*) FROM provider_insurance_partnerships " +
-                       "WHERE provider_id = :providerId " +
-                       "AND insurance_org_id = :insuranceOrgId " +
-                       "AND active = TRUE";
+                "WHERE provider_id = :providerId " +
+                "AND insurance_org_id = :insuranceOrgId " +
+                "AND active = TRUE";
 
         Number count = (Number) entityManager.createNativeQuery(query)
                 .setParameter("providerId", providerId)
@@ -61,12 +59,11 @@ public class ProviderPartnershipRule implements EligibilityRule {
         }
 
         log.info("Partnership check failed for Provider {} and Insurance Org {}", providerId, insuranceOrgId);
-        
+
         return RuleResult.fail(
-            EligibilityReason.POLICY_INACTIVE, // Reusing similar status or we can add PARTNER_NETWORK_ERROR
-            "This insurance card is not within the approved partner network.",
-            "بطاقة التأمين هذه ليست ضمن شبكة الشركاء المعتمدين."
-        );
+                EligibilityReason.POLICY_INACTIVE, // Reusing similar status or we can add PARTNER_NETWORK_ERROR
+                "This insurance card is not within the approved partner network.",
+                "بطاقة التأمين هذه ليست ضمن شبكة الشركاء المعتمدين.");
     }
 
     @Override

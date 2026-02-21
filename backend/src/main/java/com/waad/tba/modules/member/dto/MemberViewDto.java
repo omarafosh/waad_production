@@ -4,9 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.waad.tba.modules.member.entity.Member;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,10 +37,10 @@ public class MemberViewDto {
     private LocalDate birthDate;
 
     @Schema(description = "Gender", example = "MALE")
-    private Member.Gender gender;
+    private String gender;
 
     @Schema(description = "Marital status", example = "MARRIED")
-    private Member.MaritalStatus maritalStatus;
+    private String maritalStatus;
 
     @Schema(description = "Phone number", example = "+96512345678")
     private String phone;
@@ -109,7 +106,7 @@ public class MemberViewDto {
 
     // Membership Status
     @Schema(description = "Member status", example = "ACTIVE")
-    private Member.MemberStatus status;
+    private String status;
 
     @Schema(description = "Start date", example = "2024-01-01")
     private LocalDate startDate;
@@ -118,7 +115,7 @@ public class MemberViewDto {
     private LocalDate endDate;
 
     @Schema(description = "Card status", example = "ACTIVE")
-    private Member.CardStatus cardStatus;
+    private String cardStatus;
 
     @Schema(description = "Blocked reason", example = "Exceeded limit")
     private String blockedReason;
@@ -159,7 +156,7 @@ public class MemberViewDto {
     private LocalDateTime updatedAt;
 
     // ==================== UNIFIED MEMBER ARCHITECTURE ====================
-    
+
     /**
      * Member Type - AUTO-CALCULATED.
      * PRINCIPAL: This is a head of family (parent_id = null)
@@ -186,7 +183,7 @@ public class MemberViewDto {
      * NULL for PRINCIPAL members.
      */
     @Schema(description = "Relationship type - for dependents only", example = "SON")
-    private Member.Relationship relationship;
+    private String relationship;
 
     /**
      * List of Dependents - Only populated for PRINCIPAL members.

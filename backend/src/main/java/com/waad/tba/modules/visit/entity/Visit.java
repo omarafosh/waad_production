@@ -2,13 +2,11 @@ package com.waad.tba.modules.visit.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.waad.tba.common.entity.Organization;
 import com.waad.tba.common.entity.SoftDeleteEntity;
-import com.waad.tba.common.exception.BusinessRuleException;
 import com.waad.tba.modules.member.entity.Member;
 
 import jakarta.persistence.*;
@@ -47,22 +45,22 @@ public class Visit extends SoftDeleteEntity {
     private Long providerId;
 
     private String doctorName;
-    
+
     private String specialty;
-    
+
     @Column(nullable = false)
     private LocalDate visitDate;
-    
+
     private String diagnosis;
-    
+
     private String treatment;
-    
+
     @Column()
     private BigDecimal totalAmount;
-    
+
     @Column(length = 1000)
     private String notes;
-    
+
     // active, version, validFrom, validTo, createdAt, updatedAt
     // موروثة من SoftDeleteEntity
 
@@ -92,21 +90,21 @@ public class Visit extends SoftDeleteEntity {
     private VisitStatus status = VisitStatus.REGISTERED;
 
     // ==================== NEW FLOW: Visit as central link ====================
-    
+
     /**
      * Eligibility check ID that created this visit
      * Links visit back to the eligibility verification
      */
     @Column(name = "eligibility_check_id")
     private Long eligibilityCheckId;
-    
+
     /**
      * Related claims created from this visit (one visit can have multiple claims)
      */
     @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<com.waad.tba.modules.claim.entity.Claim> claims = new ArrayList<>();
-    
+
     /**
      * Related eligibility checks for this visit
      */
@@ -115,9 +113,9 @@ public class Visit extends SoftDeleteEntity {
     private List<com.waad.tba.modules.eligibility.entity.EligibilityCheck> eligibilityChecks = new ArrayList<>();
 
     // createdAt و updatedAt موروثة من SoftDeleteEntity
-    
+
     // ==================== HELPER METHODS ====================
-    
+
     /**
      * Helper method to add a claim to this visit
      */
@@ -125,7 +123,7 @@ public class Visit extends SoftDeleteEntity {
         claims.add(claim);
         claim.setVisit(this);
     }
-    
+
     /**
      * Helper method to remove a claim from this visit
      */
@@ -133,7 +131,7 @@ public class Visit extends SoftDeleteEntity {
         claims.remove(claim);
         claim.setVisit(null);
     }
-    
+
     /**
      * Helper method to add an eligibility check to this visit
      */
@@ -141,23 +139,23 @@ public class Visit extends SoftDeleteEntity {
         eligibilityChecks.add(check);
         check.setVisit(this);
     }
-    
+
     // ==================== BUSINESS LOGIC ====================
-    
+
     /**
      * Check if this visit allows creating a claim
      */
     public boolean allowsClaimCreation() {
         return status != null && status.allowsClaimCreation();
     }
-    
+
     /**
      * Check if this visit allows creating a pre-authorization
      */
     public boolean allowsPreAuthCreation() {
         return status != null && status.allowsPreAuthCreation();
     }
-    
+
     /**
      * Update status based on activity
      */
@@ -166,7 +164,7 @@ public class Visit extends SoftDeleteEntity {
             this.status = VisitStatus.PENDING_PREAUTH;
         }
     }
-    
+
     public void updateStatusForClaim() {
         if (this.status != VisitStatus.CANCELLED) {
             this.status = VisitStatus.CLAIM_SUBMITTED;

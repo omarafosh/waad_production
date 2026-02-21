@@ -275,52 +275,6 @@ public class CostCalculationService {
         return weightedCopay;
     }
     
-    /**
-     * Get coverage percentage for a claim line using BenefitPolicyCoverageService.
-     * 
-     * Resolution Priority:
-     * 1. SERVICE_RULE (if exists for this specific service)
-     * 2. CATEGORY_RULE (if exists for service's category)
-     * 3. POLICY_DEFAULT (BenefitPolicy.defaultCoveragePercent)
-     * 
-     * IMPORTANT: Always clamp result to [0, 100] range to prevent negative copay
-     * 
-     * @param line The claim line
-     * @param member The member
-     * @return Coverage percentage (0-100), guaranteed within bounds
-     */
-    private int getCoveragePercentForLine(ClaimLine line, Member member) {
-        int coverage;
-        
-        // Try to get coverage from BenefitPolicyCoverageService
-        if (line.getMedicalService() != null) {
-            Long serviceId = line.getMedicalService().getId();
-            com.waad.tba.modules.visit.entity.VisitType visitType = com.waad.tba.modules.visit.entity.VisitType.OUTPATIENT;
-            if (line.getClaim() != null && line.getClaim().getVisit() != null && line.getClaim().getVisit().getVisitType() != null) {
-                visitType = line.getClaim().getVisit().getVisitType();
-            }
-            int rawCoverage = benefitPolicyCoverageService.getEffectiveCoveragePercent(member, serviceId, visitType);
-            
-            if (rawCoverage > 0) {
-                log.debug("✅ Coverage for service {} resolved from BenefitPolicyRule: {}%", 
-                    serviceId, rawCoverage);
-                coverage = rawCoverage;
-            } else {
-                coverage = getFallbackCoverage(member);
-            }
-        } else {
-            coverage = getFallbackCoverage(member);
-        }
-        
-        // CRITICAL: Enforce hard bounds [0, 100] to prevent negative copay calculations
-        int normalizedCoverage = Math.min(100, Math.max(0, coverage));
-        if (normalizedCoverage != coverage) {
-            log.warn("⚠️ SECURITY: Coverage {}% was out of bounds, normalized to {}%", 
-                coverage, normalizedCoverage);
-        }
-        
-        return normalizedCoverage;
-    }
     
     /**
      * Get fallback coverage percentage from policy or system default.
@@ -354,7 +308,6 @@ public class CostCalculationService {
         
         // The approved amount is what insurance will pay
         // Note: This is pre-calculation - actual approval may differ
-        BigDecimal calculatedApproval = breakdown.insuranceAmount();
         
         log.info("Cost calculation for claim {}: requested={}, deductible={}, copay={}, insurance={}", 
             claim.getId(), 

@@ -1,0 +1,48 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.idea/
+*.log
+.DS_Store
+
+# Eclipse
+.settings/
+.classpath
+.project
+
+# IntelliJ
+out/
+
+# Lombok
+lombok.config
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+
+# Vite / Frontend
+.vite/
+coverage/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+
+# Misc
+*.retry
+

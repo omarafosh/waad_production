@@ -1,7 +1,6 @@
 package com.waad.tba.modules.claim.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -11,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.waad.tba.common.exception.BusinessRuleException;
 import com.waad.tba.common.exception.ResourceNotFoundException;
 import com.waad.tba.modules.claim.entity.Claim;
-import com.waad.tba.modules.claim.repository.ClaimRepository;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
 
@@ -57,7 +55,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AtomicFinancialService {
 
-    private final ClaimRepository claimRepository;
     private final MemberRepository memberRepository;
     private final CostCalculationService costCalculationService;
 

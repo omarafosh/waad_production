@@ -14,8 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 /**
  * Service for "Dry-Run" benefit coverage simulation.
  * Allows testing coverage rules before actual claim submission.
@@ -25,56 +23,57 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CoverageSimulationService {
 
-    private final BenefitPolicyRepository policyRepository;
-    private final BenefitPolicyRuleRepository ruleRepository;
-    private final MedicalServiceRepository serviceRepository;
-    private final BenefitPolicyRuleService ruleService;
+        private final BenefitPolicyRepository policyRepository;
+        private final BenefitPolicyRuleRepository ruleRepository;
+        private final MedicalServiceRepository serviceRepository;
 
-    /**
-     * Simulate coverage for a service under a specific policy
-     */
-    @Transactional(readOnly = true)
-    public SimulationResultDto simulate(SimulationRequestDto request) {
-        log.debug("Simulating coverage for service {} under policy {}", 
-                request.getServiceId(), request.getPolicyId());
+        /**
+         * Simulate coverage for a service under a specific policy
+         */
+        @Transactional(readOnly = true)
+        public SimulationResultDto simulate(SimulationRequestDto request) {
+                log.debug("Simulating coverage for service {} under policy {}",
+                                request.getServiceId(), request.getPolicyId());
 
-        BenefitPolicy policy = policyRepository.findById(request.getPolicyId())
-                .orElseThrow(() -> new BusinessRuleException("Policy not found"));
+                BenefitPolicy policy = policyRepository.findById(request.getPolicyId())
+                                .orElseThrow(() -> new BusinessRuleException("Policy not found"));
 
-        MedicalService service = serviceRepository.findById(request.getServiceId())
-                .orElseThrow(() -> new BusinessRuleException("Service not found"));
+                MedicalService service = serviceRepository.findById(request.getServiceId())
+                                .orElseThrow(() -> new BusinessRuleException("Service not found"));
 
-        // Use the existing core logic from BenefitPolicyRuleService
-        var ruleOpt = ruleRepository.findApplicableRulesForService(
-                policy.getId(), 
-                service.getId(), 
-                java.util.Collections.emptyList(), 
-                service.getCategoryName(), 
-                request.getEncounterType())
-                .stream().findFirst(); // Simplification: pick first or best match logic needed if multiple
+                // Use the existing core logic from BenefitPolicyRuleService
+                var ruleOpt = ruleRepository.findApplicableRulesForService(
+                                policy.getId(),
+                                service.getId(),
+                                java.util.Collections.emptyList(),
+                                service.getCategoryName(),
+                                request.getEncounterType())
+                                .stream().findFirst(); // Simplification: pick first or best match logic needed if
+                                                       // multiple
 
-        SimulationResultDto.SimulationResultDtoBuilder builder = SimulationResultDto.builder()
-                .policyName(policy.getName())
-                .serviceName(service.getName())
-                .categoryName(service.getCategoryName() != null ? service.getCategoryName() : "Unknown");
+                SimulationResultDto.SimulationResultDtoBuilder builder = SimulationResultDto.builder()
+                                .policyName(policy.getName())
+                                .serviceName(service.getName())
+                                .categoryName(service.getCategoryName() != null ? service.getCategoryName()
+                                                : "Unknown");
 
-        if (ruleOpt.isPresent()) {
-            BenefitPolicyRule rule = ruleOpt.get();
-            builder.coveragePercent(rule.getEffectiveCoveragePercent())
+                if (ruleOpt.isPresent()) {
+                        BenefitPolicyRule rule = ruleOpt.get();
+                        builder.coveragePercent(rule.getEffectiveCoveragePercent())
 
-                    .timesLimit(rule.getTimesLimit())
-                    .waitingPeriodDays(rule.getWaitingPeriodDays())
-                    .requiresPreApproval(rule.isRequiresPreApproval())
-                    .ruleSource(rule.isServiceRule() ? "SERVICE" : "CATEGORY")
-                    .notes(rule.getNotes());
-        } else {
-            // Fallback to policy default
-            builder.coveragePercent(policy.getDefaultCoveragePercent())
-                    .waitingPeriodDays(policy.getDefaultWaitingPeriodDays())
-                    .ruleSource("POLICY_DEFAULT")
-                    .notes("No specific rule found; using policy defaults.");
+                                        .timesLimit(rule.getTimesLimit())
+                                        .waitingPeriodDays(rule.getWaitingPeriodDays())
+                                        .requiresPreApproval(rule.isRequiresPreApproval())
+                                        .ruleSource(rule.isServiceRule() ? "SERVICE" : "CATEGORY")
+                                        .notes(rule.getNotes());
+                } else {
+                        // Fallback to policy default
+                        builder.coveragePercent(policy.getDefaultCoveragePercent())
+                                        .waitingPeriodDays(policy.getDefaultWaitingPeriodDays())
+                                        .ruleSource("POLICY_DEFAULT")
+                                        .notes("No specific rule found; using policy defaults.");
+                }
+
+                return builder.build();
         }
-
-        return builder.build();
-    }
 }

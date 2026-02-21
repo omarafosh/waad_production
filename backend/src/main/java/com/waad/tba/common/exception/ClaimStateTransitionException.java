@@ -6,13 +6,13 @@ import com.waad.tba.common.error.ErrorCode;
  * Exception thrown when an illegal claim state transition is attempted.
  * 
  * VALID TRANSITIONS:
- * DRAFT          → SUBMITTED (by EMPLOYER, INSURANCE)
- * SUBMITTED      → UNDER_REVIEW (by INSURANCE, REVIEWER)
- * UNDER_REVIEW   → APPROVED (by INSURANCE, REVIEWER)
- * UNDER_REVIEW   → REJECTED (by INSURANCE, REVIEWER)
- * UNDER_REVIEW   → RETURNED_FOR_INFO (by REVIEWER)
+ * DRAFT → SUBMITTED (by EMPLOYER, INSURANCE)
+ * SUBMITTED → UNDER_REVIEW (by INSURANCE, REVIEWER)
+ * UNDER_REVIEW → APPROVED (by INSURANCE, REVIEWER)
+ * UNDER_REVIEW → REJECTED (by INSURANCE, REVIEWER)
+ * UNDER_REVIEW → RETURNED_FOR_INFO (by REVIEWER)
  * RETURNED_FOR_INFO → SUBMITTED (by EMPLOYER, INSURANCE)
- * APPROVED       → SETTLED (by INSURANCE)
+ * APPROVED → SETTLED (by INSURANCE)
  * 
  * INVALID TRANSITIONS (examples):
  * DRAFT → APPROVED (must go through SUBMITTED and UNDER_REVIEW)
@@ -22,8 +22,8 @@ import com.waad.tba.common.error.ErrorCode;
  * SMOKE TEST:
  * Given: Claim C001 is in DRAFT status
  * When: User tries to change status to APPROVED
- * Then: ClaimStateTransitionException with message 
- *       "Invalid state transition: DRAFT → APPROVED. Must submit claim first."
+ * Then: ClaimStateTransitionException with message
+ * "Invalid state transition: DRAFT → APPROVED. Must submit claim first."
  */
 public class ClaimStateTransitionException extends BusinessRuleException {
     private static final long serialVersionUID = 1L;
@@ -40,37 +40,17 @@ public class ClaimStateTransitionException extends BusinessRuleException {
     }
 
     public ClaimStateTransitionException(String fromStatus, String toStatus) {
-        super(ErrorCode.INVALID_CLAIM_TRANSITION, buildMessage(fromStatus, toStatus, null));
+        super(ErrorCode.INVALID_CLAIM_TRANSITION, "claim.transition.invalid", new Object[] { fromStatus, toStatus });
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.requiredRole = null;
     }
 
     public ClaimStateTransitionException(String fromStatus, String toStatus, String requiredRole) {
-        super(ErrorCode.INVALID_CLAIM_TRANSITION, buildMessage(fromStatus, toStatus, requiredRole));
+        super(ErrorCode.INVALID_CLAIM_TRANSITION, "claim.transition.role.required", new Object[] { requiredRole });
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.requiredRole = requiredRole;
-    }
-
-    private static String buildMessage(String fromStatus, String toStatus, String requiredRole) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Invalid state transition: ").append(fromStatus).append(" → ").append(toStatus).append(".");
-        
-        if (requiredRole != null) {
-            sb.append(" Required role: ").append(requiredRole).append(".");
-        }
-        
-        // Add helpful hints based on transition
-        if ("DRAFT".equals(fromStatus) && !"SUBMITTED".equals(toStatus)) {
-            sb.append(" Claims must be submitted before review.");
-        } else if ("SUBMITTED".equals(fromStatus) && !"UNDER_REVIEW".equals(toStatus)) {
-            sb.append(" Submitted claims must be taken under review.");
-        } else if (("APPROVED".equals(fromStatus) || "REJECTED".equals(fromStatus) || "SETTLED".equals(fromStatus))) {
-            sb.append(" Terminal states cannot be changed.");
-        }
-        
-        return sb.toString();
     }
 
     public String getFromStatus() {

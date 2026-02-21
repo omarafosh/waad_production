@@ -158,19 +158,19 @@ public class ProviderContractService {
     @Transactional(readOnly = true)
     public Page<ProviderContractResponseDto> search(String query, ContractStatus status, Pageable pageable) {
         log.debug("Searching contracts: query={}, status={}", query, status);
-        
+
         if (query == null || query.trim().isEmpty()) {
             if (status != null) {
                 return findByStatus(status, pageable);
             }
             return findAll(pageable);
         }
-        
+
         if (status != null) {
             return contractRepository.searchByCodeOrProviderNameWithStatus(query, status, pageable)
                     .map(ProviderContractResponseDto::fromEntity);
         }
-        
+
         return contractRepository.searchByCodeOrProviderName(query, pageable)
                 .map(ProviderContractResponseDto::fromEntity);
     }
@@ -179,10 +179,12 @@ public class ProviderContractService {
      * Get all contracts for a provider (paginated)
      */
     @Transactional(readOnly = true)
-    public Page<ProviderContractResponseDto> getProviderContracts(Long providerId, boolean activeOnly, Pageable pageable) {
+    public Page<ProviderContractResponseDto> getProviderContracts(Long providerId, boolean activeOnly,
+            Pageable pageable) {
         log.debug("Getting contracts for provider: {}, activeOnly={}", providerId, activeOnly);
         if (activeOnly) {
-            return contractRepository.findByProviderIdAndStatusAndActiveTrue(providerId, ContractStatus.ACTIVE, pageable)
+            return contractRepository
+                    .findByProviderIdAndStatusAndActiveTrue(providerId, ContractStatus.ACTIVE, pageable)
                     .map(ProviderContractResponseDto::fromEntity);
         }
         return contractRepository.findByProviderIdAndActiveTrue(providerId, pageable)
@@ -204,10 +206,10 @@ public class ProviderContractService {
     @Transactional
     public ProviderContractResponseDto updateContract(Long providerId, Long contractId, ProviderContractUpdateDto dto) {
         // Verify contract belongs to provider
-        ProviderContract contract = contractRepository.findById(contractId)
+        contractRepository.findById(contractId)
                 .filter(c -> c.getProvider().getId().equals(providerId))
                 .orElseThrow(() -> new BusinessRuleException("Contract not found for this provider"));
-        
+
         return update(contractId, dto);
     }
 
@@ -217,10 +219,10 @@ public class ProviderContractService {
     @Transactional
     public void deleteContract(Long providerId, Long contractId) {
         // Verify contract belongs to provider
-        ProviderContract contract = contractRepository.findById(contractId)
+        contractRepository.findById(contractId)
                 .filter(c -> c.getProvider().getId().equals(providerId))
                 .orElseThrow(() -> new BusinessRuleException("Contract not found for this provider"));
-        
+
         delete(contractId);
     }
 
@@ -233,7 +235,7 @@ public class ProviderContractService {
                 .filter(c -> c.getProvider().getId().equals(providerId))
                 .filter(c -> Boolean.TRUE.equals(c.getActive()))
                 .orElseThrow(() -> new BusinessRuleException("Contract not found for this provider"));
-        
+
         return ProviderContractResponseDto.fromEntity(contract);
     }
 
@@ -262,19 +264,20 @@ public class ProviderContractService {
     @Transactional(readOnly = true)
     public EffectivePriceResponseDto getEffectivePrice(Long providerId, String serviceCode, LocalDate date) {
         log.info("Resolving effective price: provider={}, service={}, date={}", providerId, serviceCode, date);
-        
-        if (date == null) date = LocalDate.now();
-        
+
+        if (date == null)
+            date = LocalDate.now();
+
         Provider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found: " + providerId));
-        
+
         MedicalService service = medicalServiceRepository.findByCode(serviceCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Medical Service not found: " + serviceCode));
-        
+
         // Find active contract
         ProviderContract contract = contractRepository.findActiveContractByProvider(providerId)
                 .orElse(null);
-        
+
         if (contract == null) {
             return EffectivePriceResponseDto.builder()
                     .providerId(providerId)
@@ -285,10 +288,10 @@ public class ProviderContractService {
                     .message("No active contract found for provider")
                     .build();
         }
-        
+
         // Find pricing item
         var pricingItem = pricingItemService.findEffectivePricing(providerId, service.getId());
-        
+
         if (pricingItem == null) {
             return EffectivePriceResponseDto.builder()
                     .providerId(providerId)
@@ -300,7 +303,7 @@ public class ProviderContractService {
                     .message("Service not found in provider contract")
                     .build();
         }
-        
+
         return EffectivePriceResponseDto.builder()
                 .providerId(providerId)
                 .providerName(provider.getName())
@@ -319,26 +322,27 @@ public class ProviderContractService {
     }
 
     /**
-     * Get services requiring pre-approval for a member from provider's active contract.
+     * Get services requiring pre-approval for a member from provider's active
+     * contract.
      */
     @Transactional(readOnly = true)
     public List<ProviderServiceDto> getServicesRequiringPreAuth(Long providerId, Long memberId) {
         log.info("Fetching services requiring pre-auth: provider={}, member={}", providerId, memberId);
-        
+
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found: " + memberId));
-        
+
         if (member.getBenefitPolicy() == null) {
             log.warn("Member {} has no benefit policy assigned", memberId);
             return List.of();
         }
-        
+
         Long policyId = member.getBenefitPolicy().getId();
-        
+
         // Get all contracted services
-        List<ProviderContractPricingItemService.ContractServiceDto> contractedServices = 
-                pricingItemService.findAllServicesByProvider(providerId);
-        
+        List<ProviderContractPricingItemService.ContractServiceDto> contractedServices = pricingItemService
+                .findAllServicesByProvider(providerId);
+
         // Filter by pre-approval requirement from policy rules
         return contractedServices.stream()
                 .filter(s -> benefitPolicyRuleService.requiresPreApproval(policyId, s.getId(), null))
@@ -373,7 +377,7 @@ public class ProviderContractService {
     @Transactional(readOnly = true)
     public ProviderContractStatsDto getStatistics() {
         log.debug("Getting contract statistics");
-        
+
         return ProviderContractStatsDto.builder()
                 .totalContracts(contractRepository.countByActiveTrue())
                 .activeContracts(contractRepository.countByStatusAndActiveTrue(ContractStatus.ACTIVE))
@@ -389,17 +393,18 @@ public class ProviderContractService {
 
     /**
      * Get allowed employers for a provider based on active contracts.
-     * Includes ACTIVE, DRAFT, and SUSPENDED contracts to show all configured employers.
+     * Includes ACTIVE, DRAFT, and SUSPENDED contracts to show all configured
+     * employers.
      */
     @Transactional(readOnly = true)
     public List<AllowedEmployerDto> getAllowedEmployers(Long providerId) {
         List<ProviderContract> contracts = contractRepository.findByProviderIdAndActiveTrue(providerId);
-        
+
         // Include ACTIVE, DRAFT, and SUSPENDED contracts (exclude TERMINATED, EXPIRED)
         List<ProviderContract> validContracts = contracts.stream()
-                .filter(c -> c.getStatus() == ContractStatus.ACTIVE || 
-                            c.getStatus() == ContractStatus.DRAFT ||
-                            c.getStatus() == ContractStatus.SUSPENDED)
+                .filter(c -> c.getStatus() == ContractStatus.ACTIVE ||
+                        c.getStatus() == ContractStatus.DRAFT ||
+                        c.getStatus() == ContractStatus.SUSPENDED)
                 .collect(Collectors.toList());
 
         // Check for Global Contract
@@ -439,18 +444,19 @@ public class ProviderContractService {
      * Create a new contract
      */
     @Transactional
+    @SuppressWarnings("deprecation")
     public ProviderContractResponseDto create(ProviderContractCreateDto dto) {
         log.info("Creating new provider contract for provider: {}", dto.getProviderId());
-        
+
         // Validate provider exists
         Provider provider = providerRepository.findById(dto.getProviderId())
                 .orElseThrow(() -> new BusinessRuleException("Provider not found: " + dto.getProviderId()));
-        
+
         // Validate dates
         if (dto.getEndDate() != null && dto.getStartDate().isAfter(dto.getEndDate())) {
             throw new BusinessRuleException("Start date must be before end date");
         }
-        
+
         // Generate contract code if not provided
         String contractCode = dto.getContractCode();
         if (contractCode == null || contractCode.isBlank()) {
@@ -458,7 +464,7 @@ public class ProviderContractService {
         } else if (contractRepository.existsByContractCode(contractCode)) {
             throw new BusinessRuleException("Contract code already exists: " + contractCode);
         }
-        
+
         // Resolve Employer if provided
         Organization employer = null;
         if (dto.getEmployerId() != null) {
@@ -470,8 +476,7 @@ public class ProviderContractService {
         if (contractRepository.existsActiveContractForEmployer(dto.getProviderId(), dto.getEmployerId())) {
             String employerName = employer != null ? employer.getName() : "Global Network";
             throw new BusinessRuleException(
-                "عقد نشط موجود مسبقاً لهذه الجهة / Active contract already exists for: " + employerName
-            );
+                    "عقد نشط موجود مسبقاً لهذه الجهة / Active contract already exists for: " + employerName);
         }
 
         // Build entity
@@ -497,10 +502,10 @@ public class ProviderContractService {
                 .active(true)
                 .createdBy(getCurrentUsername())
                 .build();
-        
+
         contract = contractRepository.save(contract);
         log.info("Created provider contract: {}", contract.getContractCode());
-        
+
         return ProviderContractResponseDto.fromEntity(contract);
     }
 
@@ -512,38 +517,39 @@ public class ProviderContractService {
      * Update an existing contract
      */
     @Transactional
+    @SuppressWarnings("deprecation")
     public ProviderContractResponseDto update(Long id, ProviderContractUpdateDto dto) {
         log.info("Updating provider contract: {}", id);
-        
+
         ProviderContract contract = contractRepository.findById(id)
                 .filter(c -> Boolean.TRUE.equals(c.getActive()))
                 .orElseThrow(() -> new BusinessRuleException("Provider contract not found: " + id));
-        
+
         // Cannot update terminated contracts
         if (contract.getStatus() == ContractStatus.TERMINATED) {
             throw new BusinessRuleException("Cannot update a terminated contract");
         }
-        
+
         // Validate dates if changed
         LocalDate startDate = dto.getStartDate() != null ? dto.getStartDate() : contract.getStartDate();
         LocalDate endDate = dto.getEndDate() != null ? dto.getEndDate() : contract.getEndDate();
-        
+
         if (endDate != null && startDate.isAfter(endDate)) {
             throw new BusinessRuleException("Start date must be before end date");
         }
-        
+
         // Check for overlapping contracts if dates changed
         if ((dto.getStartDate() != null || dto.getEndDate() != null) && contract.getStatus() != ContractStatus.DRAFT) {
             checkForOverlappingContracts(contract.getProvider().getId(), contract.getId(), startDate, endDate);
         }
-        
+
         // Apply updates
         if (dto.getEmployerId() != null) {
             Organization employer = organizationRepository.findById(dto.getEmployerId())
                     .orElseThrow(() -> new BusinessRuleException("Employer not found: " + dto.getEmployerId()));
             contract.setEmployer(employer);
         }
-        
+
         if (dto.getPricingModel() != null) {
             contract.setPricingModel(dto.getPricingModel());
         }
@@ -583,10 +589,10 @@ public class ProviderContractService {
         if (dto.getNotes() != null) {
             contract.setNotes(dto.getNotes());
         }
-        
+
         contract.setUpdatedBy(getCurrentUsername());
         contract = contractRepository.save(contract);
-        
+
         log.info("Updated provider contract: {}", contract.getContractCode());
         return ProviderContractResponseDto.fromEntity(contract);
     }
@@ -601,24 +607,24 @@ public class ProviderContractService {
     @Transactional
     public ProviderContractResponseDto activate(Long id) {
         log.info("Activating provider contract: {}", id);
-        
+
         ProviderContract contractToActivate = contractRepository.findById(id)
                 .filter(c -> Boolean.TRUE.equals(c.getActive()))
                 .orElseThrow(() -> new BusinessRuleException("Provider contract not found: " + id));
-        
+
         // Validate can activate
         if (!contractToActivate.canActivate()) {
             throw new BusinessRuleException("Cannot activate contract with status: " + contractToActivate.getStatus());
         }
-        
+
         // Cannot activate expired contract
         if (contractToActivate.hasExpired()) {
             throw new BusinessRuleException("Cannot activate an expired contract");
         }
-        
+
         final Long providerId = contractToActivate.getProvider().getId();
         final Long contractId = contractToActivate.getId();
-        
+
         // Check for existing active contract for same provider
         // Check for existing active contract for same provider
         contractRepository.findActiveContractByProvider(providerId)
@@ -628,24 +634,25 @@ public class ProviderContractService {
                     long openClaims = claimRepository.countOpenClaimsByProvider(providerId);
                     if (openClaims > 0) {
                         throw new BusinessRuleException(
-                            "لا يمكن تفعيل عقد جديد لوجود " + openClaims + " مطالبات مفتوحة. يرجى تسوية المطالبات أولاً. / Cannot activate new contract. Provider has " + openClaims + " open claims."
-                        );
+                                "لا يمكن تفعيل عقد جديد لوجود " + openClaims
+                                        + " مطالبات مفتوحة. يرجى تسوية المطالبات أولاً. / Cannot activate new contract. Provider has "
+                                        + openClaims + " open claims.");
                     }
-                    
+
                     // Auto-draft the old contract
                     log.info("Auto-drafting old active contract: {}", existing.getContractCode());
                     existing.setStatus(ContractStatus.DRAFT);
                     contractRepository.save(existing);
                 });
-        
+
         // Check for overlapping contracts
-        checkForOverlappingContracts(providerId, contractId, 
+        checkForOverlappingContracts(providerId, contractId,
                 contractToActivate.getStartDate(), contractToActivate.getEndDate());
-        
+
         contractToActivate.setStatus(ContractStatus.ACTIVE);
         contractToActivate.setUpdatedBy(getCurrentUsername());
         ProviderContract savedContract = contractRepository.save(contractToActivate);
-        
+
         log.info("Activated provider contract: {}", savedContract.getContractCode());
         return ProviderContractResponseDto.fromEntity(savedContract);
     }
@@ -656,15 +663,15 @@ public class ProviderContractService {
     @Transactional
     public ProviderContractResponseDto suspend(Long id, String reason) {
         log.info("Suspending provider contract: {}", id);
-        
+
         ProviderContract contract = contractRepository.findById(id)
                 .filter(c -> Boolean.TRUE.equals(c.getActive()))
                 .orElseThrow(() -> new BusinessRuleException("Provider contract not found: " + id));
-        
+
         if (!contract.canSuspend()) {
             throw new BusinessRuleException("Cannot suspend contract with status: " + contract.getStatus());
         }
-        
+
         contract.setStatus(ContractStatus.SUSPENDED);
         if (reason != null && !reason.isBlank()) {
             String notes = contract.getNotes() != null ? contract.getNotes() + "\n" : "";
@@ -673,7 +680,7 @@ public class ProviderContractService {
         }
         contract.setUpdatedBy(getCurrentUsername());
         contract = contractRepository.save(contract);
-        
+
         log.info("Suspended provider contract: {}", contract.getContractCode());
         return ProviderContractResponseDto.fromEntity(contract);
     }
@@ -684,15 +691,15 @@ public class ProviderContractService {
     @Transactional
     public ProviderContractResponseDto terminate(Long id, String reason) {
         log.info("Terminating provider contract: {}", id);
-        
+
         ProviderContract contract = contractRepository.findById(id)
                 .filter(c -> Boolean.TRUE.equals(c.getActive()))
                 .orElseThrow(() -> new BusinessRuleException("Provider contract not found: " + id));
-        
+
         if (!contract.canTerminate()) {
             throw new BusinessRuleException("Cannot terminate contract with status: " + contract.getStatus());
         }
-        
+
         contract.setStatus(ContractStatus.TERMINATED);
         if (reason != null && !reason.isBlank()) {
             String notes = contract.getNotes() != null ? contract.getNotes() + "\n" : "";
@@ -701,7 +708,7 @@ public class ProviderContractService {
         }
         contract.setUpdatedBy(getCurrentUsername());
         contract = contractRepository.save(contract);
-        
+
         log.info("Terminated provider contract: {}", contract.getContractCode());
         return ProviderContractResponseDto.fromEntity(contract);
     }
@@ -716,20 +723,20 @@ public class ProviderContractService {
     @Transactional
     public void delete(Long id) {
         log.info("Deleting provider contract: {}", id);
-        
+
         ProviderContract contract = contractRepository.findById(id)
                 .filter(c -> Boolean.TRUE.equals(c.getActive()))
                 .orElseThrow(() -> new BusinessRuleException("Provider contract not found: " + id));
-        
+
         // Cannot delete active contract
         if (contract.getStatus() == ContractStatus.ACTIVE) {
             throw new BusinessRuleException("Cannot delete an active contract. Suspend or terminate it first.");
         }
-        
+
         contract.setActive(false);
         contract.setUpdatedBy(getCurrentUsername());
         contractRepository.save(contract);
-        
+
         log.info("Soft deleted provider contract: {}", contract.getContractCode());
     }
 
@@ -743,10 +750,10 @@ public class ProviderContractService {
     @Transactional
     public int markExpiredContracts() {
         log.info("Marking expired contracts");
-        
+
         List<ProviderContract> expiredContracts = contractRepository.findExpiredButStillActive(LocalDate.now());
         int count = 0;
-        
+
         for (ProviderContract contract : expiredContracts) {
             contract.setStatus(ContractStatus.EXPIRED);
             contract.setUpdatedBy("SYSTEM");
@@ -754,7 +761,7 @@ public class ProviderContractService {
             count++;
             log.info("Marked contract as expired: {}", contract.getContractCode());
         }
-        
+
         return count;
     }
 
@@ -782,7 +789,7 @@ public class ProviderContractService {
         if (endDate == null) {
             endDate = LocalDate.of(9999, 12, 31); // Far future date for open-ended contracts
         }
-        
+
         if (contractRepository.hasOverlappingContract(providerId, excludeId, startDate, endDate)) {
             throw new BusinessRuleException("Provider has overlapping contract dates");
         }

@@ -1,6 +1,5 @@
 package com.waad.tba.modules.claim.service;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -10,11 +9,9 @@ import java.time.format.DateTimeFormatter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.util.IOUtils;
 import org.springframework.stereotype.Service;
 
 // POI imports for image/drawing support
-import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto;
 import com.waad.tba.modules.claim.dto.ProviderSettlementReportDto.ClaimDetail;
@@ -249,7 +246,6 @@ public class ProviderSettlementExcelExporter {
         CellStyle footerStyle = createFooterStyle(workbook);
         
         // Footer separator
-        Row footerSepRow = sheet.createRow(rowNum++);
         
         // Company contact info
         StringBuilder footerText = new StringBuilder();
@@ -306,7 +302,6 @@ public class ProviderSettlementExcelExporter {
         CellStyle headerStyle = createHeaderStyle(workbook);
         CellStyle currencyStyle = createCurrencyStyle(workbook);
         CellStyle dateStyle = createDateStyle(workbook);
-        CellStyle defaultStyle = workbook.createCellStyle();
         CellStyle companyStyle = createCompanyHeaderStyle(workbook);
         CellStyle titleStyle = createTitleStyle(workbook);
         

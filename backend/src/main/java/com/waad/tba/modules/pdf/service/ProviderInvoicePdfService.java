@@ -168,6 +168,7 @@ public class ProviderInvoicePdfService {
                     .collect(Collectors.toList());
             
             // Build template context
+            @SuppressWarnings("deprecation")
             Context context = new Context(new Locale("ar"));
             context.setVariable("company", company);
             context.setVariable("provider", provider);

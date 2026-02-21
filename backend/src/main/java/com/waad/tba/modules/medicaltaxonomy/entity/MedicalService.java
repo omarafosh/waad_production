@@ -1,12 +1,10 @@
 package com.waad.tba.modules.medicaltaxonomy.entity;
 
 import com.waad.tba.modules.medicaltaxonomy.enums.MedicalServiceStatus;
-import com.waad.tba.common.exception.ArchitecturalViolationException;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

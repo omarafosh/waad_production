@@ -52,7 +52,6 @@ public class AuthController {
     private final UserSecurityService securityService;
     private final com.waad.tba.modules.auth.service.RefreshTokenService refreshTokenService;
     private final com.waad.tba.security.JwtTokenProvider tokenProvider;
-    private final com.waad.tba.modules.rbac.repository.UserRepository userRepository;
 
     /**
      * SESSION-BASED LOGIN (Phase A)

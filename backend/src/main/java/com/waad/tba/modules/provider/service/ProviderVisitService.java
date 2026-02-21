@@ -14,13 +14,11 @@ import com.waad.tba.modules.visit.entity.VisitType;
 import com.waad.tba.modules.visit.repository.VisitRepository;
 import com.waad.tba.modules.rbac.entity.User;
 import com.waad.tba.modules.rbac.repository.UserRepository;
-import com.waad.tba.security.AuthorizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +44,6 @@ public class ProviderVisitService {
     private final MemberRepository memberRepository;
     private final ProviderRepository providerRepository;
     private final PreAuthorizationRepository preAuthorizationRepository;
-    private final AuthorizationService authorizationService;
     private final UserRepository userRepository;
 
     /**

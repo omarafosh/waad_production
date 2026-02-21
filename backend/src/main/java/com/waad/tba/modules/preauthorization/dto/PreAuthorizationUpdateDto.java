@@ -3,12 +3,11 @@ package com.waad.tba.modules.preauthorization.dto;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.math.BigDecimal;
-
 /**
  * DTO for updating a PreAuthorization (CANONICAL REBUILD)
  * 
- * Note: In canonical architecture, price cannot be changed (comes from contract).
+ * Note: In canonical architecture, price cannot be changed (comes from
+ * contract).
  * Only diagnosis, notes, priority can be updated.
  */
 @Data
@@ -21,7 +20,7 @@ public class PreAuthorizationUpdateDto {
 
     @Size(max = 20, message = "Diagnosis code must not exceed 20 characters")
     private String diagnosisCode;
-    
+
     @Size(max = 500, message = "Diagnosis description must not exceed 500 characters")
     private String diagnosisDescription;
 

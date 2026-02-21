@@ -2,7 +2,12 @@
 -- V16. Fix Rule Target Constraint & Enable Global Rules
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- 1. Remove the old restrictive constraint that forced Category, Service, or Package
+-- 1. Ensure soft delete column exists (Refactored 2026-02-18)
+ALTER TABLE benefit_policy_rules ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE benefit_policy_rules ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+ALTER TABLE benefit_policy_rules ADD COLUMN IF NOT EXISTS deleted_by VARCHAR(100);
+
+-- 2. Remove the old restrictive constraint that forced Category, Service, or Package
 ALTER TABLE benefit_policy_rules DROP CONSTRAINT IF EXISTS chk_bpr_target;
 
 -- 2. Add a relaxed constraint that allows ALL to be NULL (Global rule)

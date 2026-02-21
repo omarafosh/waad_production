@@ -1,17 +1,21 @@
 package com.waad.tba.config;
 
-import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,26 +23,45 @@ import java.util.Map;
 @EnableCaching
 public class CacheConfig {
 
-    @Bean
-    @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
-    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(1))
-                .disableCachingNullValues()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+        @Bean
+        @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
+        public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+                RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                                .entryTtl(Duration.ofHours(1))
+                                .disableCachingNullValues()
+                                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                                                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
-        // Specific configurations for different caches
-        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        
-        // Coverage resolution results can be cached longer but should be evicted on policy change
-        cacheConfigurations.put("coverageResolution", defaultCacheConfig.entryTtl(Duration.ofHours(2)));
-        cacheConfigurations.put("medicalServices", defaultCacheConfig.entryTtl(Duration.ofDays(1)));
-        cacheConfigurations.put("medicalServiceLookups", defaultCacheConfig.entryTtl(Duration.ofDays(1)));
-        cacheConfigurations.put("systemSettings", defaultCacheConfig.entryTtl(Duration.ofHours(12)));
+                // Specific configurations for different caches
+                Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultCacheConfig)
-                .withInitialCacheConfigurations(cacheConfigurations)
-                .build();
-    }
+                // Coverage resolution results can be cached longer but should be evicted on
+                // policy change
+                cacheConfigurations.put("coverageResolution", defaultCacheConfig.entryTtl(Duration.ofHours(2)));
+                cacheConfigurations.put("medicalServices", defaultCacheConfig.entryTtl(Duration.ofDays(1)));
+                cacheConfigurations.put("medicalServiceLookups", defaultCacheConfig.entryTtl(Duration.ofDays(1)));
+                cacheConfigurations.put("systemSettings", defaultCacheConfig.entryTtl(Duration.ofHours(12)));
+
+                return RedisCacheManager.builder(connectionFactory)
+                                .cacheDefaults(defaultCacheConfig)
+                                .withInitialCacheConfigurations(cacheConfigurations)
+                                .build();
+        }
+
+        @Bean
+        @Primary
+        @ConditionalOnProperty(name = "spring.cache.type", havingValue = "caffeine", matchIfMissing = true)
+        public CacheManager caffeineCacheManager() {
+                CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+                cacheManager.setCacheNames(Arrays.asList(
+                                "rate-limit-bucket",
+                                "coverageResolution",
+                                "medicalServices",
+                                "medicalServiceLookups",
+                                "systemSettings"));
+                cacheManager.setCaffeine(Caffeine.newBuilder()
+                                .expireAfterWrite(Duration.ofHours(1))
+                                .maximumSize(1000));
+                return cacheManager;
+        }
 }

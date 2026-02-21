@@ -1,0 +1,4 @@
+ id | category_id | service_name | service_name_ar | service_code | description | active | created_at | updated_at | created_by | updated_by | code | name | status | base_price | requires_pa 
+----+-------------+--------------+-----------------+--------------+-------------+--------+------------+------------+------------+------------+------+------+--------+------------+-------------
+(0 rows)
+

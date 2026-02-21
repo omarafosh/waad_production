@@ -1,0 +1,667 @@
+{
+  "analysis_metadata": {
+    "project": "TBA WAAD System",
+    "analysis_date": "2024-12-29",
+    "total_entities": 37,
+    "critical_entities": 15,
+    "contracts_complete": 1,
+    "contracts_needed": 14,
+    "completion_percentage": 6.7
+  },
+  "critical_models": [
+    {
+      "priority": "CRITICAL",
+      "priority_level": 1,
+      "model": "Organization",
+      "entity_path": "common/entity/Organization.java",
+      "status": "COMPLETE",
+      "contract_file": "EMPLOYER_API_CONTRACT.md",
+      "reason": "Auto-Code Generation, Multi-type entity (EMPLOYER/TPA/INSURANCE), Uniqueness validation",
+      "key_fields": ["code", "name", "nameEn", "type", "active", "createdAt", "updatedAt"],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "EMP-XX, TPA-XX, INS-XX",
+        "field_normalization": true,
+        "normalization_rules": ["name ↔ nameAr"],
+        "validation": ["@NotBlank", "@Size", "Unique code"],
+        "type_filtering": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "Organization → BenefitPolicy (One-to-Many)",
+        "Organization → Member.employerOrganization (One-to-Many)",
+        "Organization → Claim.insuranceOrganization (One-to-Many)"
+      ],
+      "business_impact": "CRITICAL",
+      "complexity": "Very High"
+    },
+    {
+      "priority": "CRITICAL",
+      "priority_level": 2,
+      "model": "Member",
+      "entity_path": "modules/member/entity/Member.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Auto-Card Generation (BARCODE), Multi-org relationships, Eligibility rules, Financial impact",
+      "key_fields": [
+        "cardNumber",
+        "fullNameArabic",
+        "fullNameEnglish",
+        "civilId",
+        "birthDate",
+        "gender",
+        "employerOrganization",
+        "insuranceOrganization",
+        "benefitPolicy",
+        "status",
+        "cardStatus",
+        "eligibilityStatus",
+        "active"
+      ],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "WAAD|MEMBER|{SEQUENCE}",
+        "field_normalization": true,
+        "normalization_rules": ["fullNameArabic ↔ nameAr"],
+        "validation": [
+          "@NotBlank on fullNameArabic",
+          "@Email",
+          "@Pattern for civilId",
+          "Civil ID uniqueness (optional but unique if provided)",
+          "Card Number uniqueness (mandatory, system-generated)"
+        ],
+        "multi_org_linking": true,
+        "benefit_policy_auto_assignment": true,
+        "status_lifecycle": ["ACTIVE", "SUSPENDED", "TERMINATED"],
+        "card_status_management": ["ACTIVE", "BLOCKED", "EXPIRED"],
+        "eligibility_calculation": true,
+        "qr_code_generation": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "Member → Organization.employerOrganization (Many-to-One) CANONICAL",
+        "Member → Organization.insuranceOrganization (Many-to-One)",
+        "Member → BenefitPolicy (Many-to-One) CANONICAL",
+        "Member → Visit (One-to-Many)",
+        "Member → Claim (One-to-Many)",
+        "Member → PreAuthorization (One-to-Many)",
+        "Member → MemberAttribute (One-to-Many)",
+        "Member → FamilyMember (One-to-Many)"
+      ],
+      "contract_sections": [
+        "Auto-Card Generation & Uniqueness",
+        "Field Normalization & Validation",
+        "Multi-Organization Linking",
+        "Benefit Policy Auto-Assignment",
+        "Status Lifecycle Management",
+        "Eligibility & Card Status Rules",
+        "QR Code Generation",
+        "Error Handling (409 Conflict, 404 Not Found)",
+        "Authorization (Employer-scoped data access)"
+      ],
+      "business_impact": "CRITICAL",
+      "complexity": "Very High"
+    },
+    {
+      "priority": "CRITICAL",
+      "priority_level": 3,
+      "model": "BenefitPolicy",
+      "entity_path": "modules/benefitpolicy/entity/BenefitPolicy.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Business rule: Only ONE active policy per employer, Date validation, Financial limits, Coverage rules",
+      "key_fields": [
+        "name",
+        "policyCode",
+        "employerOrganization",
+        "insuranceOrganization",
+        "startDate",
+        "endDate",
+        "annualLimit",
+        "defaultCoveragePercent",
+        "perMemberLimit",
+        "perFamilyLimit",
+        "defaultWaitingPeriodDays",
+        "status",
+        "coveredMembersCount",
+        "active"
+      ],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "POL-YYYY-XXX",
+        "date_validation": true,
+        "single_active_policy_rule": true,
+        "overlap_detection": true,
+        "field_validation": ["@NotNull", "@DecimalMin", "@Min/@Max"],
+        "status_lifecycle": ["DRAFT", "ACTIVE", "EXPIRED", "TERMINATED"],
+        "coverage_rules_management": true,
+        "member_auto_assignment": true,
+        "financial_validation": true,
+        "waiting_period_defaults": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "BenefitPolicy → Organization.employerOrganization (Many-to-One)",
+        "BenefitPolicy → Organization.insuranceOrganization (Many-to-One)",
+        "BenefitPolicy → BenefitPolicyRule (One-to-Many) CASCADE",
+        "BenefitPolicy → Member (One-to-Many)"
+      ],
+      "contract_sections": [
+        "Auto-Code Generation & Uniqueness",
+        "Date Range Validation & Overlap Prevention",
+        "Single Active Policy Enforcement",
+        "Status Lifecycle Management",
+        "Financial Limits Validation",
+        "Coverage Rules (BenefitPolicyRule)",
+        "Member Auto-Assignment",
+        "Error Handling (409 Conflict - Overlap, 400 Bad Request)",
+        "Authorization (Employer-scoped access)"
+      ],
+      "business_impact": "CRITICAL",
+      "complexity": "Very High"
+    },
+    {
+      "priority": "CRITICAL",
+      "priority_level": 4,
+      "model": "Provider",
+      "entity_path": "modules/provider/entity/Provider.java",
+      "status": "PARTIAL_IMPLEMENTATION",
+      "contract_file": null,
+      "reason": "License uniqueness, Provider type validation, Contract management, Pricing agreements",
+      "key_fields": [
+        "nameArabic",
+        "nameEnglish",
+        "licenseNumber",
+        "taxNumber",
+        "city",
+        "address",
+        "phone",
+        "email",
+        "providerType",
+        "active",
+        "contractStartDate",
+        "contractEndDate",
+        "defaultDiscountRate",
+        "createdBy",
+        "updatedBy"
+      ],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "PRV-XXX",
+        "field_normalization": true,
+        "normalization_rules": ["nameArabic ↔ nameAr"],
+        "license_uniqueness": true,
+        "validation": [
+          "@Email",
+          "@Pattern",
+          "Provider Type (HOSPITAL, CLINIC, LAB, PHARMACY, RADIOLOGY)",
+          "Tax Number format",
+          "Contract Date (startDate < endDate)",
+          "Default Discount (0-100%)"
+        ],
+        "contract_management": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "Provider → ProviderContract (One-to-Many) CASCADE",
+        "Provider → PreAuthorization (One-to-Many indirectly)"
+      ],
+      "business_impact": "HIGH",
+      "complexity": "High"
+    },
+    {
+      "priority": "HIGH",
+      "priority_level": 5,
+      "model": "User",
+      "entity_path": "modules/rbac/entity/User.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Authentication, Multi-tenant scoping (employerId/companyId), Role-based access, Security",
+      "key_fields": [
+        "username",
+        "password",
+        "fullName",
+        "email",
+        "phone",
+        "active",
+        "emailVerified",
+        "employerId",
+        "companyId",
+        "roles"
+      ],
+      "contract_requirements": {
+        "username_uniqueness": true,
+        "email_uniqueness": true,
+        "password_validation": true,
+        "password_hashing": "BCrypt",
+        "field_normalization": true,
+        "normalization_rules": ["fullName ↔ fullNameAr/fullNameEn"],
+        "email_verification": true,
+        "phone_validation": true,
+        "role_assignment_validation": true,
+        "multi_tenant_scoping": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": ["login", "logout", "role changes", "password reset"]
+      },
+      "relations": [
+        "User → Role (Many-to-Many) via user_roles",
+        "User → PreAuthorization.reviewer (One-to-Many)"
+      ],
+      "business_impact": "CRITICAL",
+      "complexity": "Very High"
+    },
+    {
+      "priority": "HIGH",
+      "priority_level": 6,
+      "model": "PreAuthorization",
+      "entity_path": "modules/preauth/entity/PreAuthorization.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Auto-Number Generation, Status workflow, Financial approval, Multi-step review process",
+      "key_fields": [
+        "preAuthNumber",
+        "member",
+        "providerId",
+        "providerName",
+        "diagnosisCode",
+        "procedureCodes",
+        "serviceType",
+        "estimatedCost",
+        "approvedAmount",
+        "requestDate",
+        "expectedServiceDate",
+        "status",
+        "reviewer",
+        "reviewedAt",
+        "approvalExpiryDate",
+        "active"
+      ],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "PA-YYYYMMDD-XXXX",
+        "status_workflow": ["REQUESTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "EXPIRED"],
+        "member_eligibility_validation": true,
+        "provider_validation": true,
+        "diagnosis_code_validation": "ICD-10/11",
+        "procedure_codes_validation": "CPT",
+        "service_type_validation": true,
+        "cost_validation": true,
+        "date_validation": true,
+        "reviewer_assignment": true,
+        "approval_expiry_calculation": true,
+        "attachment_management": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": ["status changes", "approvals", "rejections"]
+      },
+      "relations": [
+        "PreAuthorization → Member (Many-to-One)",
+        "PreAuthorization → User.reviewer (Many-to-One)",
+        "PreAuthorization → Provider (Many-to-One via providerId)"
+      ],
+      "business_impact": "HIGH",
+      "complexity": "Very High"
+    },
+    {
+      "priority": "HIGH",
+      "priority_level": 7,
+      "model": "Claim",
+      "entity_path": "modules/claim/entity/Claim.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Financial settlement, Status workflow, Multi-line items, Coverage calculation, Payment processing",
+      "key_fields": [
+        "member",
+        "insuranceOrganization",
+        "preApproval",
+        "providerName",
+        "diagnosis",
+        "visitDate",
+        "requestedAmount",
+        "approvedAmount",
+        "differenceAmount",
+        "status",
+        "patientCoPay",
+        "netProviderAmount",
+        "coPayPercent",
+        "deductibleApplied",
+        "paymentReference",
+        "settledAt",
+        "active"
+      ],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "CLM-YYYYMMDD-XXXX",
+        "status_workflow": ["DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "SETTLED"],
+        "member_eligibility_validation": true,
+        "pre_approval_validation": true,
+        "coverage_calculation": true,
+        "financial_validation": true,
+        "co_pay_calculation": true,
+        "deductible_application": true,
+        "claim_lines_management": true,
+        "attachment_management": true,
+        "settlement_workflow": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": ["status changes", "approvals", "settlements"]
+      },
+      "relations": [
+        "Claim → Member (Many-to-One)",
+        "Claim → Organization.insuranceOrganization (Many-to-One)",
+        "Claim → PreApproval (Many-to-One)",
+        "Claim → ClaimLine (One-to-Many) CASCADE",
+        "Claim → ClaimAttachment (One-to-Many) CASCADE",
+        "Claim → ClaimAuditLog (One-to-Many)"
+      ],
+      "business_impact": "CRITICAL",
+      "complexity": "Very High"
+    },
+    {
+      "priority": "MEDIUM",
+      "priority_level": 8,
+      "model": "Visit",
+      "entity_path": "modules/visit/entity/Visit.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Multi-org denormalization, Financial tracking, Member history",
+      "key_fields": [
+        "member",
+        "employerOrganization",
+        "providerId",
+        "doctorName",
+        "specialty",
+        "visitDate",
+        "diagnosis",
+        "treatment",
+        "totalAmount",
+        "notes",
+        "active"
+      ],
+      "contract_requirements": {
+        "member_validation": true,
+        "provider_validation": true,
+        "visit_date_validation": true,
+        "financial_validation": true,
+        "employer_denormalization": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "Visit → Member (Many-to-One)",
+        "Visit → Organization.employerOrganization (Many-to-One) DENORMALIZED"
+      ],
+      "business_impact": "MEDIUM",
+      "complexity": "Medium"
+    },
+    {
+      "priority": "MEDIUM",
+      "priority_level": 9,
+      "model": "BenefitPolicyRule",
+      "entity_path": "modules/benefitpolicy/entity/BenefitPolicyRule.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Complex coverage logic, Uniqueness constraints, Inheritance rules, Financial impact",
+      "key_fields": [
+        "benefitPolicy",
+        "medicalCategory",
+        "medicalService",
+        "coveragePercent",
+        "annualLimit",
+        "perVisitLimit",
+        "waitingPeriodDays",
+        "requiresPreAuth",
+        "active"
+      ],
+      "contract_requirements": {
+        "mutual_exclusivity_validation": true,
+        "uniqueness_validation": true,
+        "coverage_percent_validation": true,
+        "financial_limits_validation": true,
+        "waiting_period_validation": true,
+        "pre_auth_flag": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "BenefitPolicyRule → BenefitPolicy (Many-to-One)",
+        "BenefitPolicyRule → MedicalCategory (Many-to-One) OPTIONAL",
+        "BenefitPolicyRule → MedicalService (Many-to-One) OPTIONAL"
+      ],
+      "business_impact": "HIGH",
+      "complexity": "High"
+    },
+    {
+      "priority": "MEDIUM",
+      "priority_level": 10,
+      "model": "ProviderContract",
+      "entity_path": "modules/providercontract/entity/ProviderContract.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Auto-Code Generation, Single active contract rule, Pricing management, Date validation",
+      "key_fields": [
+        "contractCode",
+        "provider",
+        "status",
+        "pricingModel",
+        "discountPercent",
+        "startDate",
+        "endDate",
+        "active"
+      ],
+      "contract_requirements": {
+        "auto_code_generation": true,
+        "code_pattern": "CON-YYYY-XXX",
+        "single_active_contract_rule": true,
+        "date_validation": true,
+        "overlap_detection": true,
+        "status_workflow": ["DRAFT", "ACTIVE", "EXPIRED", "TERMINATED"],
+        "pricing_model_validation": true,
+        "discount_percent_validation": true,
+        "pricing_items_management": true,
+        "auto_expiry": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": true
+      },
+      "relations": [
+        "ProviderContract → Provider (Many-to-One)",
+        "ProviderContract → ProviderContractPricingItem (One-to-Many) CASCADE"
+      ],
+      "business_impact": "MEDIUM",
+      "complexity": "High"
+    },
+    {
+      "priority": "MEDIUM",
+      "priority_level": 11,
+      "model": "IcdCode",
+      "entity_path": "modules/medicalcode/entity/IcdCode.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Standardized medical codes, Uniqueness, Version management, Bulk import/sync",
+      "key_fields": [
+        "code",
+        "descriptionAr",
+        "descriptionEn",
+        "category",
+        "subCategory",
+        "version",
+        "active"
+      ],
+      "contract_requirements": {
+        "code_uniqueness": true,
+        "version_validation": true,
+        "bulk_import_validation": true,
+        "code_format_validation": true,
+        "bilingual_description": true,
+        "category_validation": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": ["bulk imports", "updates"]
+      },
+      "business_impact": "MEDIUM",
+      "complexity": "Medium",
+      "notes": "Consider bulk import/sync API contract instead of CRUD"
+    },
+    {
+      "priority": "MEDIUM",
+      "priority_level": 12,
+      "model": "CptCode",
+      "entity_path": "modules/medicalcode/entity/CptCode.java",
+      "status": "MISSING_CONTRACT",
+      "contract_file": null,
+      "reason": "Standardized procedure codes, Uniqueness, Pricing, Bulk import/sync",
+      "key_fields": [
+        "code",
+        "descriptionAr",
+        "descriptionEn",
+        "category",
+        "subCategory",
+        "procedureType",
+        "standardPrice",
+        "requiresPreAuth",
+        "active"
+      ],
+      "contract_requirements": {
+        "code_uniqueness": true,
+        "procedure_type_validation": true,
+        "bulk_import_validation": true,
+        "pricing_validation": true,
+        "pre_auth_flag": true,
+        "soft_delete": true,
+        "audit_trail": true,
+        "logging": ["bulk imports", "updates"]
+      },
+      "business_impact": "MEDIUM",
+      "complexity": "Medium",
+      "notes": "Consider bulk import/sync API contract instead of CRUD"
+    },
+    {
+      "priority": "LOW",
+      "priority_level": 13,
+      "model": "Role",
+      "entity_path": "modules/rbac/entity/Role.java",
+      "status": "OPTIONAL_CONTRACT",
+      "contract_file": null,
+      "reason": "Standard RBAC entity, Less complex validation, Admin-only access",
+      "key_fields": ["name", "description", "permissions"],
+      "contract_requirements": {
+        "name_uniqueness": true,
+        "standard_validation": true,
+        "soft_delete": true,
+        "audit_trail": true
+      },
+      "business_impact": "LOW",
+      "complexity": "Low",
+      "notes": "Standard CRUD sufficient, unless complex permission matrix required"
+    },
+    {
+      "priority": "LOW",
+      "priority_level": 14,
+      "model": "Permission",
+      "entity_path": "modules/rbac/entity/Permission.java",
+      "status": "OPTIONAL_CONTRACT",
+      "contract_file": null,
+      "reason": "Standard RBAC entity, Admin-only access",
+      "key_fields": ["name", "description", "module"],
+      "contract_requirements": {
+        "name_uniqueness": true,
+        "standard_validation": true,
+        "soft_delete": true,
+        "audit_trail": true
+      },
+      "business_impact": "LOW",
+      "complexity": "Low",
+      "notes": "Standard CRUD sufficient"
+    },
+    {
+      "priority": "DEPRECATED",
+      "priority_level": 99,
+      "model": "Company",
+      "entity_path": "modules/company/entity/Company.java",
+      "status": "DEPRECATED",
+      "contract_file": null,
+      "reason": "Legacy entity, replaced by Organization, read-only for backward compatibility",
+      "business_impact": "NONE",
+      "complexity": "N/A",
+      "notes": "Marked @Deprecated, use Organization with type=TPA instead"
+    }
+  ],
+  "implementation_roadmap": {
+    "phase_1_foundation": {
+      "status": "COMPLETE",
+      "models": ["Organization"],
+      "notes": "EMP-XX auto-code, field normalization complete"
+    },
+    "phase_2_core_entities": {
+      "status": "URGENT",
+      "models": ["Member", "BenefitPolicy", "Provider"],
+      "estimated_effort": "3-4 weeks",
+      "dependencies": ["Organization"]
+    },
+    "phase_3_security": {
+      "status": "PENDING",
+      "models": ["User"],
+      "estimated_effort": "1-2 weeks",
+      "dependencies": ["Organization"]
+    },
+    "phase_4_workflows": {
+      "status": "PENDING",
+      "models": ["PreAuthorization", "Claim"],
+      "estimated_effort": "3-4 weeks",
+      "dependencies": ["Member", "BenefitPolicy", "Provider"]
+    },
+    "phase_5_supporting": {
+      "status": "PENDING",
+      "models": ["BenefitPolicyRule", "ProviderContract", "Visit"],
+      "estimated_effort": "2-3 weeks",
+      "dependencies": ["BenefitPolicy", "Provider"]
+    },
+    "phase_6_reference_data": {
+      "status": "PENDING",
+      "models": ["IcdCode", "CptCode"],
+      "estimated_effort": "1 week",
+      "dependencies": []
+    }
+  },
+  "recommendations": {
+    "immediate_actions": [
+      "Create Member API Contract (Priority 1)",
+      "Create BenefitPolicy API Contract (Priority 2)",
+      "Create Provider API Contract (Priority 3)"
+    ],
+    "best_practices": [
+      "Always create contract BEFORE implementation",
+      "Include auto-code generation patterns",
+      "Define status lifecycles clearly",
+      "Plan field normalization (Frontend ↔ Backend)",
+      "Document error scenarios with Arabic messages",
+      "Test multi-tenant isolation"
+    ],
+    "lessons_learned": [
+      "@JsonAlias provides backward compatibility",
+      "@JsonProperty enables field renaming in responses",
+      "Auto-code generation requires max code query + increment logic",
+      "Service layer normalization decouples frontend/backend",
+      "Client-side validation improves UX"
+    ],
+    "common_pitfalls": [
+      "Skipping contract → Field mismatch errors (400 Bad Request)",
+      "No auto-code generation → Manual code entry errors",
+      "Missing field normalization → Frontend/Backend coupling",
+      "No status lifecycle → Invalid state transitions",
+      "Missing authorization rules → Data leakage across tenants"
+    ]
+  }
+}

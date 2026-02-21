@@ -29,11 +29,9 @@ public class UserResponseDto {
     private Long providerId;
     private String providerName;
 
-
-
     // Provider specific permissions
     private Boolean allowAllCompanies;
-    private java.util.Set<UserEmployerResponseDto> permittedCompanies;
+    private Set<UserEmployerResponseDto> permittedCompanies;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

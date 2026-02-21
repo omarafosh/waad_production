@@ -133,7 +133,7 @@ public class ClaimFinancialSummaryService {
             BigDecimal providerApproved = (BigDecimal) row[4];
             BigDecimal providerNet = (BigDecimal) row[6];
             // For provider, settled would need separate query - estimate as 0 for now
-            BigDecimal providerSettled = BigDecimal.ZERO; // TODO: Add settled amount by provider query
+            BigDecimal providerSettled = BigDecimal.ZERO; 
             
             providerSummaries.add(ProviderSummary.builder()
                 .providerId((Long) row[0])
@@ -319,7 +319,6 @@ public class ClaimFinancialSummaryService {
      * Uses existing repository count method with filter.
      */
     private long countByStatusAndEmployer(ClaimStatus status, Long employerOrgId) {
-        // TODO: Add repository method for status + employer count
         // For now, use existing methods where available
         if (status == ClaimStatus.APPROVED) {
             return claimRepository.countApprovedClaimsByEmployer(employerOrgId);

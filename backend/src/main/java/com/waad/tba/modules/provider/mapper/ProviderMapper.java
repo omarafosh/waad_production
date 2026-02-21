@@ -11,9 +11,7 @@ import com.waad.tba.modules.providercontract.entity.ProviderContract;
 import com.waad.tba.modules.providercontract.entity.ProviderContract.ContractStatus;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import com.waad.tba.modules.provider.entity.ProviderDocument.DocumentType;
 
 @Component
 public class ProviderMapper {

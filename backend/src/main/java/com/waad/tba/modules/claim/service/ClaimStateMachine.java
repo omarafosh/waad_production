@@ -14,21 +14,23 @@ import com.waad.tba.modules.rbac.entity.User;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Claim State Machine - Enforces strict lifecycle transitions with role-based permissions.
+ * Claim State Machine - Enforces strict lifecycle transitions with role-based
+ * permissions.
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
  * TRANSITION MATRIX
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * | From Status       | To Status         | Allowed Roles                    |
+ * | From Status | To Status | Allowed Roles |
  * |-------------------|-------------------|----------------------------------|
- * | DRAFT             | SUBMITTED         | SUPER_ADMIN, EMPLOYER, INSURANCE, PROVIDER |
- * | SUBMITTED         | UNDER_REVIEW      | SUPER_ADMIN, INSURANCE, REVIEWER |
- * | UNDER_REVIEW      | APPROVED          | SUPER_ADMIN, INSURANCE, REVIEWER |
- * | UNDER_REVIEW      | REJECTED          | SUPER_ADMIN, INSURANCE, REVIEWER |
- * | UNDER_REVIEW      | RETURNED_FOR_INFO | SUPER_ADMIN, REVIEWER            |
- * | RETURNED_FOR_INFO | SUBMITTED         | SUPER_ADMIN, EMPLOYER, INSURANCE, PROVIDER |
- * | APPROVED          | SETTLED           | SUPER_ADMIN, INSURANCE           |
+ * | DRAFT | SUBMITTED | SUPER_ADMIN, EMPLOYER, INSURANCE, PROVIDER |
+ * | SUBMITTED | UNDER_REVIEW | SUPER_ADMIN, INSURANCE, REVIEWER |
+ * | UNDER_REVIEW | APPROVED | SUPER_ADMIN, INSURANCE, REVIEWER |
+ * | UNDER_REVIEW | REJECTED | SUPER_ADMIN, INSURANCE, REVIEWER |
+ * | UNDER_REVIEW | RETURNED_FOR_INFO | SUPER_ADMIN, REVIEWER |
+ * | RETURNED_FOR_INFO | SUBMITTED | SUPER_ADMIN, EMPLOYER, INSURANCE, PROVIDER
+ * |
+ * | APPROVED | SETTLED | SUPER_ADMIN, INSURANCE |
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
  * BUSINESS RULES
@@ -45,19 +47,23 @@ import lombok.extern.slf4j.Slf4j;
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
  * Scenario 1: Happy Path
- *   Given: Claim C001 in DRAFT
- *   When: EMPLOYER submits → INSURANCE reviews → REVIEWER approves → INSURANCE settles
- *   Then: Status transitions: DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED → SETTLED
+ * Given: Claim C001 in DRAFT
+ * When: EMPLOYER submits → INSURANCE reviews → REVIEWER approves → INSURANCE
+ * settles
+ * Then: Status transitions: DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED →
+ * SETTLED
  * 
  * Scenario 2: Invalid Transition
- *   Given: Claim C002 in DRAFT
- *   When: EMPLOYER tries to set status to APPROVED
- *   Then: ClaimStateTransitionException("Invalid state transition: DRAFT → APPROVED")
+ * Given: Claim C002 in DRAFT
+ * When: EMPLOYER tries to set status to APPROVED
+ * Then: ClaimStateTransitionException("Invalid state transition: DRAFT →
+ * APPROVED")
  * 
  * Scenario 3: Role Validation
- *   Given: Claim C003 in SUBMITTED
- *   When: EMPLOYER tries to transition to UNDER_REVIEW
- *   Then: ClaimStateTransitionException with requiredRole = "INSURANCE or REVIEWER"
+ * Given: Claim C003 in SUBMITTED
+ * When: EMPLOYER tries to transition to UNDER_REVIEW
+ * Then: ClaimStateTransitionException with requiredRole = "INSURANCE or
+ * REVIEWER"
  */
 @Slf4j
 @Service
@@ -73,35 +79,35 @@ public class ClaimStateMachine {
     /**
      * Validate if a transition is allowed and perform it.
      * 
-     * @param claim The claim to transition
+     * @param claim        The claim to transition
      * @param targetStatus The desired target status
-     * @param currentUser The user attempting the transition
+     * @param currentUser  The user attempting the transition
      * @throws ClaimStateTransitionException if transition is invalid
      */
     public void transition(Claim claim, ClaimStatus targetStatus, User currentUser) {
         ClaimStatus currentStatus = claim.getStatus();
-        
-        log.info("🔄 Claim transition request: {} → {} by user {}", 
-            currentStatus, targetStatus, currentUser.getUsername());
-        
+
+        log.info("🔄 Claim transition request: {} → {} by user {}",
+                currentStatus, targetStatus, currentUser.getUsername());
+
         // Rule 1: Check if transition is valid in the state machine
         validateTransitionPath(currentStatus, targetStatus);
-        
+
         // Rule 2: Check if user has required role for this transition
         validateRolePermission(currentStatus, targetStatus, currentUser);
-        
+
         // Rule 3: Apply business rules for specific transitions
         validateTransitionRequirements(claim, targetStatus);
-        
+
         // All validations passed - perform transition
         claim.setStatus(targetStatus);
         claim.setUpdatedBy(currentUser.getUsername());
-        
+
         // Set reviewedAt timestamp for reviewer actions
         if (targetStatus.requiresReviewerAction()) {
             claim.setReviewedAt(LocalDateTime.now());
         }
-        
+
         log.info("✅ Claim {} transitioned: {} → {}", claim.getId(), currentStatus, targetStatus);
     }
 
@@ -112,14 +118,12 @@ public class ClaimStateMachine {
         if (from == to) {
             return; // No-op, allow same status
         }
-        
+
         if (from.isTerminal()) {
             throw new ClaimStateTransitionException(
-                from.name(), to.name(),
-                "Cannot transition from terminal state " + from.name()
-            );
+                    "claim.transition.terminal");
         }
-        
+
         if (!from.canTransitionTo(to)) {
             throw new ClaimStateTransitionException(from.name(), to.name());
         }
@@ -131,16 +135,16 @@ public class ClaimStateMachine {
     private void validateRolePermission(ClaimStatus from, ClaimStatus to, User user) {
         Set<String> requiredRoles = getRequiredRoles(from, to);
         Set<String> userRoles = getUserRoleNames(user);
-        
+
         // SUPER_ADMIN can do anything
         if (userRoles.contains(ROLE_SUPER_ADMIN)) {
             return;
         }
-        
+
         // Check if user has at least one required role
         boolean hasPermission = requiredRoles.stream()
-            .anyMatch(userRoles::contains);
-        
+                .anyMatch(userRoles::contains);
+
         if (!hasPermission) {
             String rolesStr = String.join(" or ", requiredRoles);
             throw new ClaimStateTransitionException(from.name(), to.name(), rolesStr);
@@ -161,7 +165,7 @@ public class ClaimStateMachine {
                 default -> Set.of();
             };
             case UNDER_REVIEW -> switch (to) {
-                case APPROVED, REJECTED -> Set.of(ROLE_INSURANCE, ROLE_REVIEWER);
+                case APPROVED, REJECTED, APPROVAL_IN_PROGRESS -> Set.of(ROLE_INSURANCE, ROLE_REVIEWER);
                 case RETURNED_FOR_INFO -> Set.of(ROLE_REVIEWER);
                 default -> Set.of();
             };
@@ -171,6 +175,10 @@ public class ClaimStateMachine {
             };
             case APPROVED -> switch (to) {
                 case SETTLED -> Set.of(ROLE_INSURANCE);
+                default -> Set.of();
+            };
+            case APPROVAL_IN_PROGRESS -> switch (to) {
+                case APPROVED, REJECTED -> Set.of(ROLE_INSURANCE, ROLE_REVIEWER);
                 default -> Set.of();
             };
             default -> Set.of();
@@ -185,27 +193,24 @@ public class ClaimStateMachine {
             case REJECTED -> {
                 if (claim.getReviewerComment() == null || claim.getReviewerComment().isBlank()) {
                     throw new ClaimStateTransitionException(
-                        "Cannot reject claim without reviewer comment. Please provide rejection reason."
-                    );
+                            "claim.transition.comment.required");
                 }
             }
             case APPROVED -> {
-                if (claim.getApprovedAmount() == null || 
-                    claim.getApprovedAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                if (claim.getApprovedAmount() == null ||
+                        claim.getApprovedAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
                     throw new ClaimStateTransitionException(
-                        "Cannot approve claim without approved amount. Please set approvedAmount > 0."
-                    );
+                            "claim.transition.amount.required");
                 }
             }
             case SETTLED -> {
                 if (claim.getStatus() != ClaimStatus.APPROVED) {
                     throw new ClaimStateTransitionException(
-                        claim.getStatus().name(), targetStatus.name(),
-                        "Claim must be APPROVED before settlement"
-                    );
+                            "claim.transition.approved.required");
                 }
             }
-            default -> { /* No additional requirements */ }
+            default -> {
+                /* No additional requirements */ }
         }
     }
 
@@ -217,8 +222,8 @@ public class ClaimStateMachine {
             return Set.of();
         }
         return user.getRoles().stream()
-            .map(Role::getName)
-            .collect(java.util.stream.Collectors.toSet());
+                .map(Role::getName)
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     /**
@@ -236,14 +241,14 @@ public class ClaimStateMachine {
         ClaimStatus current = claim.getStatus();
         Set<ClaimStatus> validTransitions = current.getValidTransitions();
         Set<String> userRoles = getUserRoleNames(user);
-        
+
         // Filter by user permissions
         return validTransitions.stream()
-            .filter(target -> {
-                Set<String> required = getRequiredRoles(current, target);
-                return userRoles.contains(ROLE_SUPER_ADMIN) ||
-                       required.stream().anyMatch(userRoles::contains);
-            })
-            .collect(java.util.stream.Collectors.toSet());
+                .filter(target -> {
+                    Set<String> required = getRequiredRoles(current, target);
+                    return userRoles.contains(ROLE_SUPER_ADMIN) ||
+                            required.stream().anyMatch(userRoles::contains);
+                })
+                .collect(java.util.stream.Collectors.toSet());
     }
 }

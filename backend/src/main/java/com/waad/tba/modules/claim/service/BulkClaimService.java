@@ -1,7 +1,6 @@
 package com.waad.tba.modules.claim.service;
 
-import com.waad.tba.common.entity.Organization;
-import com.waad.tba.modules.claim.dto.BulkClaimEntryDto;
+
 import com.waad.tba.modules.claim.dto.BulkUploadResultDto;
 import com.waad.tba.modules.claim.entity.Claim;
 import com.waad.tba.modules.claim.entity.ClaimLine;
@@ -13,8 +12,6 @@ import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.provider.entity.Provider;
 import com.waad.tba.modules.provider.repository.ProviderRepository;
-import com.waad.tba.modules.providercontract.entity.ProviderContract;
-import com.waad.tba.modules.providercontract.repository.ProviderContractRepository;
 import com.waad.tba.modules.visit.entity.Visit;
 import com.waad.tba.modules.visit.entity.VisitStatus;
 import com.waad.tba.modules.visit.entity.VisitType;
@@ -32,7 +29,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +43,6 @@ public class BulkClaimService {
     private final ProviderRepository providerRepository;
     private final VisitRepository visitRepository;
     private final ClaimRepository claimRepository;
-    private final ProviderContractRepository providerContractRepository;
 
     @Transactional
     public BulkUploadResultDto processBulkUpload(MultipartFile file, Long providerId) {

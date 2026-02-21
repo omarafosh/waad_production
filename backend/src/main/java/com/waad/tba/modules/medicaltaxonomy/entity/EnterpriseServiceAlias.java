@@ -1,10 +1,7 @@
 package com.waad.tba.modules.medicaltaxonomy.entity;
 
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.util.UUID;
 
 @Entity
 @Table(name = "ent_service_aliases")

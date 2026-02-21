@@ -1,7 +1,6 @@
 package com.waad.tba.common.service;
 
 import com.waad.tba.common.entity.Organization;
-import com.waad.tba.common.enums.OrganizationType;
 import com.waad.tba.common.repository.OrganizationRepository;
 import com.waad.tba.modules.rbac.entity.User;
 import com.waad.tba.security.AuthorizationService;

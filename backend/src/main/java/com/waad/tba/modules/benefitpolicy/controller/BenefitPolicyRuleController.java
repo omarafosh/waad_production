@@ -4,7 +4,6 @@ import com.waad.tba.common.dto.ApiResponse;
 import com.waad.tba.modules.benefitpolicy.dto.*;
 import com.waad.tba.modules.benefitpolicy.service.BenefitPolicyRuleService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

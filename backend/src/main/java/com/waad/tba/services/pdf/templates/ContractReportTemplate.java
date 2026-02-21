@@ -1,7 +1,6 @@
 package com.waad.tba.services.pdf.templates;
 
 import com.lowagie.text.*;
-import com.lowagie.text.pdf.PdfPTable;
 import com.waad.tba.modules.providercontract.dto.ContractResponseDto;
 import com.waad.tba.services.pdf.PdfTableBuilder;
 import com.waad.tba.services.pdf.config.PdfFontConfig;
@@ -27,7 +26,6 @@ public class ContractReportTemplate {
     private final PdfTableBuilder tableBuilder;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     
     public List<Element> generateContractDetailReport(ContractResponseDto contract) {
         List<Element> elements = new ArrayList<>();

@@ -27,7 +27,18 @@ public class AsyncConfig implements AsyncConfigurer {
         
         executor.setThreadNamePrefix("TBA-Async-");
         executor.initialize();
-        return executor;
+        return new org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor(executor);
+    }
+
+    @Bean(name = "approvalTaskExecutor")
+    public Executor approvalTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("TBA-Approval-");
+        executor.initialize();
+        return new org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor(executor);
     }
 
     @Override

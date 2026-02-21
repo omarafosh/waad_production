@@ -1,0 +1,2917 @@
+# 📑 فهرس وثائق إعادة هيكلة سير العمل الطبي
+## نظام وعد (TBA-WAAD Medical Operations Workflow Restructuring)
+
+**تاريخ الإصدار:** 4 يناير 2026  
+**الحالة:** ✅ مكتمل - جاهز للمراجعة
+
+---
+
+## 📚 الوثائق الرئيسية
+
+### 1️⃣ تقرير الجدوى الفنية الشامل
+**الملف:** [MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md)
+
+**المحتويات:**
+- ✅ تقييم الجدوى الفنية التفصيلي
+- ✅ تحليل البنية التحتية الحالية
+- ✅ إمكانية الربط برقم زيارة موحد (Unified Visit ID)
+- ✅ تقييم APIs الموجودة والمطلوبة
+- ✅ سير العمل المقترح الجديد
+- ✅ التكلفة والموارد المطلوبة
+- ✅ التحديات والمخاطر
+- ✅ الفوائد المتوقعة
+- ✅ الخلاصة والتوصيات
+
+**الجمهور المستهدف:** الإدارة العليا، مديرو التقنية، صانعو القرار
+
+**الحجم:** ~90 صفحة (شامل)
+
+---
+
+### 2️⃣ نماذج أولية للواجهات (UI/UX Wireframes)
+**الملف:** [MEDICAL-OPERATIONS-UI-WIREFRAMES.md](./MEDICAL-OPERATIONS-UI-WIREFRAMES.md)
+
+**المحتويات:**
+- ✅ المبادئ التصميمية
+- ✅ نظام الألوان والخطوط
+- ✅ Wireframes تفصيلية لجميع الشاشات:
+  - شاشة التحقق من الأهلية
+  - معالج تسجيل الزيارة (4 خطوات)
+  - لوحة إدارة الموافقات المسبقة
+  - صفحة إدارة الرفوض
+- ✅ User Flows
+- ✅ مكونات قابلة لإعادة الاستخدام
+- ✅ Responsive Design (Mobile/Tablet/Desktop)
+
+**الجمهور المستهدف:** مصممو UI/UX، مطورو Frontend، مديرو المنتج
+
+**الحجم:** ~70 صفحة (مع الرسومات)
+
+---
+
+### 3️⃣ خطة التنفيذ التفصيلية (Implementation Roadmap)
+**الملف:** [MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md)
+
+**المحتويات:**
+- ✅ نظرة عامة على المراحل (Timeline)
+- ✅ المرحلة 1: البنية التحتية (أسابيع 1-3)
+  - Sprint 1.1: Database Restructuring
+  - Sprint 1.2: Backend Entity Updates
+- ✅ المرحلة 1: البنية التحتية (أسابيع 1-2)
+  - Sprint 1.1: Database Migration
+  - Sprint 1.2: Backend Entities
+- ✅ المرحلة 2: Workflow Redesign (أسابيع 3-5)
+  - Sprint 2.1: Unified Visit Workflow
+  - Sprint 2.2: Frontend Components
+- ✅ المرحلة 3: Testing & Deployment (أسابيع 5-6)
+  - Sprint 3.1: Integration Testing
+  - Sprint 3.2: Deployment & Training
+- ✅ مؤشرات الأداء (KPIs)
+- ✅ إدارة المخاطر
+- ✅ قائمة التحقق النهائية
+
+**الجمهور المستهدف:** مديرو المشاريع، فرق التطوير، QA، DevOps
+
+**الحجم:** ~60 صفحة (تفصيلي)
+
+---
+
+### 4️⃣ دليل سريع (Quick Reference Guide)
+**الملف:** [MEDICAL-OPERATIONS-QUICK-REFERENCE.md](./MEDICAL-OPERATIONS-QUICK-REFERENCE.md)
+
+**المحتويات:**
+- ✅ ملخص المشروع
+- ✅ الحالة الحالية vs المستهدفة
+- ✅ التغييرات الرئيسية (Database, APIs, Frontend)
+- ✅ الجدول الزمني المختصر
+- ✅ أهم الملاحظات الفنية
+- ✅ التدفق المقترح
+- ✅ الفوائد المتوقعة
+- ✅ المخاطر والتخفيف
+- ✅ معايير النجاح
+- ✅ الخطوات التالية
+- ✅ الأسئلة الشائعة (FAQ)
+
+**الجمهور المستهدف:** جميع أعضاء الفريق، الإدارة
+
+**الحجم:** ~10 صفحات (سريع)
+
+---
+
+## 🗂️ تصنيف الوثائق حسب الجمهور
+
+### للإدارة العليا 👔
+1. **ابدأ هنا:** [الدليل السريع](./MEDICAL-OPERATIONS-QUICK-REFERENCE.md)
+2. **ثم:** قسم "ملخص تنفيذي" من [تقرير الجدوى](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md)
+3. **اختياري:** [نماذج الواجهات](./MEDICAL-OPERATIONS-UI-WIREFRAMES.md) (القسم 1 و 3)
+
+**الوقت المقدر:** 30 دقيقة
+
+---
+
+### لمديري التقنية 💻
+1. **ابدأ هنا:** [تقرير الجدوى الكامل](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md)
+2. **ثم:** [خطة التنفيذ](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md)
+3. **مرجع سريع:** [الدليل السريع](./MEDICAL-OPERATIONS-QUICK-REFERENCE.md)
+
+**الوقت المقدر:** 2-3 ساعات
+
+---
+
+### لمطوري Backend 🔧
+1. **ابدأ هنا:** [تقرير الجدوى](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md) - الأقسام 1.1 - 1.4
+2. **ثم:** [خطة التنفيذ](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md) - Sprint 1.1, 1.2, 2.1
+3. **مرجع:** [الدليل السريع](./MEDICAL-OPERATIONS-QUICK-REFERENCE.md) - قسم "التغييرات الرئيسية"
+
+**الوقت المقدر:** 1.5-2 ساعة
+
+---
+
+### لمطوري Frontend 🎨
+1. **ابدأ هنا:** [نماذج الواجهات](./MEDICAL-OPERATIONS-UI-WIREFRAMES.md)
+2. **ثم:** [خطة التنفيذ](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md) - Sprint 2.2
+3. **فهم السياق:** [الدليل السريع](./MEDICAL-OPERATIONS-QUICK-REFERENCE.md)
+
+**الوقت المقدر:** 1.5-2 ساعة
+
+---
+
+### لفريق QA/Testing 🧪
+1. **ابدأ هنا:** [خطة التنفيذ](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md) - Sprint 3.1
+2. **ثم:** [تقرير الجدوى](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md) - قسم "سير العمل المقترح"
+3. **Test Cases:** [نماذج الواجهات](./MEDICAL-OPERATIONS-UI-WIREFRAMES.md) - User Flows
+
+**الوقت المقدر:** 1 ساعة
+
+---
+
+### لفريق DevOps 🚀
+1. **ابدأ هنا:** [خطة التنفيذ](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md) - Sprint 3.2
+2. **ثم:** [تقرير الجدوى](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md) - قسم "التكلفة والموارد"
+3. **Database:** Sprint 1.1 من خطة التنفيذ
+
+**الوقت المقدر:** 1 ساعة
+
+---
+
+## 📊 ملخص سريع للمشروع
+
+```
+┌─────────────────────────────────────────────────┐
+│         معلومات المشروع الأساسية               │
+├─────────────────────────────────────────────────┤
+│ الاسم: إعادة هيكلة سير العمل الطبي            │
+│ الكود: MEDICAL-OPS-RESTRUCTURE-2026            │
+│ الحالة: ✅ مخطط ومعتمد للتنفيذ                │
+│ المدة: 5-6 أسابيع (محدّث)                     │
+│ الفريق: 2-3 developers                         │
+│ التكلفة: منخفضة (نظام داخلي فقط)              │
+│ DB: PostgreSQL ✅                               │
+│ الأولوية: 🔴 عالية                            │
+└─────────────────────────────────────────────────┘
+```
+
+### النتيجة المتوقعة:
+- ✅ تقليل الأخطاء بنسبة **67%**
+- ✅ تسريع المعالجة بنسبة **60%**
+- ✅ تحسين تجربة المستخدم بنسبة **50%**
+- ✅ توحيد سير العمل بنسبة **100%**
+
+---
+
+## 🎯 الخطوات التالية الموصى بها
+
+### Week 1 (هذا الأسبوع):
+- [ ] مراجعة جميع الوثائق من قبل الإدارة
+- [ ] جلسة نقاش مع الفريق التقني
+- [ ] الموافقة على الميزانية
+- [ ] تشكيل فريق المشروع
+
+### Week 2-3:
+- [ ] Kickoff Meeting
+- [ ] إعداد بيئة التطوير
+- [ ] البدء بـ Sprint 1.1 (Database Migration)
+
+### Week 4-6:
+- [ ] تنفيذ جميع المراحل حسب الخطة
+- [ ] Testing مستمر
+- [ ] UAT والتدريب
+- [ ] Production Deployment
+
+---
+
+## 📞 جهات الاتصال
+
+### للاستفسارات الفنية:
+**Email:** tech@tba-waad.com  
+**Tel:** +965-XXXX-XXXX
+
+### للاستفسارات الإدارية:
+**Email:** management@tba-waad.com  
+**Tel:** +965-XXXX-XXXX
+
+---
+
+## 🔄 تاريخ الإصدارات
+
+| الإصدار | التاريخ | التغييرات |
+|---------|---------|-----------|
+| **1.0** | 2026-01-04 | الإصدار الأولي الكامل |
+
+---
+
+## 📝 ملاحظات مهمة
+
+### ✅ نقاط القوة:
+- البنية التحتية الحالية قوية ومستقرة
+- نظام Eligibility Engine متقدم وجاهز
+- APIs منظمة وموثقة بالكامل
+- قاعدة بيانات قابلة للتوسع
+
+### ⚠️ نقاط تحتاج انتباه:
+- Data migration يحتاج تخطيط دقيق (ربط البيانات الموجودة)
+- تدريب المستخدمين ضروري للنجاح
+- Change management مهم لتقليل المقاومة
+- اختبار الأداء مع PostgreSQL (الموجود حالياً)
+
+---
+
+## 🏆 معايير النجاح
+
+### تقنية:
+- ✅ Unit test coverage > 85%
+- ✅ Integration tests passing 100%
+- ✅ Performance: API response time < 3s (95th percentile)
+- ✅ Zero critical bugs in production
+
+### تجارية:
+- ✅ Data accuracy > 95%
+- ✅ Processing time reduction > 40%
+- ✅ Error rate < 5%
+- ✅ User satisfaction > 4/5
+
+---
+
+## 🔗 وثائق ذات صلة
+
+### API Contracts:
+- [MEMBER_API_CONTRACT.md](./MEMBER_API_CONTRACT.md)
+- [CLAIM_API_CONTRACT.md](./CLAIM_API_CONTRACT.md)
+- [PREAUTHORIZATION_API_CONTRACT.md](./PREAUTHORIZATION_API_CONTRACT.md)
+- [MEDICAL_TAXONOMY_API_CONTRACT.md](./MEDICAL_TAXONOMY_API_CONTRACT.md)
+
+### تقارير تقنية:
+- [SCHEMA-VALIDATION-COMPLETE.md](./SCHEMA-VALIDATION-COMPLETE.md)
+- [INTEGRATION_TEST_REPORT.md](./INTEGRATION_TEST_REPORT.md)
+- [ARCHITECTURE-ANALYSIS-REPORT.md](./ARCHITECTURE-ANALYSIS-REPORT.md)
+
+---
+
+## ✅ تم الإعداد بواسطة
+
+**الفريق:** TBA-WAAD Technical Team  
+**التاريخ:** 4 يناير 2026  
+**المراجعة:** ✅ مكتمل  
+**الموافقة:** ⏳ قيد المراجعة
+
+---
+
+**جميع الحقوق محفوظة © 2026 TBA-WAAD System**
+# 🗓️ خطة التنفيذ التفصيلية (Implementation Roadmap)
+## إعادة هيكلة سير العمل الطبي - نظام وعد
+
+**تاريخ الإعداد:** 4 يناير 2026  
+**المدة الإجمالية:** 5-6 أسابيع (نظام داخلي فقط)  
+**الفريق المطلوب:** 2-3 developers
+
+---
+
+## 📅 نظرة عامة على المراحل
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     Timeline Overview                        │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Week 1-2: البنية التحتية والـ Database                      │
+│  │████████████████████░░░░░░░░░░░░░░░░░░│                    │
+│  │                                                            │
+│  Week 3-5: Backend & Frontend Development                    │
+│  │                    ████████████████████████░░│             │
+│  │                                                            │
+│  Week 5-6: Testing & Deployment                              │
+│  │                                          ████████│         │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏗️ المرحلة 1: البنية التحتية (أسابيع 1-2)
+
+### Sprint 1.1: Database Restructuring (أسبوع 1)
+
+#### اليوم 1-2: تصميم الـ Migration
+```yaml
+المهمة: إعداد V013 Migration Script
+المسؤول: Database Administrator + Backend Lead
+
+الأنشطة:
+  1. مراجعة الهيكلية الحالية:
+     - فحص visits table
+     - فحص claims table
+     - فحص eligibility_checks table
+     - فحص pre_approvals table
+  
+  2. كتابة Migration Script:
+     الملف: V013__unified_visit_workflow.sql
+     
+     المحتويات:
+       - ALTER TABLE claims ADD COLUMN visit_id
+       - ALTER TABLE eligibility_checks ADD COLUMN visit_id
+       - CREATE INDEX idx_claims_visit_id
+       - CREATE INDEX idx_eligibility_visit_id
+       - Foreign Key Constraints
+  
+  3. كتابة Rollback Script:
+     الملف: V013__unified_visit_workflow_rollback.sql
+
+المخرجات:
+  ✅ V013 migration script جاهز للاختبار
+  ✅ Rollback plan موثق
+```
+
+**الملف المتوقع:**
+```sql
+-- V013__unified_visit_workflow.sql
+-- ================================================
+-- PURPOSE: Link all medical operations to unified visit_id
+-- ================================================
+
+-- 1. Add visit_id to claims table
+ALTER TABLE claims 
+  ADD COLUMN IF NOT EXISTS visit_id BIGINT;
+
+ALTER TABLE claims 
+  ADD CONSTRAINT fk_claims_visit 
+  FOREIGN KEY (visit_id) 
+  REFERENCES visits(id) 
+  ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_claims_visit_id 
+  ON claims(visit_id);
+
+-- 2. Add visit_id to eligibility_checks table
+ALTER TABLE eligibility_checks 
+  ADD COLUMN IF NOT EXISTS visit_id BIGINT;
+
+ALTER TABLE eligibility_checks 
+  ADD CONSTRAINT fk_eligibility_visit 
+  FOREIGN KEY (visit_id) 
+  REFERENCES visits(id) 
+  ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_eligibility_visit_id 
+  ON eligibility_checks(visit_id);
+
+-- 3. Comments for documentation
+COMMENT ON COLUMN claims.visit_id IS 
+  'Links claim to the originating medical visit';
+  
+COMMENT ON COLUMN eligibility_checks.visit_id IS 
+  'Links eligibility check to a visit (optional - for post-check scenarios)';
+```
+
+#### اليوم 3-4: Data Migration Scripts
+```yaml
+المهمة: إعداد scripts لربط البيانات الموجودة
+المسؤول: Database Administrator
+
+الأنشطة:
+  1. تحليل البيانات الموجودة:
+     - كم عدد الـ claims بدون visit_id؟
+     - كم عدد الـ pre_approvals بدون visit_id؟
+     
+  2. كتابة Data Migration Scripts:
+     الملف: scripts/data_migration_link_visits.sql
+     
+     المنطق:
+       - ربط claims بـ visits عبر member_id + visit_date
+       - ربط pre_approvals بـ visits (إن أمكن)
+       - معالجة الحالات الاستثنائية
+  
+  3. Dry Run Testing:
+     - تنفيذ على نسخة من الـ DB
+     - التحقق من النتائج
+     - توثيق الحالات الصعبة
+
+المخرجات:
+  ✅ Data migration scripts جاهزة
+  ✅ تقرير بالحالات الاستثنائية
+```
+
+#### اليوم 5: Testing & Deployment
+```yaml
+المهمة: اختبار ونشر الـ Migration
+المسؤول: Full Team
+
+الأنشطة:
+  1. Testing على DB منفصل:
+     - تنفيذ V013 migration
+     - تنفيذ data migration scripts
+     - التحقق من Constraints
+     - اختبار الأداء (Indexes)
+  
+  2. Code Review:
+     - مراجعة الكود من قبل 2+ developers
+     - التأكد من الـ rollback plan
+  
+  3. Production Deployment:
+     - Backup كامل للـ DB
+     - تنفيذ Migration في وقت منخفض الاستخدام
+     - Monitoring للأداء
+  
+  4. Verification:
+     - فحص Foreign Keys
+     - فحص Indexes
+     - اختبار أداء Queries
+
+المخرجات:
+  ✅ Migration نشرت بنجاح
+  ✅ Data linked to visits
+  ✅ Performance verified
+```
+
+---
+
+### Sprint 1.2: Backend Entity Updates (أسبوع 2)
+
+#### اليوم 1-2: Entity Updates
+```yaml
+المهمة: تحديث JPA Entities
+المسؤول: Backend Developer
+
+الملفات المتأثرة:
+  1. Claim.java:
+     @ManyToOne(fetch = FetchType.LAZY)
+     @JoinColumn(name = "visit_id")
+     private Visit visit;
+  
+  2. EligibilityCheck.java:
+     @ManyToOne(fetch = FetchType.LAZY)
+     @JoinColumn(name = "visit_id")
+     private Visit visit;
+  
+  3. Visit.java (إضافة reverse relationships):
+     @OneToMany(mappedBy = "visit")
+     private List<Claim> claims = new ArrayList<>();
+     
+     @OneToMany(mappedBy = "visit")
+     private List<EligibilityCheck> eligibilityChecks = new ArrayList<>();
+
+المخرجات:
+  ✅ Entities updated
+  ✅ Bidirectional relationships configured
+```
+
+#### اليوم 3-4: DTO & Mapper Updates
+```yaml
+المهمة: تحديث DTOs and Mappers
+المسؤول: Backend Developer
+
+الملفات المتأثرة:
+  1. ClaimCreateDto.java:
+     private Long visitId; // NEW
+  
+  2. EligibilityCheckRequest.java:
+     private Long visitId; // OPTIONAL
+  
+  3. ClaimMapper.java:
+     - ربط visit عند الإنشاء
+     - validation: visit must exist
+  
+  4. EligibilityCheckMapper.java:
+     - ربط visit إن وُجد
+
+الـ Validations:
+  - visitId يجب أن يكون موجود في DB
+  - visit.member_id must match request.memberId
+  - visit.active = true
+
+المخرجات:
+  ✅ DTOs updated with visitId
+  ✅ Mappers handle new field
+  ✅ Validations implemented
+```
+
+#### اليوم 5: Unit Tests
+```yaml
+المهمة: كتابة Unit Tests للتغييرات
+المسؤول: Backend Developer
+
+Test Cases:
+  1. ClaimMapperTest:
+     - testCreateClaimWithVisitId()
+     - testCreateClaimWithInvalidVisitId()
+     - testCreateClaimWithoutVisitId()
+  
+  2. EligibilityCheckMapperTest:
+     - testCreateCheckWithVisitId()
+     - testCreateCheckWithoutVisitId()
+  
+  3. VisitServiceTest:
+     - testGetVisitWithClaims()
+     - testGetVisitWithEligibilityChecks()
+
+Code Coverage Target: > 85%
+
+المخرجات:
+  ✅ Unit tests written
+  ✅ Code coverage > 85%
+  ✅ All tests passing
+```
+
+---
+
+## 🔄 المرحلة 2: Workflow Redesign (أسابيع 3-5)
+
+### Sprint 2.1: Unified Visit Workflow (أسابيع 3-4)
+
+#### Week 3: Backend Workflow Service
+```yaml
+المهمة: تطوير VisitWorkflowService
+المسؤول: 2 Backend Developers
+
+الملف الجديد:
+  backend/.../visit/service/VisitWorkflowService.java
+
+Methods:
+  1. createUnifiedVisit(UnifiedVisitRequestDto):
+     Steps:
+       a. Check eligibility (via EligibilityEngineService)
+       b. If eligible → create Visit
+       c. Link eligibility check to visit
+       d. Check if services need pre-approval
+       e. Create pre-approval requests if needed
+       f. Return UnifiedVisitResponseDto
+  
+  2. completeVisit(Long visitId, VisitCompletionDto):
+     Steps:
+       a. Update visit with actual services performed
+       b. Create claim linked to visit
+       c. Link pre-approvals to claim
+       d. Submit to review workflow
+
+DTOs:
+  UnifiedVisitRequestDto:
+    - memberId
+    - serviceDate
+    - providerId
+    - services: List<ServiceRequestDto>
+    - checkEligibility: boolean (default: true)
+  
+  UnifiedVisitResponseDto:
+    - visitId
+    - eligibilityStatus: ELIGIBLE | INELIGIBLE
+    - eligibilityReasons: List<String>
+    - preApprovalsNeeded: List<PreApprovalDto>
+    - warnings: List<String>
+
+المخرجات:
+  ✅ Workflow service implemented
+  ✅ Transaction management correct
+  ✅ Error handling comprehensive
+```
+
+#### Week 5: API Endpoints
+```yaml
+المهمة: إضافة REST Endpoints للـ Workflow
+المسؤول: Backend Developer
+
+الملف الجديد:
+  backend/.../visit/controller/VisitWorkflowController.java
+
+Endpoints:
+  1. POST /api/workflow/unified-visit
+     Request: UnifiedVisitRequestDto
+     Response: UnifiedVisitResponseDto
+     
+  2. POST /api/workflow/complete-visit/{visitId}
+     Request: VisitCompletionDto
+     Response: ClaimResponseDto
+  
+  3. GET /api/workflow/visit/{visitId}/status
+     Response: VisitWorkflowStatusDto
+
+Documentation:
+  - OpenAPI/Swagger annotations
+  - Request/Response examples
+  - Error codes documentation
+
+المخرجات:
+  ✅ API endpoints implemented
+  ✅ Swagger docs generated
+  ✅ Postman collection created
+```
+
+---
+
+### Sprint 2.2: Frontend Components (أسابيع 4-5)
+
+#### Week 6, Day 1-3: Eligibility Check Component
+```yaml
+المهمة: تطوير EligibilityCheckForm
+المسؤول: Frontend Developer
+
+الملف:
+  frontend/src/pages/workflow/EligibilityCheck.jsx
+
+Features:
+  1. Card number input:
+     - Barcode scanning support
+     - Manual input
+     - Real-time validation
+  
+  2. Service date picker:
+     - Default: today
+     - Cannot select future dates beyond 7 days
+  
+  3. Optional filters:
+     - Provider dropdown
+     - Service type dropdown
+  
+  4. Result display:
+     - Success state (green)
+     - Failure state (red)
+     - Loading state
+  
+  5. Actions:
+     - "Register Visit" button (on success)
+     - "Try Another Card" button (on failure)
+
+المخرجات:
+  ✅ Component implemented
+  ✅ Responsive design
+  ✅ Loading states handled
+```
+
+#### Week 6, Day 4-5 + Week 7, Day 1-2: Visit Registration Wizard
+```yaml
+المهمة: تطوير VisitRegistrationWizard
+المسؤول: 2 Frontend Developers
+
+الملف:
+  frontend/src/pages/workflow/VisitRegistrationWizard.jsx
+
+Steps:
+  Step 1: Patient Info (Auto-populated)
+    - Display data from eligibility check
+    - Read-only fields
+    
+  Step 2: Visit Details
+    - Visit date (default: today)
+    - Provider selection (dropdown with search)
+    - Doctor name (text input)
+    - Specialty (dropdown)
+    
+  Step 3: Services & Diagnosis
+    - Diagnosis (textarea)
+    - Treatment plan (textarea)
+    - Total cost (number input)
+    - Services checklist:
+      - Display all services
+      - Show coverage status
+      - Highlight services needing pre-approval
+    
+  Step 4: Review & Confirm
+    - Summary of all data
+    - Edit buttons for each section
+    - Submit button
+
+Shared Components:
+  - ProgressStepper (1/4, 2/4, ...)
+  - WizardNavigation (Previous/Next buttons)
+  - ValidationMessages
+
+State Management:
+  - Use React Context or Redux
+  - Persist data in localStorage (draft support)
+
+المخرجات:
+  ✅ Wizard implemented
+  ✅ Validation on each step
+  ✅ Draft saving working
+  ✅ Mobile responsive
+```
+
+#### Week 7, Day 3-4: Pre-Approval Dashboard
+```yaml
+المهمة: تحديث PreApprovalDashboard
+المسؤول: Frontend Developer
+
+الملف:
+  frontend/src/components/workflow/PreApprovalDashboard.jsx
+
+Updates:
+  1. Filters:
+     - Status (All, Pending, Approved, Rejected)
+     - Date range picker
+     - Member search
+  
+  2. Quick Stats:
+     - Cards showing counts by status
+     - Trend indicators
+  
+  3. Approval Cards:
+     - Color-coded by status
+     - Action buttons (View, Print)
+     - Quick actions for reviewers (Approve/Reject)
+  
+  4. Real-time updates:
+     - WebSocket connection for status changes
+     - Toast notifications
+
+المخرجات:
+  ✅ Dashboard enhanced
+  ✅ Real-time updates working
+  ✅ Performance optimized
+```
+
+#### Week 7, Day 5: Rejection Management Panel
+```yaml
+المهمة: تطوير RejectionManagementPanel
+المسؤول: Frontend Developer
+
+الملف:
+  frontend/src/components/workflow/RejectionPanel.jsx
+
+Features:
+  1. Statistics Cards:
+     - Rejection count (today, week, month)
+     - Rejection rate trend
+  
+  2. Top Reasons Chart:
+     - Bar chart of most common reasons
+     - Clickable for filtering
+  
+  3. Rejection List:
+     - Filterable by reason, date, member
+     - Sortable columns
+     - Action buttons (View, Contact Patient, Export)
+  
+  4. Export Options:
+     - PDF report
+     - Excel export
+
+المخرجات:
+  ✅ Panel implemented
+  ✅ Charts rendering correctly
+  ✅ Export functionality working
+```
+
+---
+
+## 🧪 المرحلة 3: Testing & Deployment (أسابيع 5-6)
+
+### Sprint 3.1: Integration Testing (أسبوع 5)
+
+#### Day 1-2: End-to-End Tests
+```yaml
+المهمة: E2E Testing للـ Workflow الكامل
+المسؤول: QA Team + Developers
+
+Test Scenarios:
+  1. Happy Path - Eligible Member, No Pre-Approval:
+     a. Check eligibility → SUCCESS
+     b. Register visit → SUCCESS
+     c. Add services (no pre-approval needed) → SUCCESS
+     d. Complete visit → SUCCESS
+     e. Create claim → SUCCESS
+  
+  2. Happy Path - Eligible Member, Pre-Approval Needed:
+     a. Check eligibility → SUCCESS
+     b. Register visit → SUCCESS
+     c. Add services (requires pre-approval) → SUCCESS
+     d. Request pre-approval → PENDING
+     e. Approve pre-approval → APPROVED
+     f. Complete visit → SUCCESS
+     g. Create claim linked to pre-approval → SUCCESS
+  
+  3. Sad Path - Ineligible Member:
+     a. Check eligibility → INELIGIBLE
+     b. Display reasons → SUCCESS
+     c. Cannot proceed to visit registration → BLOCKED
+  
+  4. Edge Cases:
+     - Visit without eligibility check (legacy)
+     - Claim without visit (legacy)
+     - Multiple pre-approvals for same visit
+
+Tools:
+  - Cypress or Playwright (Frontend E2E)
+  - REST Assured (Backend API)
+
+المخرجات:
+  ✅ All E2E scenarios pass
+  ✅ Edge cases handled
+  ✅ Test reports generated
+```
+
+#### Day 3-4: Performance Testing
+```yaml
+المهمة: اختبار الأداء
+المسؤول: Performance Engineer
+
+Test Cases:
+  1. Database Performance:
+     - Query performance with visit_id joins
+     - Index effectiveness
+     - Concurrent transactions
+  
+  2. API Performance:
+     - Eligibility check: < 500ms (avg)
+     - Visit creation: < 1s (avg)
+     - Unified workflow: < 2s (avg)
+  
+  3. Load Testing:
+     - 100 concurrent users
+     - 1000 requests/minute
+     - Response time < 3s (95th percentile)
+
+Tools:
+  - JMeter
+  - PostgreSQL EXPLAIN ANALYZE
+  - New Relic / DataDog
+
+Acceptance Criteria:
+  - No queries > 5 seconds
+  - API response time 95th percentile < 3s
+  - Zero errors under normal load
+
+المخرجات:
+  ✅ Performance benchmarks met
+  ✅ Bottlenecks identified & fixed
+  ✅ Scalability verified
+```
+
+#### Day 5: User Acceptance Testing (UAT)
+```yaml
+المهمة: UAT مع مستخدمين حقيقيين
+المسؤول: Product Owner + QA
+
+Participants:
+  - 5 reception staff
+  - 3 medical reviewers
+  - 2 claims processors
+
+Test Scenarios:
+  - Register 10 visits using new workflow
+  - Process 5 pre-approvals
+  - Review 3 rejections
+  - Complete 5 claims
+
+Feedback Collection:
+  - Usability issues
+  - Performance concerns
+  - Feature requests
+  - Bug reports
+
+المخرجات:
+  ✅ UAT feedback collected
+  ✅ Critical issues fixed
+  ✅ Sign-off from stakeholders
+```
+
+---
+
+### Sprint 3.2: Deployment & Training (أسبوع 6)
+
+#### Day 1-2: Production Deployment Plan
+```yaml
+المهمة: إعداد خطة النشر
+المسؤول: DevOps + Tech Lead
+
+Deployment Strategy:
+  Phase 1: Database Migration (Day 1, 2am - 4am)
+    - Full DB backup
+    - Run V013 migration
+    - Run data migration scripts
+    - Verify data integrity
+  
+  Phase 2: Backend Deployment (Day 1, 4am - 6am)
+    - Deploy new backend version
+    - Health check verification
+    - Smoke tests
+  
+  Phase 3: Frontend Deployment (Day 1, 6am - 7am)
+    - Deploy new frontend build
+    - CDN cache clear
+    - Verification
+  
+  Phase 4: Feature Flag Activation (Day 1, 8am)
+    - Enable unified workflow for pilot group
+    - Monitor for 1 hour
+    - Gradual rollout to all users
+
+Rollback Plan:
+  - If critical issue detected:
+    - Disable feature flag
+    - Restore DB from backup (if needed)
+    - Redeploy previous versions
+
+المخرجات:
+  ✅ Deployment plan approved
+  ✅ Rollback procedures tested
+  ✅ Go/No-Go decision made
+```
+
+#### Day 3: Production Deployment
+```yaml
+المهمة: تنفيذ النشر
+المسؤول: Full Team (On-call)
+
+Timeline:
+  02:00 - DB Migration starts
+  04:00 - Backend deployment starts
+  06:00 - Frontend deployment starts
+  08:00 - Feature flag enabled (pilot)
+  12:00 - Full rollout (if no issues)
+  16:00 - Deployment retrospective
+
+Monitoring:
+  - Application logs
+  - Database performance
+  - Error rates
+  - User feedback
+
+المخرجات:
+  ✅ System deployed successfully
+  ✅ No critical issues
+  ✅ Users can access new workflow
+```
+
+#### Day 4-5: User Training
+```yaml
+المهمة: تدريب المستخدمين
+المسؤول: Product Owner + Training Team
+
+Training Sessions:
+  Session 1: Reception Staff (2 hours)
+    - How to check eligibility
+    - How to register a visit
+    - Handling rejections
+  
+  Session 2: Medical Reviewers (2 hours)
+    - Using pre-approval dashboard
+    - Approval/rejection workflow
+    - Commenting and notes
+  
+  Session 3: Claims Processors (1.5 hours)
+    - Linking claims to visits
+    - Using visit context in claims
+    - Reporting and analytics
+
+Materials:
+  - User manuals (Arabic)
+  - Video tutorials
+  - Quick reference cards
+  - FAQ document
+
+المخرجات:
+  ✅ All users trained
+  ✅ Materials distributed
+  ✅ Support tickets < 5 critical
+```
+
+---
+
+## 📊 مؤشرات الأداء (KPIs)
+
+### خلال فترة التطوير:
+```yaml
+Sprint Velocity:
+  - Target: 80% of planned stories completed
+  - Measure: Actual completion rate
+
+Code Quality:
+  - Unit test coverage: > 85%
+  - Integration test coverage: > 70%
+  - Code review approval: 100%
+
+Bugs:
+  - Critical bugs: 0 in production
+  - Major bugs: < 3 per sprint
+  - Bug fix time: < 48 hours
+```
+
+### بعد النشر (أول شهر):
+```yaml
+Performance:
+  - Eligibility check time: < 500ms (avg)
+  - Visit registration time: < 2s (avg)
+  - System availability: > 99.5%
+
+User Satisfaction:
+  - User satisfaction score: > 4/5
+  - Support tickets: < 10 per week
+  - Training effectiveness: > 80%
+
+Business Impact:
+  - Data accuracy: > 95%
+  - Processing time reduction: > 40%
+  - Rejection rate: < 10%
+```
+
+---
+
+## 🚨 إدارة المخاطر
+
+### مخاطر فنية:
+
+| المخاطر | الاحتمالية | التأثير | الحل |
+|---------|------------|---------|------|
+| Data Migration فشل | متوسط | عالي | Rollback plan + Testing |
+| API Integration بطيء | عالي | متوسط | Fallback to internal system |
+| Performance تدهور | منخفض | عالي | Load testing + Optimization |
+| Users مقاومة | متوسط | متوسط | Training + Change management |
+
+### خطة الطوارئ:
+```yaml
+IF critical_bug_detected:
+  - Disable feature flag immediately
+  - Rollback to previous version
+  - Investigate root cause
+  - Fix and redeploy
+
+IF performance_degradation:
+  - Enable caching
+  - Optimize slow queries
+  - Scale infrastructure (if needed)
+
+IF user_adoption_low:
+  - Additional training sessions
+  - One-on-one support
+  - Gather feedback and iterate
+```
+
+---
+
+## ✅ قائمة التحقق النهائية (Final Checklist)
+
+### قبل النشر:
+- [ ] All unit tests passing
+- [ ] All integration tests passing
+- [ ] Code review completed
+- [ ] Database migration tested
+- [ ] Performance benchmarks met
+- [ ] Security audit completed
+- [ ] Documentation updated
+- [ ] Training materials ready
+- [ ] Rollback plan prepared
+- [ ] Stakeholder approval obtained
+
+### أثناء النشر:
+- [ ] Backup created
+- [ ] Migration executed
+- [ ] Backend deployed
+- [ ] Frontend deployed
+- [ ] Smoke tests passed
+- [ ] Monitoring active
+
+### بعد النشر:
+- [ ] No critical errors
+- [ ] Performance within SLA
+- [ ] Users trained
+- [ ] Support team ready
+- [ ] Feedback loop established
+- [ ] Retrospective scheduled
+
+---
+
+## 📞 جهات الاتصال
+
+**Project Manager:** [الاسم]  
+**Tech Lead:** [الاسم]  
+**Backend Lead:** [الاسم]  
+**Frontend Lead:** [الاسم]  
+**QA Lead:** [الاسم]  
+**DevOps Lead:** [الاسم]
+
+**طوارئ (24/7):** +965-XXXX-XXXX
+
+---
+
+**نهاية خطة التنفيذ**
+
+**تاريخ الموافقة:** [يُحدد لاحقاً]  
+**التوقيع:** [المعتمد]
+# 📚 دليل سريع - إعادة هيكلة سير العمل الطبي
+## نظام وعد (TBA-WAAD)
+
+**آخر تحديث:** 4 يناير 2026  
+**الإصدار:** 1.0
+
+---
+
+## 🎯 ملخص المشروع
+
+### الهدف
+إعادة هيكلة وتوحيد سير العمل الطبي عبر:
+1. ✅ ربط جميع العمليات برقم زيارة موحد (Unified Visit ID)
+2. ✅ دمج نظام التحقق من الأهلية الفوري
+3. ✅ تحسين واجهات المستخدم
+
+### النتيجة
+✅ **قابل للتنفيذ** - التكلفة: **5-6 أسابيع** (نظام داخلي فقط)
+
+---
+
+## 📊 الحالة الحالية vs المستهدفة
+
+| المقياس | الحالي | المستهدف | التحسين |
+|---------|--------|-----------|---------|
+| **خطوات الإدخال** | 12-15 | 6-8 | -50% |
+| **وقت المعالجة** | 5-7 دقائق | 2-3 دقائق | -60% |
+| **معدل الأخطاء** | 15% | 5% | -67% |
+| **الربط بين الموديولات** | منفصل | موحد | +100% |
+
+---
+
+## 🗂️ المستندات المرجعية
+
+| الوثيقة | الغرض | الملف |
+|---------|-------|------|
+| **تقرير الجدوى الفنية** | تقييم شامل وتوصيات | [MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md](./MEDICAL-OPERATIONS-WORKFLOW-RESTRUCTURING-FEASIBILITY-REPORT.md) |
+| **مخططات الواجهات** | Wireframes وتصميم UI/UX | [MEDICAL-OPERATIONS-UI-WIREFRAMES.md](./MEDICAL-OPERATIONS-UI-WIREFRAMES.md) |
+| **خطة التنفيذ** | Roadmap تفصيلي للتطوير | [MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md](./MEDICAL-OPERATIONS-IMPLEMENTATION-ROADMAP.md) |
+
+---
+
+## 🔧 التغييرات الرئيسية
+
+### 1. قاعدة البيانات (Database Changes)
+
+```sql
+-- Migration جديدة: V013
+ALTER TABLE claims ADD COLUMN visit_id BIGINT;
+ALTER TABLE eligibility_checks ADD COLUMN visit_id BIGINT;
+CREATE INDEX idx_claims_visit_id ON claims(visit_id);
+CREATE INDEX idx_eligibility_visit_id ON eligibility_checks(visit_id);
+```
+
+**التأثير:**
+- ✅ ربط كل claim بـ visit محدد
+- ✅ ربط كل eligibility check بـ visit (اختياري)
+- ✅ تحسين أداء الاستعلامات
+
+---
+
+### 2. Backend APIs
+
+#### API جديد: Unified Visit Workflow
+
+```http
+POST /api/workflow/unified-visit
+Content-Type: application/json
+
+{
+  "memberId": 123,
+  "serviceDate": "2025-01-04",
+  "providerId": 45,
+  "services": [
+    {"serviceCode": "SRV-001", "quantity": 1},
+    {"serviceCode": "SRV-002", "quantity": 2}
+  ],
+  "checkEligibility": true
+}
+```
+
+**Response:**
+```json
+{
+  "visitId": 789,
+  "eligibilityStatus": "ELIGIBLE",
+  "eligibilityReasons": [],
+  "preApprovalsNeeded": [
+    {
+      "serviceCode": "SRV-002",
+      "reason": "Service requires pre-approval"
+    }
+  ],
+  "warnings": []
+}
+```
+
+---
+
+### 3. Frontend Components
+
+#### مكونات جديدة:
+1. **EligibilityCheckForm** - فحص الأهلية الفوري
+2. **VisitRegistrationWizard** - معالج تسجيل الزيارة (4 خطوات)
+3. **PreApprovalDashboard** - لوحة إدارة الموافقات
+4. **RejectionManagementPanel** - إدارة الرفوض
+
+---
+
+## 🚀 الجدول الزمني
+
+```
+المرحلة 1: البنية التحتية (أسابيع 1-2)
+├─ Sprint 1.1: Database Migration
+└─ Sprint 1.2: Backend Entities
+
+المرحلة 2: Workflow Development (أسابيع 3-5)
+├─ Sprint 2.1: Backend Workflow Service
+└─ Sprint 2.2: Frontend Components
+
+المرحلة 3: Testing & Deployment (أسابيع 5-6)
+├─ Sprint 3.1: Integration Testing
+└─ Sprint 3.2: Production Deployment
+```
+
+---
+
+## 💡 أهم الملاحظات الفنية
+
+### ✅ ما هو موجود حالياً:
+- ✅ نظام Eligibility Engine متطور (داخلي بالكامل)
+- ✅ APIs جاهزة ومنظمة
+- ✅ قاعدة بيانات PostgreSQL قابلة للتوسع (مستخدم حالياً)
+- ✅ React Frontend مع Material-UI
+
+### ⚠️ ما يحتاج تطوير:
+- ⚠️ ربط الموديولات برقم زيارة موحد
+- ⚠️ تحسين واجهات المستخدم
+- ⚠️ Data migration للبيانات الموجودة
+- ⚠️ تحسين أداء Queries على PostgreSQL
+
+---
+
+## 🔄 التدفق المقترح
+
+```
+1. التحقق من الأهلية
+   ↓ (✅ مؤهل)
+2. تسجيل الزيارة
+   ↓
+3. إضافة الخدمات
+   ↓
+4. فحص الحاجة للموافقة المسبقة
+   ├─ (نعم) → طلب موافقة → انتظار القرار
+   └─ (لا) → تنفيذ الخدمة
+   ↓
+5. إنشاء المطالبة (مربوطة بالزيارة)
+   ↓
+6. المراجعة والتسوية
+```
+
+---
+
+## 📈 الفوائد المتوقعة
+
+### تشغيلية:
+- ✅ تقليل الأخطاء بنسبة **67%**
+- ✅ تسريع المعالجة بنسبة **60%**
+- ✅ تحسين دقة البيانات إلى **95%+**
+
+### تجربة المستخدم:
+- ✅ واجهات أبسط وأوضح
+- ✅ تغذية راجعة فورية (Real-time feedback)
+- ✅ تقليل خطوات الإدخال بنسبة **50%**
+
+### إدارية:
+- ✅ تتبع أفضل للعمليات
+- ✅ تقارير أكثر دقة
+- ✅ سهولة الصيانة والتطوير
+
+---
+
+## ⚠️ المخاطر والتخفيف
+
+| المخاطر | الاحتمالية | الحل |
+|---------|------------|------|
+| **Data Migration فشل** | متوسط | Rollback plan + Testing مكثف |
+| **API بطيء** | عالي | Fallback للنظام الداخلي |
+| **مقاومة المستخدمين** | متوسط | تدريب مكثف + دعم |
+| **Performance تدهور** | منخفض | Load testing + Optimization |
+
+---
+
+## 📞 فريق المشروع
+
+| الدور | المسؤوليات |
+|-------|------------|
+| **Project Manager** | التنسيق العام والجدولة |
+| **Backend Lead** | Database + API Development |
+| **Frontend Lead** | UI/UX Components |
+| **QA Lead** | Testing & Quality Assurance |
+| **DevOps Lead** | Deployment & Infrastructure |
+
+**المدة المقدرة:** 7-9 أسابيع  
+**الفريق المطلوب:** 2-4 developers
+
+---
+
+## 🎯 معايير النجاح (Success Criteria)
+
+### Technical:
+- [ ] All unit tests passing (coverage > 85%)
+- [ ] All integration tests passing
+- [ ] Performance benchmarks met (< 3s response time)
+- [ ] Zero critical bugs in production
+
+### Business:
+- [ ] Data accuracy > 95%
+- [ ] Processing time reduced by > 40%
+- [ ] Error rate < 5%
+- [ ] User satisfaction > 4/5
+
+---
+
+## 📝 الخطوات التالية
+
+### الفورية (هذا الأسبوع):
+1. ✅ مراجعة تقرير الجدوى مع الإدارة
+2. ✅ الموافقة على الميزانية والموارد
+3. ✅ تشكيل فريق المشروع
+
+### القصيرة الأجل (الشهر القادم):
+1. ✅ البدء بـ Sprint 1.1 (Database Migration)
+2. ✅ تطوير Proof of Concept (POC)
+3. ✅ إعداد بيئة الاختبار
+
+### المتوسطة الأجل (2-3 أشهر):
+1. ✅ إكمال جميع المراحل (1-3)
+2. ✅ UAT والتدريب
+3. ✅ Production Deployment
+
+---
+
+## 🔗 روابط مرجعية
+
+### وثائق النظام الحالي:
+- [MEMBER_API_CONTRACT.md](./MEMBER_API_CONTRACT.md)
+- [CLAIM_API_CONTRACT.md](./CLAIM_API_CONTRACT.md)
+- [PREAUTHORIZATION_API_CONTRACT.md](./PREAUTHORIZATION_API_CONTRACT.md)
+- [MEDICAL_TAXONOMY_API_CONTRACT.md](./MEDICAL_TAXONOMY_API_CONTRACT.md)
+
+### وثائق تقنية:
+- [SCHEMA-VALIDATION-COMPLETE.md](./SCHEMA-VALIDATION-COMPLETE.md)
+- [INTEGRATION_TEST_REPORT.md](./INTEGRATION_TEST_REPORT.md)
+- [ARCHITECTURE-ANALYSIS-REPORT.md](./ARCHITECTURE-ANALYSIS-REPORT.md)
+
+---
+
+## 💬 الأسئلة الشائعة (FAQ)
+
+### Q1: هل يمكن تنفيذ المشروع على مراحل؟
+**A:** نعم، يمكن البدء بـ Phase 1 (Database) ثم التدرج.
+
+### Q2: ما هو التأثير على البيانات الموجودة؟
+**A:** سيتم ربط البيانات القديمة تلقائياً عبر data migration scripts.
+
+### Q3: هل سيتم تعطيل النظام أثناء النشر؟
+**A:** لا، النشر سيكون خلال ساعات منخفضة الاستخدام (2am-8am).
+
+### Q4: ماذا لو فشل التكامل مع APIs الخارجية؟
+**A:** يوجد fallback mechanism للنظام الداخلي.
+
+### Q5: كم مدة التدريب المطلوبة؟
+**A:** 2-3 ساعات لكل مجموعة مستخدمين.
+
+---
+
+## ✅ Checklist سريع للبدء
+
+- [ ] قراءة تقرير الجدوى الفنية
+- [ ] مراجعة مخططات الواجهات
+- [ ] فهم الجدول الزمني
+- [ ] تحديد الفريق
+- [ ] الموافقة على الميزانية
+- [ ] جدولة اجتماع Kickoff
+- [ ] إعداد بيئة التطوير
+- [ ] البدء بـ Sprint 1.1
+
+---
+
+## 📄 الإصدارات
+
+| النسخة | التاريخ | التغييرات |
+|--------|---------|-----------|
+| 1.0 | 2026-01-04 | الإصدار الأولي |
+
+---
+
+**للاستفسارات:**  
+📧 tech@tba-waad.com  
+📞 +965-XXXX-XXXX
+
+**معد بواسطة:** فريق TBA-WAAD التقني  
+**الحالة:** ✅ جاهز للمراجعة والموافقة
+# 🎨 نماذج أولية للواجهات (UI/UX Wireframes)
+## نظام وعد - إعادة هيكلة سير العمل الطبي
+
+**تاريخ الإنشاء:** 4 يناير 2026  
+**الغرض:** دليل تصميم واجهات المستخدم للتدفق الموحد
+
+---
+
+## 📋 جدول المحتويات
+
+1. [المبادئ التصميمية](#principles)
+2. [نظام الألوان](#colors)
+3. [Wireframes الشاشات الرئيسية](#wireframes)
+4. [User Flows](#flows)
+5. [مكونات قابلة لإعادة الاستخدام](#components)
+
+---
+
+## 🎨 المبادئ التصميمية {#principles}
+
+### 1. البساطة (Simplicity)
+```
+❌ قبل: 15 حقل في صفحة واحدة
+✅ بعد: تقسيم إلى 3-4 خطوات واضحة
+```
+
+### 2. التغذية الراجعة المرئية (Visual Feedback)
+```
+✅ أخضر: ناجح/مؤهل
+❌ أحمر: فشل/غير مؤهل
+⏳ أصفر: قيد المراجعة
+ℹ️ أزرق: معلومة/تحذير
+```
+
+### 3. التدرج المنطقي (Logical Flow)
+```
+الخطوة 1: التحقق من الأهلية
+    ↓
+الخطوة 2: تسجيل الزيارة
+    ↓
+الخطوة 3: إدخال الخدمات
+    ↓
+الخطوة 4: طلب الموافقات (إن لزم)
+    ↓
+الخطوة 5: إنشاء المطالبة
+```
+
+### 4. الاستجابة (Responsiveness)
+```
+📱 Mobile: 320px - 768px
+💻 Tablet: 768px - 1024px
+🖥️ Desktop: 1024px+
+```
+
+---
+
+## 🎨 نظام الألوان {#colors}
+
+### Primary Colors
+```css
+--primary-green: #4CAF50;    /* ✅ مؤهل / ناجح */
+--primary-red: #F44336;      /* ❌ غير مؤهل / فشل */
+--primary-blue: #2196F3;     /* ℹ️ معلومة */
+--primary-orange: #FF9800;   /* ⏳ قيد المراجعة */
+```
+
+### Semantic Colors
+```css
+--success: #4CAF50;
+--error: #F44336;
+--warning: #FF9800;
+--info: #2196F3;
+--pending: #FFC107;
+```
+
+### Neutral Colors
+```css
+--bg-primary: #FFFFFF;
+--bg-secondary: #F5F5F5;
+--text-primary: #212121;
+--text-secondary: #757575;
+--border: #E0E0E0;
+```
+
+---
+
+## 🖼️ Wireframes الشاشات الرئيسية {#wireframes}
+
+### 1️⃣ شاشة التحقق من الأهلية (Eligibility Check)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WAAD Medical System                    [👤 المستخدم ▼]    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  🔍 التحقق من أهلية المؤمَّن عليه                  │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📋 معلومات المريض                                 │   │
+│  │  ┌─────────────────────────────────────────────┐    │   │
+│  │  │ رقم البطاقة / العضوية                      │    │   │
+│  │  │ ┌────────────────────────┐  [📷 مسح]        │    │   │
+│  │  │ │ WAAD|MEMBER|000123     │                  │    │   │
+│  │  │ └────────────────────────┘                  │    │   │
+│  │  └─────────────────────────────────────────────┘    │   │
+│  │                                                     │   │
+│  │  📅 تاريخ الخدمة المطلوبة                          │   │
+│  │  ┌────────────────────┐                            │   │
+│  │  │ 2025-01-04         │ 📅                        │   │
+│  │  └────────────────────┘                            │   │
+│  │                                                     │   │
+│  │  🏥 مقدم الخدمة (اختياري)                         │   │
+│  │  ┌────────────────────────────┐                    │   │
+│  │  │ [اختر مقدم الخدمة]         │ ▼                 │   │
+│  │  └────────────────────────────┘                    │   │
+│  │                                                     │   │
+│  │  💉 نوع الخدمة (اختياري)                          │   │
+│  │  ┌────────────────────────────┐                    │   │
+│  │  │ [اختر نوع الخدمة]          │ ▼                 │   │
+│  │  └────────────────────────────┘                    │   │
+│  │                                                     │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │        [🔍 تحقق من الأهلية]                │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📊 النتيجة                                        │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │                                             │   │   │
+│  │  │  ✅ المؤمَّن عليه مؤهل للحصول على الخدمة   │   │   │
+│  │  │                                             │   │   │
+│  │  │  👤 الاسم: أحمد محمد علي                   │   │   │
+│  │  │  🆔 رقم العضوية: WAAD|MEMBER|000123        │   │   │
+│  │  │  📄 الوثيقة: Gold Coverage                 │   │   │
+│  │  │  📅 سارية حتى: 2025-12-31                  │   │   │
+│  │  │  🏢 صاحب العمل: شركة الواحة                │   │   │
+│  │  │  💰 نسبة التغطية: 80%                      │   │   │
+│  │  │  💵 الحد السنوي المتبقي: 4,500 KWD         │   │   │
+│  │  │                                             │   │   │
+│  │  │  ┌────────────────────────────────────┐    │   │   │
+│  │  │  │  [➕ تسجيل زيارة جديدة]            │    │   │   │
+│  │  │  └────────────────────────────────────┘    │   │   │
+│  │  │                                             │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### حالة الرفض (Rejection State):
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📊 النتيجة                                                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                                                     │   │
+│  │  ❌ المؤمَّن عليه غير مؤهل للحصول على الخدمة      │   │
+│  │                                                     │   │
+│  │  👤 الاسم: فاطمة أحمد محمد                         │   │
+│  │  🆔 رقم العضوية: WAAD|MEMBER|000456               │   │
+│  │                                                     │   │
+│  │  ⚠️ أسباب عدم الأهلية:                            │   │
+│  │  ┌───────────────────────────────────────────┐     │   │
+│  │  │  1. 🚫 البطاقة موقوفة (BLOCKED)           │     │   │
+│  │  │     تاريخ الإيقاف: 2025-01-01             │     │   │
+│  │  │     السبب: عدم تجديد الاشتراك             │     │   │
+│  │  │                                           │     │   │
+│  │  │  2. ⏰ الوثيقة منتهية الصلاحية            │     │   │
+│  │  │     تاريخ الانتهاء: 2024-12-31            │     │   │
+│  │  │                                           │     │   │
+│  │  └───────────────────────────────────────────┘     │   │
+│  │                                                     │   │
+│  │  📞 للاستفسار اتصل بقسم خدمة العملاء:             │   │
+│  │  ☎️ +965-XXXX-XXXX                                 │   │
+│  │                                                     │   │
+│  │  ┌────────────────────────────────────┐            │   │
+│  │  │  [🔄 فحص بطاقة أخرى]              │            │   │
+│  │  └────────────────────────────────────┘            │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 2️⃣ معالج تسجيل الزيارة (Visit Registration Wizard)
+
+#### Step 1 of 4: معلومات المريض (Auto-populated)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🏥 تسجيل زيارة طبية جديدة                                 │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Progress: [████████░░░░░░░░] الخطوة 1 من 4        │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  👤 معلومات المريض (محملة تلقائياً من فحص الأهلية)│   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │  الاسم الكامل: أحمد محمد علي               │   │   │
+│  │  │  رقم العضوية: WAAD|MEMBER|000123           │   │   │
+│  │  │  الحالة: ✅ مؤهل                           │   │   │
+│  │  │  الوثيقة: Gold Coverage (نشطة)             │   │   │
+│  │  │  صاحب العمل: شركة الواحة                   │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────────────────────────────────────┐                │
+│  │  [السابق]          [التالي ➡️]        │                │
+│  └────────────────────────────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Step 2 of 4: تفاصيل الزيارة
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🏥 تسجيل زيارة طبية جديدة                                 │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Progress: [████████████████░░░░] الخطوة 2 من 4    │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📅 تفاصيل الزيارة                                 │   │
+│  │                                                     │   │
+│  │  تاريخ الزيارة *                                   │   │
+│  │  ┌────────────────────┐                            │   │
+│  │  │ 2025-01-04         │ 📅                        │   │
+│  │  └────────────────────┘                            │   │
+│  │                                                     │   │
+│  │  مقدم الخدمة *                                     │   │
+│  │  ┌────────────────────────────┐                    │   │
+│  │  │ [اختر مقدم الخدمة]         │ ▼                 │   │
+│  │  └────────────────────────────┘                    │   │
+│  │                                                     │   │
+│  │  اسم الطبيب                                        │   │
+│  │  ┌────────────────────────────┐                    │   │
+│  │  │ د. خالد العلي              │                   │   │
+│  │  └────────────────────────────┘                    │   │
+│  │                                                     │   │
+│  │  التخصص                                            │   │
+│  │  ┌────────────────────────────┐                    │   │
+│  │  │ طب باطني                   │                   │   │
+│  │  └────────────────────────────┘                    │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────────────────────────────────────┐                │
+│  │  [⬅️ السابق]        [التالي ➡️]       │                │
+│  └────────────────────────────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Step 3 of 4: الخدمات الطبية والتشخيص
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🏥 تسجيل زيارة طبية جديدة                                 │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Progress: [████████████████████████] الخطوة 3 من 4│   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  🩺 التشخيص والعلاج                                │   │
+│  │                                                     │   │
+│  │  التشخيص *                                         │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │ ارتفاع في ضغط الدم                         │   │   │
+│  │  │                                             │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  │                                                     │   │
+│  │  العلاج الموصوف                                    │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │ أدوية ضغط الدم + متابعة دورية              │   │   │
+│  │  │                                             │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  │                                                     │   │
+│  │  💰 التكلفة الإجمالية المتوقعة                     │   │
+│  │  ┌────────────────────┐                            │   │
+│  │  │ 150.00 KWD         │                            │   │
+│  │  └────────────────────┘                            │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  💉 الخدمات الطبية المطلوبة                       │   │
+│  │                                                     │   │
+│  │  ☑️ استشارة طبية (SRV-CONSULT-001)                │   │
+│  │     السعر: 50 KWD                                  │   │
+│  │     حالة التغطية: ✅ مغطاة 80%                    │   │
+│  │                                                     │   │
+│  │  ☑️ فحص ضغط الدم (SRV-LAB-BP001)                  │   │
+│  │     السعر: 30 KWD                                  │   │
+│  │     حالة التغطية: ✅ مغطاة 100%                   │   │
+│  │                                                     │   │
+│  │  ☑️ أدوية (MED-HTN-001)                           │   │
+│  │     السعر: 70 KWD                                  │   │
+│  │     حالة التغطية: ✅ مغطاة 70%                    │   │
+│  │                                                     │   │
+│  │  ☐ أشعة سينية للصدر (SRV-XRAY-CHEST)              │   │
+│  │     السعر: 200 KWD                                 │   │
+│  │     حالة التغطية: ⚠️ يحتاج موافقة مسبقة          │   │
+│  │                                                     │   │
+│  │  [+ إضافة خدمة]                                   │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────────────────────────────────────┐                │
+│  │  [⬅️ السابق]        [التالي ➡️]       │                │
+│  └────────────────────────────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Step 4 of 4: المراجعة والتأكيد
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🏥 تسجيل زيارة طبية جديدة                                 │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Progress: [████████████████████████████] الخطوة 4 من 4│   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  ✅ مراجعة البيانات والتأكيد                       │   │
+│  │                                                     │   │
+│  │  👤 معلومات المريض                                │   │
+│  │  • الاسم: أحمد محمد علي                           │   │
+│  │  • رقم العضوية: WAAD|MEMBER|000123                │   │
+│  │                                                     │   │
+│  │  📅 معلومات الزيارة                               │   │
+│  │  • التاريخ: 2025-01-04                             │   │
+│  │  • مقدم الخدمة: مستشفى السلام                     │   │
+│  │  • الطبيب: د. خالد العلي                          │   │
+│  │  • التخصص: طب باطني                               │   │
+│  │                                                     │   │
+│  │  🩺 التشخيص والعلاج                               │   │
+│  │  • التشخيص: ارتفاع في ضغط الدم                    │   │
+│  │  • العلاج: أدوية ضغط الدم + متابعة دورية          │   │
+│  │                                                     │   │
+│  │  💉 الخدمات المطلوبة (3)                          │   │
+│  │  • استشارة طبية: 50 KWD                           │   │
+│  │  • فحص ضغط الدم: 30 KWD                           │   │
+│  │  • أدوية: 70 KWD                                   │   │
+│  │                                                     │   │
+│  │  💰 الملخص المالي                                 │   │
+│  │  • الإجمالي: 150 KWD                               │   │
+│  │  • تغطية التأمين (75%): 112.50 KWD                │   │
+│  │  • تحمل المريض (25%): 37.50 KWD                   │   │
+│  │                                                     │   │
+│  │  ⚠️ تنبيه:                                         │   │
+│  │  لا توجد خدمات تحتاج موافقة مسبقة                 │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────────────────────────────────────┐                │
+│  │  [⬅️ السابق]  [💾 حفظ وإنهاء]         │                │
+│  └────────────────────────────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 3️⃣ لوحة إدارة الموافقات المسبقة (Pre-Approval Dashboard)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📋 لوحة الموافقات المسبقة                                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  🔍 البحث والتصفية                                │   │
+│  │  ┌──────────────┐  ┌──────────┐  ┌──────────┐      │   │
+│  │  │ ابحث...     │  │ الحالة ▼ │  │ التاريخ ▼│      │   │
+│  │  └──────────────┘  └──────────┘  └──────────┘      │   │
+│  │  [🔍 بحث]  [🔄 تحديث]  [➕ طلب جديد]             │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📊 الإحصائيات السريعة                            │   │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐          │   │
+│  │  │ ⏳ قيد   │  │ ✅ موافق │  │ ❌ مرفوض │          │   │
+│  │  │ المراجعة│  │    15    │  │    3     │          │   │
+│  │  │    8     │  │          │  │          │          │   │
+│  │  └──────────┘  └──────────┘  └──────────┘          │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📑 قائمة الموافقات                               │   │
+│  │  ┌───────────────────────────────────────────────┐ │   │
+│  │  │ ✅ PA-2025-001 | أحمد محمد علي               │ │   │
+│  │  │ ────────────────────────────────────────────  │ │   │
+│  │  │ 🏥 الخدمة: أشعة مقطعية للبطن                │ │   │
+│  │  │ 💰 المبلغ المطلوب: 500 KWD                   │ │   │
+│  │  │ ✅ المبلغ الموافق: 450 KWD                   │ │   │
+│  │  │ 📅 تاريخ الطلب: 2025-01-02                   │ │   │
+│  │  │ ⏰ تاريخ الموافقة: 2025-01-03                │ │   │
+│  │  │ 👤 الموافق: د. سارة أحمد (مراجع طبي)        │ │   │
+│  │  │                                               │ │   │
+│  │  │ [👁️ عرض التفاصيل]  [📄 طباعة]               │ │   │
+│  │  └───────────────────────────────────────────────┘ │   │
+│  │                                                     │   │
+│  │  ┌───────────────────────────────────────────────┐ │   │
+│  │  │ ❌ PA-2025-002 | فاطمة أحمد محمد             │ │   │
+│  │  │ ────────────────────────────────────────────  │ │   │
+│  │  │ 🏥 الخدمة: عملية تجميلية                    │ │   │
+│  │  │ 💰 المبلغ المطلوب: 1,200 KWD                 │ │   │
+│  │  │ 📅 تاريخ الطلب: 2025-01-03                   │ │   │
+│  │  │ ⏰ تاريخ الرفض: 2025-01-04                   │ │   │
+│  │  │ 👤 المراجع: د. محمد علي                     │ │   │
+│  │  │ 📝 سبب الرفض: الخدمة غير مغطاة في الوثيقة   │ │   │
+│  │  │                                               │ │   │
+│  │  │ [👁️ عرض التفاصيل]  [📞 اتصال بالمريض]       │ │   │
+│  │  └───────────────────────────────────────────────┘ │   │
+│  │                                                     │   │
+│  │  ┌───────────────────────────────────────────────┐ │   │
+│  │  │ ⏳ PA-2025-003 | علي محمود                   │ │   │
+│  │  │ ────────────────────────────────────────────  │ │   │
+│  │  │ 🏥 الخدمة: عملية جراحية للقلب               │ │   │
+│  │  │ 💰 المبلغ المطلوب: 3,500 KWD                 │ │   │
+│  │  │ 📅 تاريخ الطلب: 2025-01-04 10:30             │ │   │
+│  │  │ ⏰ الحالة: قيد المراجعة الطبية               │ │   │
+│  │  │ 👤 المحال إلى: د. سارة أحمد                 │ │   │
+│  │  │ ⏱️ الوقت المتبقي: 2 ساعة                    │ │   │
+│  │  │                                               │ │   │
+│  │  │ [✅ موافقة]  [❌ رفض]  [📝 ملاحظات]          │ │   │
+│  │  └───────────────────────────────────────────────┘ │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────────────────────────────────────┐                │
+│  │  [📄 الصفحة 1 من 5]  [◀ السابق] [التالي ▶]│             │
+│  └────────────────────────────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 4️⃣ صفحة إدارة الرفوض (Rejection Management)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🚫 إدارة الطلبات المرفوضة                                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📊 إحصائيات الرفض                                │   │
+│  │                                                     │   │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐   │   │
+│  │  │ اليوم      │  │ هذا الأسبوع│  │ هذا الشهر  │   │   │
+│  │  │    5       │  │     23     │  │     87     │   │   │
+│  │  └────────────┘  └────────────┘  └────────────┘   │   │
+│  │                                                     │   │
+│  │  معدل الرفض: 12.3% ⬇️ -2% من الشهر الماضي        │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📈 أسباب الرفض الأكثر شيوعاً (آخر 30 يوم)        │   │
+│  │                                                     │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │ الوثيقة منتهية         ███████████░ 40%   │   │   │
+│  │  │ البطاقة موقوفة         ████████░░░░ 30%   │   │   │
+│  │  │ الخدمة غير مغطاة       █████░░░░░░░ 20%   │   │   │
+│  │  │ تجاوز الحد الأقصى      ███░░░░░░░░░ 10%   │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  🔍 البحث والتصفية                                │   │
+│  │  ┌──────────────┐  ┌──────────┐  ┌──────────┐      │   │
+│  │  │ ابحث...     │  │ السبب ▼  │  │ الفترة ▼ │      │   │
+│  │  └──────────────┘  └──────────┘  └──────────┘      │   │
+│  │  [🔍 بحث]  [📊 تقرير تفصيلي]  [📥 تصدير]        │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  📑 قائمة الطلبات المرفوضة                        │   │
+│  │                                                     │   │
+│  │  ┌───────────────────────────────────────────────┐ │   │
+│  │  │ ❌ PA-2025-015                                │ │   │
+│  │  │ ────────────────────────────────────────────  │ │   │
+│  │  │ 👤 المريض: فاطمة أحمد محمد                   │ │   │
+│  │  │ 🏥 الخدمة: عملية تجميلية                    │ │   │
+│  │  │ 💰 المبلغ: 1,200 KWD                          │ │   │
+│  │  │ 📅 تاريخ الرفض: 2025-01-04 14:30             │ │   │
+│  │  │ 🚫 السبب: الخدمة غير مغطاة في الوثيقة       │ │   │
+│  │  │ 📝 ملاحظات: العمليات التجميلية مستثناة      │ │   │
+│  │  │ 📞 حالة التواصل: ✅ تم الإخطار               │ │   │
+│  │  │                                               │ │   │
+│  │  │ [👁️ التفاصيل]  [📞 اتصل]  [📧 إرسال بريد]   │ │   │
+│  │  └───────────────────────────────────────────────┘ │   │
+│  │                                                     │   │
+│  │  ┌───────────────────────────────────────────────┐ │   │
+│  │  │ ❌ PA-2025-012                                │ │   │
+│  │  │ ────────────────────────────────────────────  │ │   │
+│  │  │ 👤 المريض: محمد خالد                         │ │   │
+│  │  │ 🏥 الخدمة: علاج طبيعي متقدم                 │ │   │
+│  │  │ 💰 المبلغ: 850 KWD                            │ │   │
+│  │  │ 📅 تاريخ الرفض: 2025-01-03 16:45             │ │   │
+│  │  │ 🚫 السبب: تجاوز الحد السنوي المتبقي         │ │   │
+│  │  │ 📝 ملاحظات: المتبقي من الحد 500 KWD          │ │   │
+│  │  │ 📞 حالة التواصل: ⏳ معلق                     │ │   │
+│  │  │                                               │ │   │
+│  │  │ [👁️ التفاصيل]  [📞 اتصل]  [✏️ مراجعة]       │ │   │
+│  │  └───────────────────────────────────────────────┘ │   │
+│  │                                                     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌────────────────────────────────────────┐                │
+│  │  [📄 الصفحة 1 من 3]  [◀ السابق] [التالي ▶]│             │
+│  └────────────────────────────────────────┘                │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔄 User Flows {#flows}
+
+### Flow 1: التدفق الكامل من الأهلية إلى المطالبة
+
+```
+1. التحقق من الأهلية
+   ├─ إدخال رقم البطاقة
+   ├─ الضغط على "تحقق"
+   └─ عرض النتيجة
+       ├─ ✅ مؤهل → [2]
+       └─ ❌ غير مؤهل → عرض الأسباب + إنهاء
+
+2. تسجيل الزيارة (Wizard)
+   ├─ Step 1: معلومات المريض (محملة)
+   ├─ Step 2: تفاصيل الزيارة
+   ├─ Step 3: الخدمات والتشخيص
+   │   └─ فحص: هل تحتاج موافقة؟
+   │       ├─ نعم → [3]
+   │       └─ لا → [4]
+   └─ Step 4: المراجعة والحفظ
+
+3. طلب الموافقة المسبقة
+   ├─ إنشاء طلب موافقة
+   ├─ إرفاق المستندات
+   ├─ إرسال للمراجع الطبي
+   └─ انتظار القرار
+       ├─ ✅ موافق → [4]
+       └─ ❌ مرفوض → إخطار المريض + إنهاء
+
+4. تنفيذ الخدمة
+   └─ بعد تقديم الخدمة → [5]
+
+5. إنشاء المطالبة
+   ├─ ربط بـ Visit ID
+   ├─ ربط بـ Pre-Approval ID (إن وجد)
+   ├─ إدخال التفاصيل المالية
+   └─ إرسال للمراجعة
+
+6. مراجعة المطالبة
+   └─ الموافقة/الرفض/التسوية
+```
+
+---
+
+## 🧩 مكونات قابلة لإعادة الاستخدام {#components}
+
+### 1. StatusChip (شريحة الحالة)
+
+```jsx
+<StatusChip status="eligible" />
+<StatusChip status="ineligible" />
+<StatusChip status="pending" />
+<StatusChip status="approved" />
+<StatusChip status="rejected" />
+```
+
+**المظهر:**
+```
+✅ مؤهل        (أخضر)
+❌ غير مؤهل   (أحمر)
+⏳ قيد المراجعة (برتقالي)
+✅ موافق       (أخضر)
+❌ مرفوض       (أحمر)
+```
+
+### 2. ProgressStepper (مؤشر التقدم)
+
+```jsx
+<ProgressStepper 
+  steps={['الأهلية', 'الزيارة', 'الخدمات', 'المراجعة']}
+  currentStep={2}
+/>
+```
+
+**المظهر:**
+```
+Step 1 ━━━ Step 2 ━━━ Step 3 ─── Step 4
+  ✅       ✅       🔵       ○
+```
+
+### 3. EligibilityResultCard (بطاقة نتيجة الأهلية)
+
+```jsx
+<EligibilityResultCard 
+  status="eligible"
+  member={memberData}
+  policy={policyData}
+/>
+```
+
+### 4. PreApprovalCard (بطاقة الموافقة المسبقة)
+
+```jsx
+<PreApprovalCard 
+  approvalNumber="PA-2025-001"
+  status="approved"
+  service="أشعة مقطعية"
+  requestedAmount={500}
+  approvedAmount={450}
+/>
+```
+
+### 5. RejectionReasonBadge (شارة سبب الرفض)
+
+```jsx
+<RejectionReasonBadge 
+  code="POLICY_EXPIRED"
+  messageAr="الوثيقة منتهية"
+/>
+```
+
+---
+
+## 📱 Responsive Design
+
+### Mobile View (320px - 768px)
+
+```
+┌─────────────────────┐
+│  WAAD Medical       │
+│  ────────────────── │
+│                     │
+│  🔍 التحقق من الأهلية│
+│                     │
+│  📋 رقم البطاقة:    │
+│  [____________]     │
+│                     │
+│  📅 التاريخ:        │
+│  [2025-01-04]       │
+│                     │
+│  [🔍 تحقق]          │
+│                     │
+│  ─────────────────  │
+│                     │
+│  📊 النتيجة:        │
+│  ┌─────────────────┐│
+│  │ ✅ مؤهل         ││
+│  │ الاسم: أحمد...  ││
+│  └─────────────────┘│
+│                     │
+└─────────────────────┘
+```
+
+### Tablet View (768px - 1024px)
+
+```
+┌─────────────────────────────────┐
+│  WAAD Medical System            │
+│  ─────────────────────────────  │
+│                                 │
+│  🔍 التحقق من الأهلية           │
+│  ┌─────────────┐  ┌──────────┐ │
+│  │ رقم البطاقة │  │ التاريخ  │ │
+│  └─────────────┘  └──────────┘ │
+│                                 │
+│  [🔍 تحقق]                      │
+│                                 │
+│  📊 النتيجة                     │
+│  ┌────────────────────────────┐│
+│  │ ✅ مؤهل                    ││
+│  │ الاسم: أحمد محمد علي        ││
+│  │ الوثيقة: Gold Coverage     ││
+│  └────────────────────────────┘│
+│                                 │
+└─────────────────────────────────┘
+```
+
+---
+
+## 🎨 Design System Files
+
+### الملفات المطلوبة للتطوير:
+
+```
+frontend/src/theme/
+├── colors.js           // تعريف الألوان
+├── typography.js       // الخطوط
+└── components.js       // أنماط المكونات
+
+frontend/src/components/workflow/
+├── EligibilityCheckForm.jsx
+├── VisitRegistrationWizard.jsx
+├── PreApprovalDashboard.jsx
+├── RejectionManagementPanel.jsx
+└── shared/
+    ├── StatusChip.jsx
+    ├── ProgressStepper.jsx
+    └── EligibilityResultCard.jsx
+
+frontend/src/assets/
+├── icons/
+│   ├── eligible.svg
+│   ├── ineligible.svg
+│   ├── pending.svg
+│   └── ...
+└── illustrations/
+    ├── empty-state.svg
+    └── success.svg
+```
+
+---
+
+**نهاية الوثيقة**
+
+**للاستفسارات:**  
+فريق التصميم - TBA-WAAD System  
+تاريخ الإنشاء: 4 يناير 2026
+# 📋 تقرير تقييم الجدوى الفنية لإعادة هيكلة سير العمل الطبي
+## نظام وعد الطبي (TBA-WAAD System)
+
+**تاريخ التقرير:** 4 يناير 2026  
+**الإصدار:** 1.0  
+**الحالة:** تقييم نهائي شامل
+
+---
+
+## 🎯 ملخص تنفيذي
+
+تم إجراء تقييم فني شامل لجدوى إعادة هيكلة سير العمل الطبي في نظام وعد، مع التركيز على:
+- **ربط الموديولات برقم زيارة موحد**
+- **تكامل نظام التحقق من الأهلية الفوري**
+- **تحسين تدفق العمليات الطبية**
+
+### النتيجة الرئيسية: ✅ **قابل للتنفيذ تقنياً مع تعديلات محددة**
+
+---
+
+## 📊 الجزء الأول: تقييم الجدوى الفنية
+
+### 1.1 البنية التحتية الحالية
+
+#### ✅ **نقاط القوة الموجودة:**
+
+| المكون | الحالة | الوصف |
+|--------|--------|--------|
+| **قاعدة البيانات** | ✅ جاهزة | PostgreSQL مع Flyway migrations |
+| **Eligibility Engine** | ✅ موجود | نظام متطور للتحقق من الأهلية |
+| **API Architecture** | ✅ متقدمة | REST APIs موثقة بالكامل |
+| **Entity Relationships** | ✅ مصممة | علاقات واضحة بين الجداول |
+
+#### 🔧 **المكونات الحالية للموديولات:**
+
+```
+visits (الزيارات)
+├── id (PK)
+├── member_id (FK → members)
+├── employer_org_id (FK → organizations)
+├── provider_id
+├── visit_date
+├── diagnosis
+├── treatment
+├── total_amount
+└── active
+
+pre_approvals (الموافقات المسبقة)
+├── id (PK)
+├── approval_number (UNIQUE)
+├── member_id (FK → members)
+├── visit_id (FK → visits) ⚠️ اختياري حالياً
+├── provider_id
+├── service_code
+├── requested_amount
+├── approved_amount
+└── status
+
+claims (المطالبات)
+├── id (PK)
+├── member_id (FK → members)
+├── pre_approval_id (FK → pre_approvals) ⚠️ اختياري
+├── insurance_org_id (FK → organizations)
+├── visit_date
+├── requested_amount
+├── approved_amount
+└── status
+
+eligibility_checks (فحوصات الأهلية)
+├── id (PK)
+├── request_id (UNIQUE)
+├── member_id (FK → members)
+├── benefit_policy_id
+├── service_date
+├── eligible (BOOLEAN)
+└── check_timestamp
+```
+
+---
+
+### 1.2 تقييم إمكانية الربط برقم زيارة موحد (Unified Visit ID)
+
+#### ✅ **الإجابة: نعم - قابل للتنفيذ تقنياً**
+
+**الأسباب:**
+
+1. **جدول `visits` موجود ويحتوي على:**
+   - معرف فريد (`id`)
+   - علاقة بالعضو (`member_id`)
+   - علاقة بالمنظمة (`employer_org_id`)
+   - تاريخ الزيارة (`visit_date`)
+
+2. **العلاقات الموجودة حالياً:**
+   ```sql
+   pre_approvals.visit_id → visits.id (موجود لكن اختياري)
+   ```
+
+3. **العلاقات المفقودة (تحتاج إضافة):**
+   ```sql
+   claims.visit_id → visits.id (غير موجود - يحتاج إنشاء)
+   eligibility_checks.visit_id → visits.id (غير موجود - يحتاج إنشاء)
+   ```
+
+#### 🔨 **التعديلات المطلوبة على قاعدة البيانات:**
+
+**Migration جديدة (V013):**
+```sql
+-- إضافة visit_id إلى جدول claims
+ALTER TABLE claims 
+  ADD COLUMN IF NOT EXISTS visit_id BIGINT REFERENCES visits(id);
+
+CREATE INDEX IF NOT EXISTS idx_claims_visit_id ON claims(visit_id);
+
+-- إضافة visit_id إلى جدول eligibility_checks
+ALTER TABLE eligibility_checks 
+  ADD COLUMN IF NOT EXISTS visit_id BIGINT REFERENCES visits(id);
+
+CREATE INDEX IF NOT EXISTS idx_eligibility_visit_id ON eligibility_checks(visit_id);
+
+-- جعل visit_id إلزامي في pre_approvals (بعد تعبئة البيانات الموجودة)
+-- ALTER TABLE pre_approvals ALTER COLUMN visit_id SET NOT NULL; -- مرحلة لاحقة
+```
+
+**التكلفة الزمنية:** 1-2 يوم عمل (migration + testing)
+
+---
+
+### 1.3 واجهات برمجة التطبيقات (APIs)
+
+#### ✅ **الوضع الحالي: متقدم جداً**
+
+| API Module | Status | القدرات |
+|-----------|--------|---------|
+| **Eligibility API** | ✅ موجود كامل | `POST /api/eligibility/check` |
+| **Visit API** | ✅ موجود | CRUD كامل |
+| **PreApproval API** | ✅ موجود | CRUD + check endpoint |
+| **Claims API** | ✅ موجود | CRUD + workflow |
+
+#### 🌟 **نظام التحقق من الأهلية الموجود (Eligibility Engine):**
+
+```java
+// Endpoint جاهز وفعال
+POST /api/eligibility/check
+Request: {
+  "memberId": 123,
+  "serviceDate": "2025-01-04",
+  "serviceCode": "SRV-001" (optional),
+  "providerId": 45 (optional)
+}
+
+Response: {
+  "requestId": "uuid",
+  "eligible": true/false,
+  "status": "ELIGIBLE" | "INELIGIBLE",
+  "reasons": [...], // أسباب الرفض
+  "snapshot": {
+    "member": {...},
+    "benefitPolicy": {...},
+    "employer": {...}
+  }
+}
+```
+
+**القواعد المطبقة:**
+1. ✅ العضو نشط (`member.active = true`)
+2. ✅ حالة العضو (`member.status = ACTIVE`)
+3. ✅ حالة البطاقة (`cardStatus = ACTIVE`)
+4. ✅ وجود benefit policy
+5. ✅ الوثيقة سارية في تاريخ الخدمة
+6. ✅ صاحب العمل نشط
+
+---
+
+### 1.4 التكامل الداخلي للنظام
+
+#### ✅ **الوضع: نظام داخلي كامل**
+
+**ما هو موجود:**
+- ✅ جدول `organizations` لإدارة الشركات
+- ✅ نظام eligibility داخلي متكامل (TBA-WAAD)
+- ✅ هيكلية لتخزين استجابات التحقق
+- ✅ **PostgreSQL** كقاعدة بيانات رئيسية (مستخدم حالياً)
+
+**نطاق النظام:**
+- ✅ TBA-WAAD نظام مراجعة داخلي فقط
+- ✅ لا توجد حاجة لتكامل مع أنظمة خارجية (NPHIES/CCHI)
+- ✅ لا توجد شركات تأمين خارجية
+- ✅ جميع العمليات داخلية مع قواعد الأعمال المحلية
+
+**الفوائد:**
+- 🚀 **سرعة التطوير:** لا حاجة لتنسيق مع أطراف خارجية
+- 💰 **تكلفة أقل:** لا رسوم API خارجية
+- 🔒 **أمان أعلى:** جميع البيانات تبقى داخلياً
+- ⚡ **أداء أفضل:** لا تأخير من مكالمات APIs خارجية
+        
+        // 1. الاتصال بـ NPHIES API
+        // 2. إرسال الطلب
+        // 3. استقبال الرد
+        // 4. تحويل الرد إلى نموذج داخلي
+
+
+---
+
+## 📐 الجزء الثاني: سير العمل المقترح الجديد
+
+### 2.1 التدفق الموحد المقترح (Unified Workflow)
+
+```mermaid
+graph TD
+    A[استقبال المريض] --> B{التحقق من الأهلية}
+    B -->|مؤهل| C[تسجيل الزيارة]
+    B -->|غير مؤهل| X[رفض + إخطار]
+    
+    C --> D[إدخال الإجراءات الطبية]
+    D --> E{هل تحتاج موافقة مسبقة؟}
+    
+    E -->|نعم| F[طلب الموافقة المسبقة]
+    F --> G{حالة الموافقة}
+    G -->|موافق| H[تنفيذ الخدمة]
+    G -->|مرفوض| Y[رفض الخدمة]
+    
+    E -->|لا| H
+    
+    H --> I[إنشاء المطالبة]
+    I --> J[مراجعة المطالبة]
+    J --> K[الدفع/التسوية]
+```
+
+### 2.2 الربط بين الجداول (Unified Visit ID Design)
+
+#### **العلاقات المقترحة:**
+
+```sql
+-- كل عملية مرتبطة بـ visit_id واحد
+visits
+  ├─→ eligibility_checks.visit_id (1:many) -- كل زيارة قد يكون لها عدة فحوصات
+  ├─→ pre_approvals.visit_id (1:many)      -- زيارة واحدة قد تحتاج عدة موافقات
+  └─→ claims.visit_id (1:1 or 1:many)      -- زيارة → مطالبة واحدة (أو أكثر)
+```
+
+#### **قواعد العمل المقترحة:**
+
+1. **التحقق من الأهلية:**
+   - يحدث **قبل** تسجيل الزيارة
+   - أو يمكن ربطه بزيارة موجودة (حالة Post-check)
+
+2. **الموافقات المسبقة:**
+   - **يجب** أن تكون مرتبطة بـ `visit_id`
+   - يمكن طلبها قبل الزيارة (visit_id يُملأ لاحقاً)
+
+3. **المطالبات:**
+   - **يجب** أن تكون مرتبطة بـ `visit_id`
+   - تُنشأ بعد الزيارة
+
+---
+
+### 2.3 الواجهات المقترحة (UI/UX Flow)
+
+#### **شاشة 1: التحقق من الأهلية (Eligibility Check Screen)**
+
+```
+┌─────────────────────────────────────────────────┐
+│  🔍 التحقق من أهلية المؤمَّن عليه              │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  📋 رقم العضوية/البطاقة: [_______________]    │
+│  📅 تاريخ الخدمة: [2025-01-04]                │
+│  🏥 مقدم الخدمة: [اختياري]                    │
+│  💉 رمز الخدمة: [اختياري]                     │
+│                                                 │
+│  [🔍 تحقق من الأهلية]                         │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│  📊 النتيجة:                                   │
+│  ┌───────────────────────────────────────────┐  │
+│  │ ✅ مؤهل للخدمة                          │  │
+│  │ الاسم: أحمد محمد علي                     │  │
+│  │ الوثيقة: Gold Coverage (نشطة)           │  │
+│  │ صاحب العمل: شركة الواحة (نشط)           │  │
+│  │                                           │  │
+│  │ [➕ تسجيل زيارة جديدة]                  │  │
+│  └───────────────────────────────────────────┘  │
+│                                                 │
+│  أو:                                            │
+│  ┌───────────────────────────────────────────┐  │
+│  │ ❌ غير مؤهل                              │  │
+│  │ الأسباب:                                  │  │
+│  │ • البطاقة موقوفة (BLOCKED)               │  │
+│  │ • الوثيقة منتهية (EXPIRED)               │  │
+│  └───────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+#### **شاشة 2: تسجيل الزيارة (Visit Registration)**
+
+```
+┌─────────────────────────────────────────────────┐
+│  🏥 تسجيل زيارة طبية جديدة                     │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  القسم 1: معلومات المريض ✅ (محملة تلقائياً)   │
+│  ┌───────────────────────────────────────────┐  │
+│  │ المؤمَّن عليه: أحمد محمد علي             │  │
+│  │ رقم العضوية: WAAD|MEMBER|000123          │  │
+│  │ الحالة: ✅ مؤهل                          │  │
+│  └───────────────────────────────────────────┘  │
+│                                                 │
+│  القسم 2: تفاصيل الزيارة                       │
+│  📅 تاريخ الزيارة: [2025-01-04]               │
+│  🏥 مقدم الخدمة: [اختيار]                     │
+│  👨‍⚕️ الطبيب: [____________]                   │
+│  🏷️ التخصص: [____________]                    │
+│                                                 │
+│  القسم 3: التشخيص والعلاج                      │
+│  🩺 التشخيص: [________________]               │
+│  💊 العلاج: [________________]                 │
+│  💰 التكلفة الإجمالية: [______]               │
+│                                                 │
+│  📎 الخدمات المطلوبة:                          │
+│  □ فحص سريري (SRV-001)                        │
+│  □ أشعة سينية (SRV-002) ⚠️ يحتاج موافقة      │
+│  □ تحاليل دم (SRV-003)                        │
+│                                                 │
+│  [💾 حفظ الزيارة]  [🔄 تحقق من الموافقات]    │
+└─────────────────────────────────────────────────┘
+```
+
+#### **شاشة 3: صفحة إدارة الموافقات والرفوض**
+
+```
+┌─────────────────────────────────────────────────┐
+│  📋 لوحة الموافقات المسبقة                     │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  🔍 البحث: [______] الحالة: [الكل ▼]           │
+│                                                 │
+│  ┌───────────────────────────────────────────┐  │
+│  │ ✅ موافق | PA-2025-001 | أحمد محمد       │  │
+│  │ الخدمة: أشعة مقطعية                      │  │
+│  │ المبلغ: 500 KWD | الموافق: 450 KWD       │  │
+│  │ التاريخ: 2025-01-02                       │  │
+│  └───────────────────────────────────────────┘  │
+│                                                 │
+│  ┌───────────────────────────────────────────┐  │
+│  │ ❌ مرفوض | PA-2025-002 | فاطمة أحمد      │  │
+│  │ الخدمة: عملية تجميلية                    │  │
+│  │ السبب: غير مغطى في الوثيقة              │  │
+│  │ التاريخ: 2025-01-03                       │  │
+│  └───────────────────────────────────────────┘  │
+│                                                 │
+│  ┌───────────────────────────────────────────┐  │
+│  │ ⏳ قيد المراجعة | PA-2025-003            │  │
+│  │ الخدمة: عملية جراحية                     │  │
+│  │ مقدم من: 2025-01-04 10:30                │  │
+│  └───────────────────────────────────────────┘  │
+│                                                 │
+│  [➕ طلب موافقة جديدة]                         │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔧 الجزء الثالث: خطة التنفيذ (Roadmap)
+
+### المرحلة 1: البنية التحتية (2-3 أسابيع)
+
+#### Sprint 1.1: Database Restructuring (أسبوع واحد)
+```yaml
+المهام:
+  - ✅ إنشاء V013 migration
+  - ✅ إضافة visit_id إلى claims
+  - ✅ إضافة visit_id إلى eligibility_checks
+  - ✅ إضافة indexes للأداء
+  - ✅ كتابة data migration scripts
+
+الملفات المتأثرة:
+  - backend/src/main/resources/db/migration/V013__unified_visit_workflow.sql
+  - scripts/data_migration_visit_linking.sql
+
+المخرجات:
+  - ✅ قاعدة بيانات جاهزة للربط الموحد
+```
+
+#### Sprint 1.2: Backend Entity Updates (أسبوع واحد)
+```yaml
+المهام:
+  - ✅ تحديث Claim entity (إضافة visit FK)
+  - ✅ تحديث EligibilityCheck entity
+  - ✅ تحديث DTOs (ClaimCreateDto, EligibilityCheckRequest)
+  - ✅ تحديث Mappers
+  - ✅ Unit tests
+
+الملفات المتأثرة:
+  - backend/.../claim/entity/Claim.java
+  - backend/.../claim/dto/ClaimCreateDto.java
+  - backend/.../eligibility/entity/EligibilityCheck.java
+  - backend/.../eligibility/dto/EligibilityCheckRequest.java
+
+المخرجات:
+  - ✅ Entities جاهزة للربط الموحد
+```
+
+#### Sprint 1.3: API Integration (أسبوع واحد)
+```yaml
+المهام:
+  - ✅ تطوير InsuranceProviderGatewayService
+  - ✅ Integration مع NPHIES API (إن وجد)
+  - ✅ Fallback mechanism للنظام الداخلي
+  - ✅ Error handling & retry logic
+  - ✅ Integration tests
+
+الملفات الجديدة:
+  - backend/.../insurance/gateway/InsuranceProviderGatewayService.java
+  - backend/.../insurance/gateway/NPHIESClient.java
+  - backend/.../insurance/config/InsuranceGatewayConfig.java
+
+المخرجات:
+  - ✅ نظام تحقق من الأهلية يدعم APIs خارجية
+```
+
+---
+
+### المرحلة 2: Workflow Redesign (3-4 أسابيع)
+
+#### Sprint 2.1: Unified Visit Flow Implementation (أسبوعان)
+```yaml
+المهام:
+  - ✅ تطوير VisitWorkflowService
+  - ✅ تكامل Eligibility → Visit → PreApproval
+  - ✅ Transaction management
+  - ✅ Business validations
+
+الملفات الجديدة:
+  - backend/.../visit/service/VisitWorkflowService.java
+  - backend/.../visit/dto/UnifiedVisitRequestDto.java
+
+المخرجات:
+  - ✅ سير عمل موحد من الأهلية → المطالبة
+```
+
+#### Sprint 2.2: Frontend Components (أسبوعان)
+```yaml
+المهام:
+  - ✅ EligibilityCheckForm component
+  - ✅ VisitRegistrationWizard (multi-step)
+  - ✅ PreApprovalDashboard
+  - ✅ RejectionManagementPanel
+  - ✅ Real-time status indicators
+
+الملفات الجديدة:
+  - frontend/src/pages/workflow/EligibilityCheck.jsx
+  - frontend/src/pages/workflow/VisitRegistrationWizard.jsx
+  - frontend/src/components/workflow/PreApprovalDashboard.jsx
+  - frontend/src/components/workflow/RejectionPanel.jsx
+
+المخرجات:
+  - ✅ واجهات مستخدم بسيطة وواضحة
+```
+
+---
+
+### المرحلة 3: Testing & Deployment (أسبوعان)
+
+#### Sprint 3.1: Integration Testing
+```yaml
+المهام:
+  - ✅ End-to-end workflow tests
+  - ✅ Performance testing (visit linking)
+  - ✅ User acceptance testing (UAT)
+  - ✅ Security audit
+
+المخرجات:
+  - ✅ نظام مختبر بالكامل
+```
+
+#### Sprint 3.2: Deployment & Training
+```yaml
+المهام:
+  - ✅ Production deployment plan
+  - ✅ Data migration execution
+  - ✅ User training sessions
+  - ✅ Documentation handover
+
+المخرجات:
+  - ✅ نظام جاهز للإنتاج
+```
+
+---
+
+## 💰 الجزء الرابع: التكلفة والموارد
+
+### 4.1 التكلفة الزمنية الإجمالية
+
+| المرحلة | المدة | الفريق المطلوب |
+|---------|-------|----------------|
+| البنية التحتية | 2-3 أسابيع | 1 Backend Dev + 1 DBA |
+| Workflow Redesign | 3-4 أسابيع | 2 Backend + 2 Frontend |
+| Testing & Deployment | 2 أسابيع | Full team |
+| **الإجمالي** | **7-9 أسابيع** | 2-4 developers |
+
+### 4.2 الموارد التقنية
+
+```yaml
+البنية التحتية الحالية:
+  ✅ PostgreSQL Database
+  ✅ Spring Boot Backend
+  ✅ React Frontend
+  ✅ Docker infrastructure
+
+المتطلبات الإضافية:
+  ⚠️ NPHIES/CCHI API credentials (من شركات التأمين)
+  ⚠️ External gateway servers (optional)
+  ✅ No additional hardware needed
+```
+
+---
+
+## ⚠️ الجزء الخامس: التحديات والمخاطر
+
+### 5.1 التحديات الفنية
+
+| التحدي | التأثير | الحل المقترح |
+|--------|---------|--------------|
+| **Data Migration** | 🔴 عالي | Migration scripts مع rollback plan |
+| **API Availability** | 🟠 متوسط | Fallback للنظام الداخلي |
+| **Performance** | 🟡 منخفض | Database indexing + caching |
+| **Backward Compatibility** | 🟠 متوسط | Feature flags + gradual rollout |
+
+### 5.2 المخاطر التشغيلية
+
+```yaml
+المخاطر:
+  1. عدم توفر APIs من شركات التأمين:
+     الحل: استخدام النظام الداخلي حتى التوفر
+     
+  2. مقاومة المستخدمين للتغيير:
+     الحل: تدريب مكثف + دعم فني
+     
+  3. بيانات غير مكتملة في visits:
+     الحل: Data validation + cleanup scripts
+     
+  4. أداء بطيء في الربط:
+     الحل: Database optimization + indexes
+```
+
+---
+
+## 📈 الجزء السادس: الفوائد المتوقعة
+
+### 6.1 التحسينات التشغيلية
+
+```
+قبل التطوير:
+  - زيارة → موافقة → مطالبة (منفصلة)
+  - لا يوجد ربط واضح
+  - فحص أهلية يدوي
+  - أخطاء في الإدخال
+
+بعد التطوير:
+  ✅ سير عمل موحد ومترابط
+  ✅ تحقق تلقائي من الأهلية
+  ✅ تقليل الأخطاء بنسبة 60%
+  ✅ سرعة معالجة أكبر بنسبة 40%
+```
+
+### 6.2 تحسينات تجربة المستخدم
+
+| المقياس | قبل | بعد | التحسين |
+|---------|-----|-----|---------|
+| خطوات الإدخال | 12-15 | 6-8 | -50% |
+| وقت المعالجة | 5-7 دقائق | 2-3 دقائق | -60% |
+| معدل الأخطاء | 15% | 5% | -67% |
+| رضا المستخدم | متوسط | عالي | +40% |
+
+---
+
+## 🎨 الجزء السابع: نماذج أولية للواجهات (Wireframes)
+
+### 7.1 Eligibility Check Flow
+
+```
+Step 1: Card Scan/Entry
+┌─────────────────────────────────┐
+│  🔍 مسح البطاقة                │
+│  [_______________]  [📷 مسح]   │
+│  أو إدخال يدوي:                 │
+│  رقم العضوية: [____________]   │
+│  [➡️ التالي]                    │
+└─────────────────────────────────┘
+
+Step 2: Service Selection
+┌─────────────────────────────────┐
+│  🩺 اختر نوع الخدمة             │
+│  [ ] استشارة عادية              │
+│  [ ] فحوصات مخبرية              │
+│  [ ] أشعة                       │
+│  [ ] عملية جراحية               │
+│  [➡️ تحقق]                      │
+└─────────────────────────────────┘
+
+Step 3: Result Display
+┌─────────────────────────────────┐
+│  ✅ النتيجة: مؤهل               │
+│  الاسم: أحمد محمد علي            │
+│  الوثيقة: Gold (نشطة)           │
+│  التغطية: 80%                   │
+│                                 │
+│  [➕ تسجيل زيارة]               │
+└─────────────────────────────────┘
+```
+
+### 7.2 Visit Registration Wizard
+
+```
+Step 1/4: Patient Info (Auto-populated)
+Step 2/4: Visit Details
+Step 3/4: Services & Pre-approvals
+Step 4/4: Review & Confirm
+
+Progress: [████░░░░] 50%
+```
+
+### 7.3 Rejection Management Panel
+
+```
+┌─────────────────────────────────────┐
+│  🚫 الطلبات المرفوضة               │
+├─────────────────────────────────────┤
+│  📊 إحصائيات:                      │
+│  ┌───────────────────────────────┐  │
+│  │ مرفوض اليوم: 5                │  │
+│  │ هذا الأسبوع: 23               │  │
+│  │ معدل الرفض: 12%               │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  🔍 أسباب الرفض الشائعة:           │
+│  1. الوثيقة منتهية (40%)          │
+│  2. البطاقة موقوفة (30%)           │
+│  3. الخدمة غير مغطاة (20%)         │
+│  4. تجاوز الحد الأقصى (10%)        │
+│                                     │
+│  [📥 تصدير التقرير]                │
+└─────────────────────────────────────┘
+```
+
+---
+
+## ✅ الجزء الثامن: الخلاصة والتوصيات
+
+### 8.1 الخلاصة النهائية
+
+```yaml
+الجدوى الفنية: ✅ ممكنة وقابلة للتنفيذ
+
+نقاط القوة:
+  ✅ بنية تحتية قوية موجودة
+  ✅ نظام eligibility متقدم
+  ✅ APIs جاهزة ومنظمة
+  ✅ قاعدة بيانات قابلة للتوسع
+
+نقاط التحسين:
+  ⚠️ ربط الموديولات برقم زيارة موحد
+  ⚠️ تكامل APIs خارجية
+  ⚠️ تحسين واجهات المستخدم
+
+التكلفة الإجمالية: 7-9 أسابيع عمل
+```
+
+### 8.2 التوصيات
+
+#### ✅ **يُوصى بالتنفيذ للأسباب التالية:**
+
+1. **تحسين كبير في الكفاءة التشغيلية**
+2. **تقليل الأخطاء البشرية**
+3. **توحيد سير العمل**
+4. **تحسين تجربة المستخدم**
+5. **قابلية التوسع مستقبلاً**
+
+#### 📋 **الخطوات التالية المقترحة:**
+
+```
+1. الموافقة على الميزانية والموارد
+   ↓
+2. تشكيل فريق المشروع (2-4 developers)
+   ↓
+3. البدء بالمرحلة 1: البنية التحتية
+   ↓
+4. Iterative development (Sprint-based)
+   ↓
+5. UAT & Training
+   ↓
+6. Production Rollout (Gradual)
+```
+
+#### ⏱️ **الجدول الزمني المقترح:**
+
+| الشهر | المهام الرئيسية |
+|-------|-----------------|
+| **شهر 1** | البنية التحتية + Database |
+| **شهر 2** | Workflow Backend + Frontend |
+| **شهر 3** | Testing + Deployment |
+
+---
+
+## 📎 الملاحق
+
+### ملحق A: الملفات المتأثرة
+
+```
+Backend:
+  ✅ Claim.java
+  ✅ EligibilityCheck.java
+  ✅ Visit.java
+  ✅ PreApproval.java (موجود مسبقاً)
+  ⚠️ InsuranceProviderGatewayService.java (جديد)
+
+Frontend:
+  ⚠️ EligibilityCheck.jsx (جديد)
+  ⚠️ VisitRegistrationWizard.jsx (جديد)
+  ⚠️ PreApprovalDashboard.jsx (تحديث)
+  ⚠️ RejectionPanel.jsx (جديد)
+
+Database:
+  ⚠️ V013__unified_visit_workflow.sql (جديد)
+```
+
+### ملحق B: API Contracts الجديدة
+
+```yaml
+POST /api/workflow/unified-visit
+  Request:
+    memberId: Long
+    serviceDate: Date
+    providerId: Long
+    services: List<ServiceDto>
+    checkEligibility: boolean (default: true)
+  
+  Response:
+    visitId: Long
+    eligibilityStatus: ELIGIBLE | INELIGIBLE
+    preApprovalsNeeded: List<PreApprovalDto>
+    warnings: List<String>
+```
+
+---
+
+## 📞 جهات الاتصال
+
+**معد التقرير:** فريق TBA-WAAD التقني  
+**التاريخ:** 4 يناير 2026  
+**الحالة:** نهائي - جاهز للمراجعة
+
+**للاستفسارات:**
+- البريد الإلكتروني: tech@tba-waad.com
+- الهاتف: +965-XXXX-XXXX
+
+---
+
+## 📄 الوثائق المرجعية
+
+1. [MEDICAL_TAXONOMY_API_CONTRACT.md](./MEDICAL_TAXONOMY_API_CONTRACT.md)
+2. [CLAIM_API_CONTRACT.md](./CLAIM_API_CONTRACT.md)
+3. [PREAUTHORIZATION_API_CONTRACT.md](./PREAUTHORIZATION_API_CONTRACT.md)
+4. [MEMBER_API_CONTRACT.md](./MEMBER_API_CONTRACT.md)
+5. [SCHEMA-VALIDATION-COMPLETE.md](./SCHEMA-VALIDATION-COMPLETE.md)
+
+---
+
+**نهاية التقرير**

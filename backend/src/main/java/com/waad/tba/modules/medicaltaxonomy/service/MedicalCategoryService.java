@@ -59,7 +59,8 @@ public class MedicalCategoryService {
         String parentName = null;
         if (dto.getParentId() != null) {
             MedicalCategory parent = categoryRepository.findActiveById(dto.getParentId())
-                    .orElseThrow(() -> new BusinessRuleException("Parent category not found or inactive: " + dto.getParentId()));
+                    .orElseThrow(() -> new BusinessRuleException(
+                            "Parent category not found or inactive: " + dto.getParentId()));
             parentName = parent.getName();
         }
 
@@ -142,29 +143,29 @@ public class MedicalCategoryService {
     @Transactional(readOnly = true)
     public List<MedicalCategoryResponseDto> getCategoryTree() {
         log.debug("Building category tree");
-        
+
         // Get all active categories
         List<MedicalCategory> allCategories = categoryRepository.findByActiveTrue();
-        
+
         // Build parent map for efficient lookup
         Map<Long, String> parentNames = allCategories.stream()
                 .collect(Collectors.toMap(MedicalCategory::getId, MedicalCategory::getName));
-        
+
         // Convert to DTOs
         List<MedicalCategoryResponseDto> allDtos = allCategories.stream()
                 .map(cat -> toDto(cat, parentNames.get(cat.getParentId())))
                 .collect(Collectors.toList());
-        
+
         // Build hierarchy
         Map<Long, List<MedicalCategoryResponseDto>> childrenMap = allDtos.stream()
                 .filter(dto -> dto.getParentId() != null)
                 .collect(Collectors.groupingBy(MedicalCategoryResponseDto::getParentId));
-        
+
         // Attach children to parents
         allDtos.forEach(dto -> {
             dto.setChildren(childrenMap.getOrDefault(dto.getId(), new ArrayList<>()));
         });
-        
+
         // Return only root categories
         return allDtos.stream()
                 .filter(dto -> dto.getParentId() == null)
@@ -189,13 +190,14 @@ public class MedicalCategoryService {
         if (dto.getParentId() != null) {
             // Validate parent category exists and is active
             categoryRepository.findActiveById(dto.getParentId())
-                    .orElseThrow(() -> new BusinessRuleException("Parent category not found or inactive: " + dto.getParentId()));
-            
+                    .orElseThrow(() -> new BusinessRuleException(
+                            "Parent category not found or inactive: " + dto.getParentId()));
+
             // Prevent circular reference
             if (dto.getParentId().equals(id)) {
                 throw new BusinessRuleException("Category cannot be its own parent");
             }
-            
+
             category.setParentId(dto.getParentId());
         }
         if (dto.getActive() != null) {
@@ -222,7 +224,8 @@ public class MedicalCategoryService {
         // Check if category has active services
         long serviceCount = serviceRepository.countActiveByCategoryId(id);
         if (serviceCount > 0) {
-            throw new BusinessRuleException("Cannot delete category with active services: " + serviceCount + " services found");
+            throw new BusinessRuleException(
+                    "Cannot delete category with active services: " + serviceCount + " services found");
         }
 
         // Soft delete
@@ -270,14 +273,10 @@ public class MedicalCategoryService {
     @Transactional(readOnly = true)
     public List<MedicalServiceResponseDto> findServicesByCategory(Long categoryId, String context) {
         log.debug("Finding services for category: {} (context: {})", categoryId, context);
-        
-        // Get category info
-        MedicalCategory category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new BusinessRuleException("Medical category not found: " + categoryId));
-        
+
         // Get all services in this category via the new many-to-many junction
         List<MedicalService> services = serviceRepository.findActiveByCategoryIdInMultiMapping(categoryId, context);
-        
+
         // Convert to DTOs
         return services.stream()
                 .map(this::toServiceResponseDto)
@@ -291,21 +290,26 @@ public class MedicalCategoryService {
     @Transactional
     public void addCategoryToService(Long serviceId, Long categoryId, boolean isPrimary, String context) {
         log.info("Adding category {} to service {} (context: {})", categoryId, serviceId, context);
-        
+
         MedicalService service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new BusinessRuleException("Medical service not found: " + serviceId));
-        
+
         MedicalCategory category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BusinessRuleException("Medical category not found: " + categoryId));
 
         // Check for existing mapping
         mappingRepository.findByServiceIdAndCategoryIdAndContext(serviceId, categoryId, context)
-                .ifPresent(m -> { throw new BusinessRuleException("Mapping already exists for this context"); });
+                .ifPresent(m -> {
+                    throw new BusinessRuleException("Mapping already exists for this context");
+                });
 
         // If setting as primary, unset other primaries for this service
         if (isPrimary) {
             mappingRepository.findByServiceIdAndIsPrimaryTrue(serviceId)
-                .ifPresent(m -> { m.setPrimary(false); mappingRepository.save(m); });
+                    .ifPresent(m -> {
+                        m.setPrimary(false);
+                        mappingRepository.save(m);
+                    });
         }
 
         ServiceCategoryMapping mapping = ServiceCategoryMapping.builder()
@@ -316,7 +320,7 @@ public class MedicalCategoryService {
                 .build();
 
         mappingRepository.save(mapping);
-        
+
         // Update legacy field for backward compatibility if primary
         if (isPrimary) {
             service.setCategoryId(categoryId);
@@ -328,12 +332,14 @@ public class MedicalCategoryService {
     @Transactional
     public void removeCategoryFromService(Long serviceId, Long categoryId, String context) {
         log.info("Removing category {} from service {} (context: {})", categoryId, serviceId, context);
-        
-        ServiceCategoryMapping mapping = mappingRepository.findByServiceIdAndCategoryIdAndContext(serviceId, categoryId, context)
+
+        ServiceCategoryMapping mapping = mappingRepository
+                .findByServiceIdAndCategoryIdAndContext(serviceId, categoryId, context)
                 .orElseThrow(() -> new BusinessRuleException("Mapping not found"));
 
         if (mapping.isPrimary()) {
-            throw new BusinessRuleException("Cannot remove primary category mapping. Set another category as primary first.");
+            throw new BusinessRuleException(
+                    "Cannot remove primary category mapping. Set another category as primary first.");
         }
 
         mappingRepository.delete(mapping);
@@ -366,7 +372,7 @@ public class MedicalCategoryService {
                 .updatedAt(category.getUpdatedAt())
                 .build();
     }
-    
+
     /**
      * Convert MedicalService entity to DTO with all category mappings.
      */
@@ -404,8 +410,9 @@ public class MedicalCategoryService {
                 .updatedAt(service.getUpdatedAt())
                 .build();
     }
-    
+
     // Legacy support
+    @SuppressWarnings("unused")
     private MedicalServiceResponseDto toServiceDto(MedicalService service, MedicalCategory category) {
         return toServiceResponseDto(service);
     }

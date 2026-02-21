@@ -2,20 +2,14 @@ package com.waad.tba.config;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.waad.tba.common.entity.Organization;
 import com.waad.tba.common.repository.OrganizationRepository;
-import com.waad.tba.common.enums.OrganizationType;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicy;
 import com.waad.tba.modules.benefitpolicy.entity.BenefitPolicyRule;
 import com.waad.tba.modules.benefitpolicy.repository.BenefitPolicyRepository;
@@ -26,11 +20,8 @@ import com.waad.tba.modules.claim.entity.ClaimLine;
 import com.waad.tba.modules.claim.repository.ClaimRepository;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalCategory;
-import com.waad.tba.modules.medicaltaxonomy.repository.MedicalCategoryRepository;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.entity.Member.Gender;
-import com.waad.tba.modules.member.entity.Member.MemberType;
 import com.waad.tba.modules.member.entity.Member.Relationship;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.member.service.BarcodeGeneratorService;
@@ -47,8 +38,6 @@ import com.waad.tba.modules.visit.entity.Visit;
 import com.waad.tba.modules.visit.entity.VisitStatus;
 import com.waad.tba.modules.visit.entity.VisitType;
 import com.waad.tba.modules.visit.repository.VisitRepository;
-import com.waad.tba.modules.rbac.entity.User;
-import com.waad.tba.modules.rbac.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,11 +59,8 @@ public class ModulesDataSeeder implements CommandLineRunner {
     private final ClaimRepository claimRepository;
     private final BenefitPolicyRuleRepository benefitPolicyRuleRepository;
     
-    private final MedicalCategoryRepository medicalCategoryRepository;
     private final BarcodeGeneratorService barcodeGenerator;
     private final CardNumberGeneratorService cardNumberGenerator;
-    private final PasswordEncoder passwordEncoder;
-    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -97,7 +83,6 @@ public class ModulesDataSeeder implements CommandLineRunner {
         // 2. Medical Services
         MedicalService consultation = createService("GP Consultation", "استشارة عامة", "GP-001", consultationsCat);
         MedicalService xRay = createService("Chest X-Ray", "أشعة صدر", "IMG-001", diagnosticsCat);
-        MedicalService bloodTest = createService("CBC Blood Test", "تحليل دم شامل", "LAB-001", diagnosticsCat);
 
         // 3. Benefit Policy
         BenefitPolicy policy = createPolicy(insuranceOrg, employerOrg);

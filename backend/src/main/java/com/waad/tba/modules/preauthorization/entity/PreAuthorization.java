@@ -6,8 +6,6 @@ import com.waad.tba.modules.visit.entity.Visit;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -72,32 +70,32 @@ public class PreAuthorization extends SoftDeleteEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_id", nullable = false)
     private Visit visit;
-    
+
     // ==================== ENTERPRISE MEDICAL SERVICE ====================
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id", nullable = false)
     private MedicalService medicalService;
-    
+
     /**
      * Service code (denormalized snapshot)
      */
     @Column(name = "service_code", nullable = false, length = 50)
     private String serviceCode;
-    
+
     /**
      * Service name (denormalized snapshot)
      */
     @Column(name = "service_name", length = 200)
     private String serviceName;
-    
+
     /**
      * Service type
      */
     @Column(name = "service_type", nullable = false, length = 100)
     @Builder.Default
     private String serviceType = "MEDICAL";
-    
+
     /**
      * Service category (denormalized from EnterpriseMedicalService)
      */
@@ -133,7 +131,7 @@ public class PreAuthorization extends SoftDeleteEntity {
      */
     @Column(name = "contract_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal contractPrice;
-    
+
     /**
      * Whether service requires pre-authorization (snapshot from MedicalService)
      */
@@ -210,15 +208,14 @@ public class PreAuthorization extends SoftDeleteEntity {
     private Priority priority = Priority.NORMAL;
 
     // ==================== DIAGNOSIS (SYSTEM-SELECTED) ====================
-    
+
     /**
      * Diagnosis ICD-10 code (for future structured diagnosis)
-     * TODO: Create Diagnosis entity and link as FK when ICD table is available
      */
     @Column(name = "diagnosis_code", nullable = false, length = 20)
     @Builder.Default
     private String diagnosisCode = "Z00.0";
-    
+
     /**
      * Diagnosis description (snapshot at creation time)
      * For display purposes - derived from diagnosis code
@@ -251,20 +248,20 @@ public class PreAuthorization extends SoftDeleteEntity {
      * PreAuthorization Status Enum
      */
     public enum PreAuthStatus {
-        PENDING("معلق"),       // Awaiting review
-        UNDER_REVIEW("قيد المراجعة"),  // Currently being reviewed
-        APPROVED("موافق عليه"),      // Approved and valid
-        REJECTED("مرفوض"),      // Rejected
-        EXPIRED("منتهي"),       // Expired without use
-        CANCELLED("ملغي"),     // Cancelled by member/provider
-        USED("مستخدم");           // Already used in a claim
-        
+        PENDING("معلق"), // Awaiting review
+        UNDER_REVIEW("قيد المراجعة"), // Currently being reviewed
+        APPROVED("موافق عليه"), // Approved and valid
+        REJECTED("مرفوض"), // Rejected
+        EXPIRED("منتهي"), // Expired without use
+        CANCELLED("ملغي"), // Cancelled by member/provider
+        USED("مستخدم"); // Already used in a claim
+
         private final String arabicLabel;
-        
+
         PreAuthStatus(String arabicLabel) {
             this.arabicLabel = arabicLabel;
         }
-        
+
         public String getArabicLabel() {
             return arabicLabel;
         }
@@ -274,10 +271,10 @@ public class PreAuthorization extends SoftDeleteEntity {
      * Priority Enum
      */
     public enum Priority {
-        EMERGENCY,    // Emergency cases
-        URGENT,       // Urgent cases (24-48h)
-        NORMAL,       // Normal priority
-        LOW           // Low priority
+        EMERGENCY, // Emergency cases
+        URGENT, // Urgent cases (24-48h)
+        NORMAL, // Normal priority
+        LOW // Low priority
     }
 
     // ==================== Business Logic Methods ====================
@@ -306,7 +303,7 @@ public class PreAuthorization extends SoftDeleteEntity {
         if (referenceNumber == null || referenceNumber.isBlank()) {
             referenceNumber = preAuthNumber; // Sync with preAuthNumber
         }
-        
+
         // Populate denormalized fields from EnterpriseMedicalService
         if (medicalService != null) {
             this.serviceCode = medicalService.getCode();
@@ -314,17 +311,17 @@ public class PreAuthorization extends SoftDeleteEntity {
             this.serviceCategory = medicalService.getCategoryName();
             this.requiresPA = true; // PreAuthorizations always require PA
         }
-        
+
         // Populate memberId from Visit
         if (visit != null && memberId == null) {
             this.memberId = visit.getMember().getId();
         }
-        
+
         // Set default request date
         if (requestDate == null) {
             requestDate = LocalDate.now();
         }
-        
+
         // Set default expiry date (30 days from request)
         if (expiryDate == null && requestDate != null) {
             expiryDate = requestDate.plusDays(30);
@@ -334,11 +331,11 @@ public class PreAuthorization extends SoftDeleteEntity {
         if (expectedServiceDate == null && requestDate != null) {
             expectedServiceDate = requestDate;
         }
-        
+
         validateArchitecturalRules();
         validateAmounts();
     }
-    
+
     /**
      * Validate architectural rules before save
      * THROWS IllegalStateException if any rule is violated
@@ -348,17 +345,19 @@ public class PreAuthorization extends SoftDeleteEntity {
         if (visit == null) {
             throw new IllegalStateException("ARCHITECTURAL VIOLATION: PreAuthorization MUST reference a Visit");
         }
-        
+
         // RULE: MedicalService is MANDATORY (no free-text services)
         if (medicalService == null) {
-            throw new IllegalStateException("ARCHITECTURAL VIOLATION: PreAuthorization MUST reference a MedicalService from Provider Contract");
+            throw new IllegalStateException(
+                    "ARCHITECTURAL VIOLATION: PreAuthorization MUST reference a MedicalService from Provider Contract");
         }
-        
+
         // RULE: Contract price is MANDATORY (no manual pricing)
         if (contractPrice == null || contractPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("ARCHITECTURAL VIOLATION: Contract price must be resolved from Provider Contract");
+            throw new IllegalStateException(
+                    "ARCHITECTURAL VIOLATION: Contract price must be resolved from Provider Contract");
         }
-        
+
         // RULE: Provider ID is MANDATORY
         if (providerId == null) {
             throw new IllegalStateException("Provider ID is required");
@@ -369,9 +368,9 @@ public class PreAuthorization extends SoftDeleteEntity {
      * Check if pre-authorization is currently valid
      */
     public boolean isValid() {
-        return active && 
-               status == PreAuthStatus.APPROVED && 
-               (expiryDate == null || !LocalDate.now().isAfter(expiryDate));
+        return active &&
+                status == PreAuthStatus.APPROVED &&
+                (expiryDate == null || !LocalDate.now().isAfter(expiryDate));
     }
 
     /**
@@ -418,10 +417,10 @@ public class PreAuthorization extends SoftDeleteEntity {
         this.approvedAmount = approvedAmount;
         this.copayAmount = copayAmount;
         this.insuranceCoveredAmount = approvedAmount.subtract(copayAmount);
-        
+
         // ARCHITECTURAL: Set reserved amount for limit tracking (not deduction)
         this.reservedAmount = this.insuranceCoveredAmount;
-        
+
         this.approvedAt = LocalDateTime.now();
         this.approvedBy = approvedBy;
     }

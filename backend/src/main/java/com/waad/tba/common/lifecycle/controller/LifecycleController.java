@@ -1,7 +1,6 @@
 package com.waad.tba.common.lifecycle.controller;
 
 import com.waad.tba.common.lifecycle.dto.*;
-import com.waad.tba.common.lifecycle.enums.LifecycleAction;
 import com.waad.tba.common.lifecycle.service.LifecycleManagerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class LifecycleController {
     public ResponseEntity<LifecyclePreviewDto> preview(
             @PathVariable String entityType,
             @PathVariable Long entityId) {
-        
+
         return ResponseEntity.ok(lifecycleManagerService.preview(entityType, entityId));
     }
 
@@ -42,8 +41,7 @@ public class LifecycleController {
                 entityType,
                 entityId,
                 request.getAction(),
-                context
-        );
+                context);
 
         return ResponseEntity.ok(result);
     }

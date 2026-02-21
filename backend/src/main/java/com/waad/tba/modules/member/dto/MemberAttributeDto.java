@@ -17,22 +17,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MemberAttributeDto {
-    
+
     @Schema(description = "Attribute ID (null for new)", example = "1")
     private Long id;
-    
-    @Schema(description = "Attribute code/key", example = "job_title", required = true)
+
+    @Schema(description = "Attribute code/key", example = "job_title", requiredMode = Schema.RequiredMode.REQUIRED)
     private String code;
-    
+
     @Schema(description = "Attribute value", example = "Software Engineer")
     private String value;
-    
+
     @Schema(description = "Display name (from definitions)", example = "Job Title")
     private String displayName;
-    
+
     @Schema(description = "Data source", example = "MANUAL")
     private String source;
-    
+
     /**
      * Convert from Map.Entry
      */
@@ -42,12 +42,13 @@ public class MemberAttributeDto {
                 .value(value)
                 .build();
     }
-    
+
     /**
      * Convert from Map
      */
     public static java.util.List<MemberAttributeDto> fromMap(Map<String, String> attributes) {
-        if (attributes == null) return java.util.List.of();
+        if (attributes == null)
+            return java.util.List.of();
         return attributes.entrySet().stream()
                 .map(e -> from(e.getKey(), e.getValue()))
                 .toList();

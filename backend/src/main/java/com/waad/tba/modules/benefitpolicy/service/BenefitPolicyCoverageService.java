@@ -573,10 +573,7 @@ public class BenefitPolicyCoverageService {
         
         LocalDate memberStartDate = member.getStartDate();
         if (memberStartDate == null) {
-            memberStartDate = member.getJoinDate();
-        }
-        if (memberStartDate == null) {
-            log.debug("Member {} has no start/join date, skipping waiting period check", member.getId());
+            log.debug("Member {} has no start date, skipping waiting period check", member.getId());
             return; // Cannot validate without dates
         }
         

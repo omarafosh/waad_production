@@ -7,6 +7,8 @@ import com.waad.tba.modules.benefitpolicy.dto.BenefitPolicyResponseDto;
 import com.waad.tba.services.pdf.config.PdfFontConfig;
 import com.waad.tba.services.pdf.PdfTableBuilder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -14,6 +16,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * PDF Template for Benefit Policy Reports
@@ -25,6 +28,7 @@ public class BenefitPolicyReportTemplate {
 
     private final PdfFontConfig fontConfig;
     private final PdfTableBuilder tableBuilder;
+    private final MessageSource messageSource;
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /**
@@ -32,48 +36,50 @@ public class BenefitPolicyReportTemplate {
      */
     public List<Element> generateBenefitPolicyDetailReport(BenefitPolicyResponseDto policy) {
         List<Element> elements = new ArrayList<>();
-        
+
         try {
             // Policy Name
-            Paragraph policyName = new Paragraph(policy.getName(), 
-                fontConfig.getFont(policy.getName(), true));
+            Paragraph policyName = new Paragraph(policy.getName(),
+                    fontConfig.getFont(policy.getName(), true));
             policyName.setAlignment(Element.ALIGN_CENTER);
             policyName.setSpacingAfter(15);
             elements.add(policyName);
 
-            elements.add(createSection("المعلومات الأساسية"));
-            elements.add(createBasicInfoTable(policy));
+            Locale locale = LocaleContextHolder.getLocale();
+
+            elements.add(createSection(messageSource.getMessage("pdf.benefit.section.basic", null, locale)));
+            elements.add(createBasicInfoTable(policy, locale));
             elements.add(new Paragraph("\n"));
 
-            elements.add(createSection("معلومات الجهات"));
-            elements.add(createOrganizationInfoTable(policy));
+            elements.add(createSection(messageSource.getMessage("pdf.benefit.section.organizations", null, locale)));
+            elements.add(createOrganizationInfoTable(policy, locale));
             elements.add(new Paragraph("\n"));
 
-            elements.add(createSection("الفترة الزمنية"));
-            elements.add(createDatesTable(policy));
+            elements.add(createSection(messageSource.getMessage("pdf.benefit.section.dates", null, locale)));
+            elements.add(createDatesTable(policy, locale));
             elements.add(new Paragraph("\n"));
 
-            elements.add(createSection("الحدود المالية"));
-            elements.add(createLimitsTable(policy));
+            elements.add(createSection(messageSource.getMessage("pdf.benefit.section.limits", null, locale)));
+            elements.add(createLimitsTable(policy, locale));
             elements.add(new Paragraph("\n"));
 
-            elements.add(createSection("الإحصائيات"));
-            elements.add(createStatsTable(policy));
+            elements.add(createSection(messageSource.getMessage("pdf.benefit.section.stats", null, locale)));
+            elements.add(createStatsTable(policy, locale));
             elements.add(new Paragraph("\n"));
 
             if (policy.getNotes() != null && !policy.getNotes().isBlank()) {
-                elements.add(createSection("ملاحظات إضافية"));
-                elements.add(createNotesTable(policy));
+                elements.add(createSection(messageSource.getMessage("pdf.benefit.section.notes", null, locale)));
+                elements.add(createNotesTable(policy, locale));
                 elements.add(new Paragraph("\n"));
             }
 
-            elements.add(createSection("معلومات التدقيق"));
-            elements.add(createAuditTable(policy));
-            
+            elements.add(createSection(messageSource.getMessage("pdf.benefit.section.audit", null, locale)));
+            elements.add(createAuditTable(policy, locale));
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate BenefitPolicy detail report", e);
         }
-        
+
         return elements;
     }
 
@@ -82,11 +88,13 @@ public class BenefitPolicyReportTemplate {
      */
     public List<Element> generateBenefitPolicyListReport(List<BenefitPolicyResponseDto> policies) {
         List<Element> elements = new ArrayList<>();
-        
+
         try {
+            Locale locale = LocaleContextHolder.getLocale();
             // Summary
-            Paragraph summary = new Paragraph("إجمالي السياسات: " + policies.size(), 
-                fontConfig.getFont("إجمالي السياسات", true));
+            String totalMsg = messageSource.getMessage("pdf.benefit.summary.total", new Object[] { policies.size() },
+                    locale);
+            Paragraph summary = new Paragraph(totalMsg, fontConfig.getFont(totalMsg, true));
             summary.setAlignment(Element.ALIGN_RIGHT);
             summary.setSpacingAfter(15);
             elements.add(summary);
@@ -94,22 +102,21 @@ public class BenefitPolicyReportTemplate {
             // Statistics
             long activePolicies = policies.stream().filter(BenefitPolicyResponseDto::isActive).count();
             long effectivePolicies = policies.stream().filter(BenefitPolicyResponseDto::isEffective).count();
-            
-            Paragraph stats = new Paragraph(
-                String.format("السياسات النشطة: %d | السياسات السارية: %d", activePolicies, effectivePolicies),
-                fontConfig.getFont("السياسات النشطة", true)
-            );
+
+            String statsMsg = messageSource.getMessage("pdf.benefit.stats.active",
+                    new Object[] { activePolicies, effectivePolicies }, locale);
+            Paragraph stats = new Paragraph(statsMsg, fontConfig.getFont(statsMsg, true));
             stats.setAlignment(Element.ALIGN_RIGHT);
             stats.setSpacingAfter(15);
             elements.add(stats);
 
             // Table
-            elements.add(createListTable(policies));
-            
+            elements.add(createListTable(policies, locale));
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate BenefitPolicy list report", e);
         }
-        
+
         return elements;
     }
 
@@ -125,81 +132,116 @@ public class BenefitPolicyReportTemplate {
         return section;
     }
 
-    private PdfPTable createBasicInfoTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createBasicInfoTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("كود السياسة", policy.getPolicyCode()));
-        data.add(new PdfTableBuilder.KeyValue("الوصف", policy.getDescription()));
-        data.add(new PdfTableBuilder.KeyValue("الحالة", policy.getStatusDisplay()));
-        data.add(new PdfTableBuilder.KeyValue("نشطة", formatBoolean(policy.isActive())));
-        data.add(new PdfTableBuilder.KeyValue("سارية المفعول", formatBoolean(policy.isEffective())));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.code", null, locale),
+                policy.getPolicyCode()));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.description", null, locale),
+                policy.getDescription()));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.status", null, locale),
+                policy.getStatusDisplay()));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.active", null, locale),
+                formatBoolean(policy.isActive(), locale)));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.effective", null, locale),
+                formatBoolean(policy.isEffective(), locale)));
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createOrganizationInfoTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createOrganizationInfoTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("جهة العمل", policy.getEmployerName()));
-        data.add(new PdfTableBuilder.KeyValue("رقم جهة العمل", policy.getEmployerOrgId() != null ? policy.getEmployerOrgId().toString() : "-"));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.employer", null, locale),
+                policy.getEmployerName()));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.employer_id", null, locale),
+                policy.getEmployerOrgId() != null ? policy.getEmployerOrgId().toString() : "-"));
         if (policy.getInsuranceName() != null) {
-            data.add(new PdfTableBuilder.KeyValue("شركة التأمين", policy.getInsuranceName()));
-            data.add(new PdfTableBuilder.KeyValue("رقم شركة التأمين", policy.getInsuranceOrgId() != null ? policy.getInsuranceOrgId().toString() : "-"));
+            data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.insurance", null, locale),
+                    policy.getInsuranceName()));
+            data.add(new PdfTableBuilder.KeyValue(
+                    messageSource.getMessage("pdf.benefit.label.insurance_id", null, locale),
+                    policy.getInsuranceOrgId() != null ? policy.getInsuranceOrgId().toString() : "-"));
         }
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createDatesTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createDatesTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("تاريخ البداية", formatDate(policy.getStartDate())));
-        data.add(new PdfTableBuilder.KeyValue("تاريخ الانتهاء", formatDate(policy.getEndDate())));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.start_date", null, locale),
+                formatDate(policy.getStartDate())));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.end_date", null, locale),
+                formatDate(policy.getEndDate())));
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createLimitsTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createLimitsTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("الحد السنوي", formatAmount(policy.getAnnualLimit())));
-        data.add(new PdfTableBuilder.KeyValue("الحد لكل مستفيد", formatAmount(policy.getPerMemberLimit())));
-        data.add(new PdfTableBuilder.KeyValue("الحد لكل عائلة", formatAmount(policy.getPerFamilyLimit())));
-        data.add(new PdfTableBuilder.KeyValue("نسبة التغطية الافتراضية", formatPercentage(policy.getDefaultCoveragePercent())));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.annual_limit", null, locale),
+                formatAmount(policy.getAnnualLimit())));
+        data.add(new PdfTableBuilder.KeyValue(
+                messageSource.getMessage("pdf.benefit.label.per_member_limit", null, locale),
+                formatAmount(policy.getPerMemberLimit())));
+        data.add(new PdfTableBuilder.KeyValue(
+                messageSource.getMessage("pdf.benefit.label.per_family_limit", null, locale),
+                formatAmount(policy.getPerFamilyLimit())));
+        data.add(new PdfTableBuilder.KeyValue(
+                messageSource.getMessage("pdf.benefit.label.coverage_percent", null, locale),
+                formatPercentage(policy.getDefaultCoveragePercent())));
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createStatsTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createStatsTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("عدد المستفيدين المغطيين", policy.getCoveredMembersCount() != null ? policy.getCoveredMembersCount().toString() : "0"));
-        data.add(new PdfTableBuilder.KeyValue("عدد القواعد", policy.getRulesCount() != null ? policy.getRulesCount().toString() : "0"));
-        data.add(new PdfTableBuilder.KeyValue("عدد القواعد النشطة", policy.getActiveRulesCount() != null ? policy.getActiveRulesCount().toString() : "0"));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.members_count", null, locale),
+                policy.getCoveredMembersCount() != null ? policy.getCoveredMembersCount().toString() : "0"));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.rules_count", null, locale),
+                policy.getRulesCount() != null ? policy.getRulesCount().toString() : "0"));
+        data.add(new PdfTableBuilder.KeyValue(
+                messageSource.getMessage("pdf.benefit.label.active_rules_count", null, locale),
+                policy.getActiveRulesCount() != null ? policy.getActiveRulesCount().toString() : "0"));
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createNotesTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createNotesTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("الملاحظات", policy.getNotes()));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.notes", null, locale),
+                policy.getNotes()));
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createAuditTable(BenefitPolicyResponseDto policy) {
+    private PdfPTable createAuditTable(BenefitPolicyResponseDto policy, Locale locale) {
         List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-        data.add(new PdfTableBuilder.KeyValue("تاريخ الإنشاء", formatDateTime(policy.getCreatedAt())));
-        data.add(new PdfTableBuilder.KeyValue("تاريخ التحديث", formatDateTime(policy.getUpdatedAt())));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.created_at", null, locale),
+                formatDateTime(policy.getCreatedAt())));
+        data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.updated_at", null, locale),
+                formatDateTime(policy.getUpdatedAt())));
         return tableBuilder.buildKeyValueTable(data);
     }
 
-    private PdfPTable createListTable(List<BenefitPolicyResponseDto> policies) {
+    private PdfPTable createListTable(List<BenefitPolicyResponseDto> policies, Locale locale) {
         // Create simple card-style table for each policy
         PdfPTable mainTable = new PdfPTable(1);
         mainTable.setWidthPercentage(100);
         mainTable.setSpacingBefore(10);
-        
+
         for (int i = 0; i < policies.size(); i++) {
             BenefitPolicyResponseDto policy = policies.get(i);
             List<PdfTableBuilder.KeyValue> data = new ArrayList<>();
-            data.add(new PdfTableBuilder.KeyValue("الرقم", String.valueOf(i + 1)));
-            data.add(new PdfTableBuilder.KeyValue("كود السياسة", policy.getPolicyCode()));
-            data.add(new PdfTableBuilder.KeyValue("الاسم", policy.getName()));
-            data.add(new PdfTableBuilder.KeyValue("جهة العمل", policy.getEmployerName()));
-            data.add(new PdfTableBuilder.KeyValue("الحالة", policy.getStatusDisplay()));
-            data.add(new PdfTableBuilder.KeyValue("الحد السنوي", formatAmount(policy.getAnnualLimit())));
-            data.add(new PdfTableBuilder.KeyValue("المستفيدين", policy.getCoveredMembersCount() != null ? policy.getCoveredMembersCount().toString() : "0"));
-            
+            data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.index", null, locale),
+                    String.valueOf(i + 1)));
+            data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.code", null, locale),
+                    policy.getPolicyCode()));
+            data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.name", null, locale),
+                    policy.getName()));
+            data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.employer", null, locale),
+                    policy.getEmployerName()));
+            data.add(new PdfTableBuilder.KeyValue(messageSource.getMessage("pdf.benefit.label.status", null, locale),
+                    policy.getStatusDisplay()));
+            data.add(new PdfTableBuilder.KeyValue(
+                    messageSource.getMessage("pdf.benefit.label.annual_limit", null, locale),
+                    formatAmount(policy.getAnnualLimit())));
+            data.add(new PdfTableBuilder.KeyValue(
+                    messageSource.getMessage("pdf.benefit.label.members_count", null, locale),
+                    policy.getCoveredMembersCount() != null ? policy.getCoveredMembersCount().toString() : "0"));
+
             PdfPTable itemTable = tableBuilder.buildKeyValueTable(data);
             PdfPCell cell = new PdfPCell();
             cell.addElement(itemTable);
@@ -207,7 +249,7 @@ public class BenefitPolicyReportTemplate {
             cell.setBorder(Rectangle.NO_BORDER);
             mainTable.addCell(cell);
         }
-        
+
         return mainTable;
     }
 
@@ -220,7 +262,8 @@ public class BenefitPolicyReportTemplate {
     }
 
     private String formatAmount(BigDecimal amount) {
-        if (amount == null) return "-";
+        if (amount == null)
+            return "-";
         return String.format("%,.2f SAR", amount);
     }
 
@@ -228,7 +271,8 @@ public class BenefitPolicyReportTemplate {
         return percentage != null ? percentage + "%" : "-";
     }
 
-    private String formatBoolean(boolean value) {
-        return value ? "نعم" : "لا";
+    private String formatBoolean(boolean value, Locale locale) {
+        String key = value ? "common.yes" : "common.no";
+        return messageSource.getMessage(key, null, locale);
     }
 }

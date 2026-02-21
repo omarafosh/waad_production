@@ -1,6 +1,5 @@
 package com.waad.tba.common.entity;
 
-import com.waad.tba.common.enums.OrganizationType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,22 +18,14 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    public Long getId() {
-        return id;
-    }
-
     /**
      * Organization name (unified field - supports Arabic and English)
      */
     @Column(nullable = false, length = 255)
     private String name;
 
-    public String getName() { return name; }
-
     @Column(nullable = false, unique = true, length = 50)
     private String code;
-
-    public String getCode() { return code; }
 
     @Column(length = 255)
     private String address;

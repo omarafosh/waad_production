@@ -1,6 +1,5 @@
 package com.waad.tba.modules.medicaltaxonomy.entity;
 
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.provider.entity.Provider;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,14 +8,16 @@ import java.time.LocalDateTime;
 /**
  * Provider Service Mapping Entity
  * 
- * Purpose: Bridges provider-specific service codes to the Master Medical Catalog.
- * Each provider has its own catalog, which must be mapped to the standard master catalog
+ * Purpose: Bridges provider-specific service codes to the Master Medical
+ * Catalog.
+ * Each provider has its own catalog, which must be mapped to the standard
+ * master catalog
  * for coverage resolution and claim processing.
  * (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "provider_service_mappings", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"provider_id", "provider_service_code"})
+        @UniqueConstraint(columnNames = { "provider_id", "provider_service_code" })
 })
 @Getter
 @Setter

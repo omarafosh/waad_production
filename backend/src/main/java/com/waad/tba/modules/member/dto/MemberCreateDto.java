@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class MemberCreateDto {
 
     // Personal Information
-    @Schema(description = "Full name (Arabic or English)", example = "أحمد محمد علي", required = true)
+    @Schema(description = "Full name (Arabic or English)", example = "أحمد محمد علي", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Full name is required")
     private String fullName;
 
@@ -68,9 +67,9 @@ public class MemberCreateDto {
     private Long benefitPolicyId;
 
     // Employment Information
-    @Schema(description = "Employer ID", example = "1", required = true)
+    @Schema(description = "Employer ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Employer is required")
-    @JsonAlias({"employerOrganizationId", "employer_organization_id", "organizationId", "employer_id"})
+    @JsonAlias({ "employerOrganizationId", "employer_organization_id", "organizationId", "employer_id" })
     private Long employerId;
 
     @Schema(description = "Employee number", example = "EMP-001")
@@ -104,7 +103,7 @@ public class MemberCreateDto {
     private Boolean active;
 
     // ==================== UNIFIED MEMBER ARCHITECTURE ====================
-    
+
     /**
      * Parent Member ID - ONLY for creating DEPENDENT members.
      * 

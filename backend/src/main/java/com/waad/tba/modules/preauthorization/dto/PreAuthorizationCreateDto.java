@@ -58,7 +58,6 @@ public class PreAuthorizationCreateDto {
     
     /**
      * Diagnosis ICD-10 code (selected from dropdown)
-     * TODO: Will be FK to Diagnosis table when available
      */
     @Size(max = 20, message = "Diagnosis code must not exceed 20 characters")
     private String diagnosisCode;

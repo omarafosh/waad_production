@@ -12,9 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,7 +23,6 @@ public class LifecycleManagerService {
     private final List<LifecycleAdapter<?>> adapters;
     private final LifecycleLogRepository auditRepository;
     private final LifecycleReasonCodeRepository reasonCodeRepository;
-    private final com.waad.tba.common.lifecycle.LifecycleStateMachine stateMachine;
     private final com.waad.tba.common.audit.service.AuditService auditService;
 
     private LifecycleAdapter<?> getAdapter(String entityType) {

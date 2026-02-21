@@ -59,7 +59,7 @@ public class MedicalCategoryExcelService {
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            
+
             Row headerRow = sheet.getRow(0);
             if (headerRow == null) {
                 throw new BusinessRuleException("الملف لا يحتوي على صف رأس (Header)");
@@ -134,7 +134,8 @@ public class MedicalCategoryExcelService {
             if (parent != null) {
                 parentId = parent.getId();
             } else {
-                log.warn("[MedicalCategoryExcel] Row {}: Parent code '{}' not found, creating as root", rowNum, parentCode);
+                log.warn("[MedicalCategoryExcel] Row {}: Parent code '{}' not found, creating as root", rowNum,
+                        parentCode);
             }
         }
 
@@ -147,11 +148,11 @@ public class MedicalCategoryExcelService {
                 existingCategory.setActive(active);
             }
             existingCategory.setUpdatedAt(LocalDateTime.now());
-            
+
             categoryRepository.save(existingCategory);
             summary.setUpdated(summary.getUpdated() + 1);
             log.debug("[MedicalCategoryExcel] Updated category: {}", code);
-            
+
         } else {
             MedicalCategory newCategory = MedicalCategory.builder()
                     .code(code.trim())
@@ -159,7 +160,7 @@ public class MedicalCategoryExcelService {
                     .parentId(parentId)
                     .active(active != null ? active : true)
                     .build();
-            
+
             categoryRepository.save(newCategory);
             summary.setInserted(summary.getInserted() + 1);
             log.debug("[MedicalCategoryExcel] Inserted category: {}", code);
@@ -168,24 +169,27 @@ public class MedicalCategoryExcelService {
 
     private Map<String, Integer> mapColumns(Row headerRow) {
         Map<String, Integer> columnMap = new HashMap<>();
-        
+
         for (Cell cell : headerRow) {
             String columnName = cell.getStringCellValue().trim().toLowerCase();
-            
+
             // Code column (required)
-            if (columnName.equals("code") || columnName.equals("الرمز") || columnName.equals("كود") || columnName.equals("رمز التصنيف")) {
+            if (columnName.equals("code") || columnName.equals("الرمز") || columnName.equals("كود")
+                    || columnName.equals("رمز التصنيف")) {
                 columnMap.put("code", cell.getColumnIndex());
-            } 
+            }
             // Name column (new standard - unified name)
             else if (columnName.equals("name") || columnName.equals("اسم التصنيف") || columnName.equals("الاسم")) {
                 columnMap.put("name", cell.getColumnIndex());
             }
             // Legacy nameAr column (for backward compatibility)
-            else if (columnName.equals("namear") || columnName.equals("name_ar") || columnName.equals("الاسم بالعربية")) {
+            else if (columnName.equals("namear") || columnName.equals("name_ar")
+                    || columnName.equals("الاسم بالعربية")) {
                 columnMap.put("nameAr", cell.getColumnIndex());
-            } 
+            }
             // Parent code column (for hierarchy)
-            else if (columnName.equals("parent_code") || columnName.equals("parentcode") || columnName.equals("رمز التصنيف الأب") || columnName.equals("الأب")) {
+            else if (columnName.equals("parent_code") || columnName.equals("parentcode")
+                    || columnName.equals("رمز التصنيف الأب") || columnName.equals("الأب")) {
                 columnMap.put("parentCode", cell.getColumnIndex());
             }
             // Active column
@@ -193,13 +197,13 @@ public class MedicalCategoryExcelService {
                 columnMap.put("active", cell.getColumnIndex());
             }
         }
-        
+
         return columnMap;
     }
 
     private void validateRequiredColumns(Map<String, Integer> columnMap) {
         List<String> missing = new ArrayList<>();
-        
+
         if (!columnMap.containsKey("code")) {
             missing.add("code (الرمز)");
         }
@@ -207,7 +211,7 @@ public class MedicalCategoryExcelService {
         if (!columnMap.containsKey("name") && !columnMap.containsKey("nameAr")) {
             missing.add("name (اسم التصنيف)");
         }
-        
+
         if (!missing.isEmpty()) {
             throw new BusinessRuleException("أعمدة مطلوبة مفقودة: " + String.join(", ", missing));
         }
@@ -217,12 +221,12 @@ public class MedicalCategoryExcelService {
         if (colIndex == null) {
             return null;
         }
-        
+
         Cell cell = row.getCell(colIndex);
         if (cell == null) {
             return null;
         }
-        
+
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue();
             case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
@@ -231,16 +235,17 @@ public class MedicalCategoryExcelService {
         };
     }
 
+    @SuppressWarnings("unused")
     private Integer getCellValueAsInteger(Row row, Integer colIndex) {
         if (colIndex == null) {
             return null;
         }
-        
+
         Cell cell = row.getCell(colIndex);
         if (cell == null) {
             return null;
         }
-        
+
         return switch (cell.getCellType()) {
             case NUMERIC -> (int) cell.getNumericCellValue();
             case STRING -> {
@@ -258,12 +263,12 @@ public class MedicalCategoryExcelService {
         if (colIndex == null) {
             return null;
         }
-        
+
         Cell cell = row.getCell(colIndex);
         if (cell == null) {
             return null;
         }
-        
+
         return switch (cell.getCellType()) {
             case BOOLEAN -> cell.getBooleanCellValue();
             case STRING -> {
@@ -295,7 +300,7 @@ public class MedicalCategoryExcelService {
     private String buildSuccessMessage(ImportSummary summary) {
         StringBuilder msg = new StringBuilder();
         msg.append("تم استيراد البيانات بنجاح. ");
-        
+
         if (summary.getInserted() > 0) {
             msg.append(summary.getInserted()).append(" سجل جديد، ");
         }
@@ -305,7 +310,7 @@ public class MedicalCategoryExcelService {
         if (summary.getFailed() > 0) {
             msg.append(summary.getFailed()).append(" سجل فشل");
         }
-        
+
         return msg.toString();
     }
 }

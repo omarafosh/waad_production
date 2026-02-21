@@ -2,10 +2,8 @@ package com.waad.tba.common.email;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
-import java.time.format.DateTimeFormatter;
 
 /**
  * Email Service Implementation
@@ -66,7 +64,6 @@ public class EmailServiceImpl implements EmailService {
         } else {
             // Production: Real email sending (requires SMTP configuration)
             log.info("Sending email to {} from {}", to, FROM_EMAIL);
-            // TODO: Implement real email sending via JavaMailSender
             // For now, log as well
             log.warn("Production email sending not yet configured. Email logged:");
             log.info("To: {}, Subject: {}", to, subject);

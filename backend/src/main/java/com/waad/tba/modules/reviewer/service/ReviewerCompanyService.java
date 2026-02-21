@@ -1,7 +1,6 @@
 package com.waad.tba.modules.reviewer.service;
 
 import com.waad.tba.common.entity.Organization;
-import com.waad.tba.common.enums.OrganizationType;
 import com.waad.tba.common.exception.ResourceNotFoundException;
 import com.waad.tba.common.repository.OrganizationRepository;
 import com.waad.tba.modules.reviewer.dto.ReviewerCompanyCreateDto;
@@ -19,17 +18,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Reviewer Company Service - Uses Organization Entity (CANONICAL)
- * 
- * This service is a facade over {@link Organization} with type=REVIEWER.
- * All CRUD operations work with Organization table only.
- * 
- * ✅ READS: OrganizationRepository.findByType(REVIEWER)
- * ✅ WRITES: OrganizationRepository.save() with type=REVIEWER
- * ❌ NEVER uses legacy ReviewerCompanyRepository for writes
- * 
- * @see Organization
- * @see OrganizationType#REVIEWER
+ * Reviewer Company Service (Unified Organization-backed implementation).
+ *
+ * Reads and writes reviewer companies through {@link OrganizationRepository}
+ * only.
  */
 @Slf4j
 @Service
@@ -68,7 +60,7 @@ public class ReviewerCompanyService {
         Organization entity = mapper.toEntity(dto);
         entity.setActive(true);
         Organization saved = organizationRepository.save(entity);
-        
+
         log.info("Reviewer company created successfully with id: {}", saved.getId());
         return mapper.toResponseDto(saved);
     }
@@ -76,13 +68,13 @@ public class ReviewerCompanyService {
     @Transactional
     public ReviewerCompanyResponseDto update(Long id, ReviewerCompanyCreateDto dto) {
         log.info("Updating reviewer company with id: {}", id);
-        
+
         Organization entity = organizationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ReviewerCompany", "id", id));
 
         mapper.updateEntityFromDto(entity, dto);
         Organization updated = organizationRepository.save(entity);
-        
+
         log.info("Reviewer company updated successfully: {}", id);
         return mapper.toResponseDto(updated);
     }
@@ -90,10 +82,10 @@ public class ReviewerCompanyService {
     @Transactional
     public void delete(Long id) {
         log.info("Soft deleting reviewer company with id: {}", id);
-        
+
         Organization entity = organizationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ReviewerCompany", "id", id));
-        
+
         entity.setActive(false);
         organizationRepository.save(entity);
         log.info("Reviewer company deleted successfully: {}", id);
@@ -124,4 +116,3 @@ public class ReviewerCompanyService {
         return organizationRepository.count();
     }
 }
-

@@ -42,7 +42,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ClaimAuditService {
 
     private final ClaimAuditLogRepository auditLogRepository;
-    private final ObjectMapper objectMapper;
 
     /**
      * Record a status change for a claim.

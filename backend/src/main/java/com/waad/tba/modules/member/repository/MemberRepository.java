@@ -26,7 +26,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
     @Query("SELECT m FROM Member m WHERE m.cardNumber = :cardNumber AND m.active = true ORDER BY m.id DESC")
     List<Member> findByCardNumber(@Param("cardNumber") String cardNumber);
     
-    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m JOIN m.employmentDetails ed WHERE ed.employeeNumber = :employeeNumber AND m.active = true ORDER BY m.id DESC")
     List<Member> findByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 
     
@@ -52,7 +52,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
      * Used for eligibility checks when searching by employee number (e.g. EMP-...).
      */
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"employerOrganization", "benefitPolicy"})
-    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m JOIN m.employmentDetails ed WHERE ed.employeeNumber = :employeeNumber AND m.active = true ORDER BY m.id DESC")
     List<Member> findByEmployeeNumberWithDetails(@Param("employeeNumber") String employeeNumber);
 
 
@@ -279,7 +279,7 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
     /**
      * Find member by employee number and employer organization ID
      */
-    @Query("SELECT m FROM Member m WHERE m.employeeNumber = :employeeNumber AND m.employerOrganization.id = :employerOrgId AND m.active = true ORDER BY m.id DESC")
+    @Query("SELECT m FROM Member m JOIN m.employmentDetails ed WHERE ed.employeeNumber = :employeeNumber AND m.employerOrganization.id = :employerOrgId AND m.active = true ORDER BY m.id DESC")
     List<Member> findByEmployeeNumberAndEmployerOrganizationId(@Param("employeeNumber") String employeeNumber, @Param("employerOrgId") Long employerOrgId);
 
     /**
@@ -313,11 +313,11 @@ public interface MemberRepository extends JpaRepository<Member, Long>, JpaSpecif
      * Get monthly member growth trends
      * Returns: [year, month, count]
      */
-    @Query("SELECT YEAR(m.joinDate) as year, MONTH(m.joinDate) as month, COUNT(m) as count " +
+    @Query("SELECT YEAR(m.startDate) as year, MONTH(m.startDate) as month, COUNT(m) as count " +
            "FROM Member m WHERE m.active = true " +
-           "AND m.joinDate >= :startDate " +
-           "AND m.joinDate <= :endDate " +
-           "GROUP BY YEAR(m.joinDate), MONTH(m.joinDate) " +
+           "AND m.startDate >= :startDate " +
+           "AND m.startDate <= :endDate " +
+           "GROUP BY YEAR(m.startDate), MONTH(m.startDate) " +
            "ORDER BY year, month")
     List<Object[]> getMonthlyGrowthTrends(@Param("startDate") java.time.LocalDate startDate,
                                           @Param("endDate") java.time.LocalDate endDate);

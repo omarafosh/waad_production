@@ -30,15 +30,23 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
-import java.time.LocalDate;
+
+import com.waad.tba.modules.visit.repository.VisitRepository;
+import com.waad.tba.modules.visit.entity.Visit;
+
+import com.waad.tba.common.exception.ResourceNotFoundException;
+import org.springframework.validation.annotation.Validated;
 import java.util.List;
+import java.util.Map;
+
+import java.time.LocalDate;
+
 
 /**
  * Provider Portal Controller.
@@ -56,11 +64,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/provider")
 @RequiredArgsConstructor
-@Tag(name = "Provider Portal", description = "Healthcare provider interface for eligibility checks and service verification")
+@Validated // Added @Validated
+@Tag(name = "بوابة المزود", description = "نقطة الوصول الموحدة لخدمات بوابة المزود (الأهلية، المطالبات، الزيارات)")
 public class ProviderPortalController {
 
         private final ProviderPortalService providerPortalService;
+        private final AuthorizationService authorizationService;
         private final ProviderClaimsService providerClaimsService;
+        private final VisitRepository visitRepository;
         private final ProviderVisitService providerVisitService;
         private final ProviderServiceService providerServiceService;
         private final ProviderContractService providerContractService;
@@ -72,17 +83,12 @@ public class ProviderPortalController {
         @Qualifier("providerContractModuleService")
         private final com.waad.tba.modules.providercontract.service.ProviderContractService modernContractService;
 
-        // ... (other fields)
-
-        // ... (existing code)
-
         private final ProviderContractPricingItemService pricingItemService;
 
         // For pre-approval services lookup
         private final com.waad.tba.modules.member.repository.MemberRepository memberRepository;
         private final com.waad.tba.modules.benefitpolicy.service.BenefitPolicyRuleService benefitPolicyRuleService;
 
-        private final AuthorizationService authorizationService;
         private final ProviderContextGuard providerContextGuard;
 
         /**
@@ -114,13 +120,13 @@ public class ProviderPortalController {
          */
         @PostMapping("/eligibility-check")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Check member eligibility (Provider Portal)", description = "Real-time eligibility verification for healthcare providers. "
+        @Operation(summary = "التحقق من أهلية العضو (بوابة المزود)", description = "التحقق الفوري من الأهلية لمقدمي الرعاية الصحية. "
                         +
-                        "Supports barcode scan, QR code, or card number entry. " +
-                        "Returns member info, coverage details, and family members.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Eligibility check successful", content = @Content(schema = @Schema(implementation = ProviderEligibilityResponse.class)))
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Member not found")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request - barcode or card number required")
+                        "يدعم مسح الباركود، رمز الاستجابة السريعة، أو إدخال رقم البطاقة. " +
+                        "يعرض معلومات العضو وتفاصيل التغطية وأفراد العائلة.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم التحقق من الأهلية بنجاح", content = @Content(schema = @Schema(implementation = ProviderEligibilityResponse.class)))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "العضو غير موجود")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "طلب غير صالح - مطلوب باركود أو رقم بطاقة")
         public ResponseEntity<ProviderEligibilityResponse> checkEligibility(
                         @Valid @RequestBody ProviderEligibilityRequest request) {
 
@@ -160,11 +166,11 @@ public class ProviderPortalController {
          */
         @GetMapping("/eligibility/{barcode}")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Quick eligibility check by barcode (GET)", description = "Simplified eligibility check using barcode only. "
+        @Operation(summary = "تحقق سريع من الأهلية بالباركود (GET)", description = "تحقق مبسط من الأهلية باستخدام الباركود فقط. "
                         +
-                        "Useful for QR code scanners that trigger GET requests.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Eligibility check successful")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Member not found")
+                        "مفيد لماسحات رمز الاستجابة السريعة التي تطلق طلبات GET.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم التحقق من الأهلية بنجاح")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "العضو غير موجود")
         public ResponseEntity<ProviderEligibilityResponse> checkEligibilityByBarcode(
                         @PathVariable String barcode) {
 
@@ -211,13 +217,13 @@ public class ProviderPortalController {
          */
         @PostMapping("/claims/submit")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Submit claim (Provider Portal)", description = "Submit claim for member with automatic limit validation. "
+        @Operation(summary = "تقديم مطالبة (بوابة المزود)", description = "تقديم مطالبة للعضو مع التحقق التلقائي من الحدود. "
                         +
-                        "Supports Cash Claims and Direct Billing. " +
-                        "Returns detailed response with warnings if approaching limit.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Claim submitted successfully (may include warnings)", content = @Content(schema = @Schema(implementation = ProviderClaimResponse.class)))
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request or exceeded limits")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Member not found")
+                        "يدعم المطالبات النقدية والفواتير المباشرة. " +
+                        "يعرض استجابة مفصلة مع تحذيرات إذا اقتربت من الحد الأقصى.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم تقديم المطالبة بنجاح (قد تتضمن تحذيرات)", content = @Content(schema = @Schema(implementation = ProviderClaimResponse.class)))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "طلب غير صالح أو تجاوز الحدود")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "العضو غير موجود")
         public ResponseEntity<ProviderClaimResponse> submitClaim(
                         @Valid @RequestBody ProviderClaimRequest request) {
 
@@ -291,53 +297,29 @@ public class ProviderPortalController {
          *                  attachments)
          * @return ProviderClaimResponse with claim ID and upload status
          */
-        @PostMapping(value = "/submit-claim-with-attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN')")
-        @Operation(summary = "Submit claim with file attachments (Provider Portal - Phase 1)", description = "Submit a claim with multiple file attachments (invoices, prescriptions, medical reports). "
-                        +
-                        "Supports PDF, JPEG, PNG. Max 5 MB per file, 20 MB total. " +
-                        "Transaction is atomic - if any file fails, claim is rolled back.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Claim and files uploaded successfully", content = @Content(schema = @Schema(implementation = ProviderClaimResponse.class)))
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file type, size exceeded, or claim validation failed")
-        public ResponseEntity<ProviderClaimResponse> submitClaimWithAttachments(
+        @PostMapping(value = "/submit-claim-with-attachments", consumes = "multipart/form-data")
+        @PreAuthorize("hasRole('PROVIDER') or hasRole('SUPER_ADMIN')")
+        @Operation(summary = "تقديم مطالبة مع مرفقات", description = "تقديم مطالبة طبية مع رفع الملفات المرفقة (PDF, Images)")
+        public ApiResponse<ProviderClaimResponse> submitClaimWithAttachments(
                         @RequestPart("claim") String claimJson,
-                        @RequestPart(value = "files", required = false) MultipartFile[] files) {
+                        @RequestPart(value = "attachments", required = false) MultipartFile[] attachments) {
 
-                String provider = authorizationService.getCurrentUser() != null
-                                ? authorizationService.getCurrentUser().getUsername()
-                                : "UNKNOWN";
-
-                int fileCount = files != null ? files.length : 0;
-                log.info("🏥 Provider claim submission with {} attachment(s): provider={}",
-                                fileCount, provider);
+                String username = authorizationService.getCurrentUser().getUsername();
+                log.info("📥 [Portal] Received claim with attachments from: {}, json length: {}",
+                                username, claimJson.length());
 
                 try {
-                        // Delegate to service layer (handles JSON parsing, validation, file upload, and
-                        // transaction)
                         ProviderClaimResponse response = providerClaimsService.submitClaimWithAttachments(
-                                        claimJson, files, provider);
+                                        claimJson, attachments, username);
 
                         if (response.getSuccess()) {
-                                log.info("✅ Claim with attachments submitted: claimId={}, ref={}, files={}",
-                                                response.getClaimId(),
-                                                response.getClaimReferenceNumber(),
-                                                fileCount);
+                                return ApiResponse.success("تم تقديم المطالبة بنجاح", response);
                         } else {
-                                log.warn("❌ Claim with attachments failed: reason={}",
-                                                response.getMessage());
+                                return ApiResponse.error(response.getMessage());
                         }
-
-                        return ResponseEntity.ok(response);
-
                 } catch (Exception e) {
                         log.error("❌ Error submitting claim with attachments", e);
-
-                        ProviderClaimResponse errorResponse = ProviderClaimResponse.builder()
-                                        .success(false)
-                                        .message("خطأ في رفع المرفقات: " + e.getMessage())
-                                        .build();
-
-                        return ResponseEntity.badRequest().body(errorResponse);
+                        return ApiResponse.error("فشل تقديم المطالبة: " + e.getMessage());
                 }
         }
 
@@ -359,12 +341,12 @@ public class ProviderPortalController {
          */
         @PostMapping("/visits/register")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Register visit (Provider Portal)", description = "Register a new visit for a member after eligibility check. "
+        @Operation(summary = "تسجيل زيارة (بوابة المزود)", description = "تسجيل زيارة جديدة لعضو بعد التحقق من الأهلية. "
                         +
-                        "Creates visit linked to member. Use visitId for subsequent " +
-                        "claim or pre-authorization creation.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Visit registered successfully", content = @Content(schema = @Schema(implementation = ProviderVisitResponse.class)))
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request or member not eligible")
+                        "ينشئ زيارة مرتبطة بالعضو. استخدم معرف الزيارة لإنشاء " +
+                        "مطالبة أو تفويض مسبق لاحقًا.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم تسجيل الزيارة بنجاح", content = @Content(schema = @Schema(implementation = ProviderVisitResponse.class)))
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "طلب غير صالح أو العضو غير مؤهل")
         public ResponseEntity<ProviderVisitResponse> registerVisit(
                         @Valid @RequestBody ProviderVisitRegisterRequest request) {
 
@@ -398,20 +380,20 @@ public class ProviderPortalController {
          */
         @GetMapping("/visits")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN', 'REVIEWER')")
-        @Operation(summary = "Get visit log (Provider Portal)", description = "Returns paginated list of visits with filters. "
+        @Operation(summary = "جلب سجل الزيارات (بوابة المزود)", description = "يعرض قائمة بالزيارات مقسمة بصفحات مع فلاتر. "
                         +
-                        "Each visit shows canCreateClaim and canCreatePreAuth flags.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Visit log retrieved successfully")
+                        "تظهر كل زيارة علامات canCreateClaim و canCreatePreAuth.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم استرداد سجل الزيارات بنجاح")
         public ResponseEntity<Page<ProviderVisitResponse>> getVisitLog(
-                        @Parameter(description = "Member ID filter") @RequestParam(required = false) Long memberId,
-                        @Parameter(description = "Member name/card number/civil ID search") @RequestParam(required = false) String memberName,
-                        @Parameter(description = "Status filter (REGISTERED, IN_PROGRESS, CLAIM_SUBMITTED, etc.)") @RequestParam(required = false) String status,
-                        @Parameter(description = "From date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-                        @Parameter(description = "To date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-                        @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
-                        @Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size,
-                        @Parameter(description = "Sort field") @RequestParam(defaultValue = "visitDate") String sortBy,
-                        @Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "desc") String sortDir) {
+                        @Parameter(description = "فلتر معرف العضو") @RequestParam(required = false) Long memberId,
+                        @Parameter(description = "بحث باسم العضو/رقم البطاقة/الرقم المدني") @RequestParam(required = false) String memberName,
+                        @Parameter(description = "فلتر الحالة (REGISTERED, IN_PROGRESS, CLAIM_SUBMITTED, etc.)") @RequestParam(required = false) String status,
+                        @Parameter(description = "فلتر من تاريخ (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                        @Parameter(description = "فلتر إلى تاريخ (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+                        @Parameter(description = "رقم الصفحة (يبدأ من 0)") @RequestParam(defaultValue = "0") int page,
+                        @Parameter(description = "حجم الصفحة") @RequestParam(defaultValue = "10") int size,
+                        @Parameter(description = "حقل الفرز") @RequestParam(defaultValue = "visitDate") String sortBy,
+                        @Parameter(description = "اتجاه الفرز (asc/desc)") @RequestParam(defaultValue = "desc") String sortDir) {
 
                 String providerUsername = authorizationService.getCurrentUser() != null
                                 ? authorizationService.getCurrentUser().getUsername()
@@ -447,11 +429,11 @@ public class ProviderPortalController {
          */
         @GetMapping("/visits/{id}")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN', 'REVIEWER')")
-        @Operation(summary = "Get visit details (Provider Portal)", description = "Returns detailed visit information including member, "
+        @Operation(summary = "جلب تفاصيل الزيارة (بوابة المزود)", description = "يعرض معلومات الزيارة التفصيلية بما في ذلك العضو، "
                         +
-                        "provider, and available actions.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Visit details retrieved successfully")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Visit not found")
+                        "المزود، والإجراءات المتاحة.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم استرداد تفاصيل الزيارة بنجاح")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "الزيارة غير موجودة")
         public ResponseEntity<ProviderVisitResponse> getVisitById(@PathVariable Long id) {
 
                 log.debug("📋 Provider visit details request: visitId={}", id);
@@ -470,21 +452,54 @@ public class ProviderPortalController {
          * 
          * GET /api/provider/visits/{id}/context
          */
-        @GetMapping("/visits/{id}/context")
-        @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN', 'REVIEWER')")
-        @Operation(summary = "Get visit context (decides UI state)")
-        public ResponseEntity<ApiResponse<com.waad.tba.modules.provider.dto.VisitContextDto>> getVisitContext(
-                        @PathVariable Long id) {
+        @GetMapping("/visit/{visitId}/context")
+        @PreAuthorize("hasRole('PROVIDER') or hasRole('SUPER_ADMIN')")
+        @Operation(summary = "جلب سياق الزيارة لإنشاء المطالبة", description = "يتحقق من صحة الزيارة ويرجع البيانات اللازمة لإنشاء مطالبة أو تفويض مسبق.")
+        public ResponseEntity<ApiResponse<Map<String, Object>>> getVisitContext(
+                        @PathVariable Long visitId) {
 
-                log.debug("📋 Provider visit context request: visitId={}", id);
+                log.info("[PROVIDER-PORTAL] GET /api/provider/visit/{}/context", visitId);
 
-                com.waad.tba.modules.provider.dto.VisitContextDto context = providerVisitService.getVisitContext(id);
+                try {
+                        Visit visit = visitRepository.findById(visitId)
+                                        .orElseThrow(() -> new ResourceNotFoundException("الزيارة غير موجودة",
+                                                        visitId));
 
-                if (context == null) {
-                        return ResponseEntity.notFound().build();
+                        // Basic validation: Ensure the current provider is associated with this visit
+                        Long currentProviderId = providerContextGuard.getProviderFilter();
+                        if (currentProviderId != null && !visit.getProviderId().equals(currentProviderId)) {
+                                throw new SecurityException("المزود الحالي غير مصرح له بالوصول إلى هذه الزيارة.");
+                        }
+
+                        // Build context map
+                        Map<String, Object> response = new java.util.HashMap<>();
+                        response.put("visitId", visit.getId());
+                        response.put("providerId", visit.getProviderId());
+                        response.put("providerName", "المزود رقم " + visit.getProviderId());
+                        response.put("memberId", visit.getMember().getId());
+                        response.put("memberName", visit.getMember().getFullName());
+                        response.put("memberCard", visit.getMember().getCardNumber());
+                        response.put("visitDate", visit.getVisitDate());
+                        response.put("encounterType", visit.getVisitType());
+
+                        // Add flags for UI decision making
+                        response.put("canCreateClaim", true); // Placeholder, actual logic would be more complex
+                        response.put("canCreatePreAuth", true); // Placeholder
+
+                        return ResponseEntity.ok(ApiResponse.success("تم جلب سياق الزيارة", response));
+                } catch (ResourceNotFoundException e) {
+                        log.warn("[PROVIDER-PORTAL] Visit not found: {}", e.getMessage());
+                        return ResponseEntity.status(404)
+                                        .body(ApiResponse.error(e.getMessage()));
+                } catch (SecurityException e) {
+                        log.warn("[PROVIDER-PORTAL] Security violation for visit {}: {}", visitId, e.getMessage());
+                        return ResponseEntity.status(403)
+                                        .body(ApiResponse.error(e.getMessage()));
+                } catch (Exception e) {
+                        log.error("[PROVIDER-PORTAL] Error fetching visit context: {}", e.getMessage(), e);
+                        return ResponseEntity.badRequest()
+                                        .body(ApiResponse.error("تعذر جلب بيانات الزيارة: " + e.getMessage()));
                 }
-
-                return ResponseEntity.ok(ApiResponse.success(context));
         }
 
         // ════════════════════════════════════════════════════════════════════════════
@@ -504,8 +519,8 @@ public class ProviderPortalController {
          */
         @GetMapping("/my-services")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Get provider's contracted services (Provider Portal)", description = "Returns medical services available for this provider to use in claims and pre-authorizations.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Services retrieved successfully")
+        @Operation(summary = "جلب خدمات المزود المتعاقد عليها (بوابة المزود)", description = "يعرض الخدمات الطبية المتاحة لهذا المزود لاستخدامها في المطالبات والتفويضات المسبقة.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم استرداد الخدمات بنجاح")
         public ResponseEntity<ApiResponse<List<ProviderServiceDto>>> getMyServices() {
 
                 // ════════════════════════════════════════════════════════════════════════
@@ -515,7 +530,7 @@ public class ProviderPortalController {
 
                 if (providerId == null) {
                         // Admin without provider binding - return empty list
-                        return ResponseEntity.ok(ApiResponse.success("No provider bound", List.of()));
+                        return ResponseEntity.ok(ApiResponse.success("لا يوجد مزود مرتبط", List.of()));
                 }
 
                 log.debug("📋 Provider services request: providerId={}", providerId);
@@ -553,11 +568,11 @@ public class ProviderPortalController {
          */
         @GetMapping("/my-services/{serviceCode}/price")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Get service price for provider (Provider Portal)", description = "Returns the effective contract price for a specific service. "
+        @Operation(summary = "جلب سعر الخدمة للمزود (بوابة المزود)", description = "يعرض سعر العقد الفعال لخدمة معينة. "
                         +
-                        "Provider users can only access their own contract prices.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Price retrieved successfully")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Service or contract not found")
+                        "يمكن لمستخدمي المزود الوصول إلى أسعار عقودهم فقط.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم استرداد السعر بنجاح")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "الخدمة أو العقد غير موجود")
         public ResponseEntity<ApiResponse<EffectivePriceResponseDto>> getServicePrice(
                         @PathVariable String serviceCode,
                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -570,7 +585,7 @@ public class ProviderPortalController {
                 if (providerId == null) {
                         // Admin without provider binding - return error
                         return ResponseEntity.badRequest()
-                                        .body(ApiResponse.error("No provider bound to current user"));
+                                        .body(ApiResponse.error("لا يوجد مزود مرتبط بالمستخدم الحالي"));
                 }
 
                 log.info("[PROVIDER-PORTAL] GET /api/provider/my-services/{}/price, providerId={}, date={}",
@@ -588,7 +603,7 @@ public class ProviderPortalController {
                                         .providerId(providerId)
                                         .serviceCode(serviceCode)
                                         .hasContract(false)
-                                        .message("Unable to retrieve price: " + e.getMessage())
+                                        .message("تعذر استرداد السعر: " + e.getMessage())
                                         .build();
                         return ResponseEntity.ok(ApiResponse.success(fallback));
                 }
@@ -610,16 +625,16 @@ public class ProviderPortalController {
          */
         @GetMapping("/my-contract")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Get my active contract (Provider Portal)", description = "Returns the active contract for the current provider user. "
+        @Operation(summary = "جلب عقدي النشط (بوابة المزود)", description = "يعرض العقد النشط للمزود الحالي. "
                         +
-                        "Used by pre-approval and claims forms to fetch contract-based pricing.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Contract retrieved successfully (may be null if no active contract)")
+                        "يستخدمه نموذج التفويض المسبق والمطالبات لجلب الأسعار بناءً على العقد.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم استرداد العقد بنجاح (قد يكون فارغًا إذا لم يكن هناك عقد نشط)")
         public ResponseEntity<ApiResponse<MyContractResponseDto>> getMyActiveContract() {
                 Long providerId = providerContextGuard.getProviderFilter();
 
                 if (providerId == null) {
                         return ResponseEntity.badRequest()
-                                        .body(ApiResponse.error("No provider bound to current user"));
+                                        .body(ApiResponse.error("لا يوجد مزود مرتبط بالمستخدم الحالي"));
                 }
 
                 log.info("[PROVIDER-PORTAL] GET /api/provider/my-contract, providerId={}", providerId);
@@ -631,7 +646,7 @@ public class ProviderPortalController {
 
                         if (activeContract == null) {
                                 return ResponseEntity.ok(ApiResponse.success(
-                                                "No active contract found",
+                                                "لم يتم العثور على عقد نشط",
                                                 MyContractResponseDto.builder()
                                                                 .providerId(providerId)
                                                                 .hasActiveContract(false)
@@ -658,11 +673,11 @@ public class ProviderPortalController {
                                         .totalServices(totalServices)
                                         .build();
 
-                        return ResponseEntity.ok(ApiResponse.success("Active contract found", response));
+                        return ResponseEntity.ok(ApiResponse.success("تم العثور على عقد نشط", response));
                 } catch (Exception e) {
                         log.error("[PROVIDER-PORTAL] Error fetching my contract: {}", e.getMessage(), e);
                         return ResponseEntity.ok(ApiResponse.success(
-                                        "Unable to fetch contract",
+                                        "تعذر جلب العقد",
                                         MyContractResponseDto.builder()
                                                         .providerId(providerId)
                                                         .hasActiveContract(false)
@@ -672,14 +687,6 @@ public class ProviderPortalController {
         }
 
         /**
-         * Get all pricing items (services with prices) for the current PROVIDER's
-         * active contract.
-         * 
-         * SECURITY: Provider can only access their own contract pricing (via
-         * ProviderContextGuard).
-         * 
-         * 
-         * /**
          * Get allowed employers for the current provider.
          * Used by Service Portal to display supported entities.
          * 
@@ -687,11 +694,11 @@ public class ProviderPortalController {
          */
         @GetMapping("/allowed-employers")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Get allowed employers")
+        @Operation(summary = "جلب أصحاب العمل المسموح بهم")
         public ResponseEntity<ApiResponse<List<AllowedEmployerDto>>> getAllowedEmployers() {
                 Long providerId = providerContextGuard.getProviderFilter();
                 if (providerId == null) {
-                        return ResponseEntity.badRequest().body(ApiResponse.error("No provider bound"));
+                        return ResponseEntity.badRequest().body(ApiResponse.error("لا يوجد مزود مرتبط"));
                 }
 
                 try {
@@ -720,10 +727,10 @@ public class ProviderPortalController {
          */
         @GetMapping("/my-contract/services")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Get my contract services with pricing (Provider Portal)", description = "Returns all services available in the provider's active contract with prices. "
+        @Operation(summary = "جلب خدمات عقدي مع التسعير (بوابة المزود)", description = "يعرض جميع الخدمات المتاحة في العقد النشط للمزود مع الأسعار. "
                         +
-                        "Used by pre-approval form to populate service dropdown.")
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Services retrieved successfully")
+                        "يستخدمه نموذج التفويض المسبق لملء قائمة الخدمات المنسدلة.")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "تم استرداد الخدمات بنجاح")
         public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<MyContractServiceDto>>> getMyContractServices(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "200") int size) {
@@ -732,7 +739,7 @@ public class ProviderPortalController {
 
                 if (providerId == null) {
                         return ResponseEntity.badRequest()
-                                        .body(ApiResponse.error("No provider bound to current user"));
+                                        .body(ApiResponse.error("لا يوجد مزود مرتبط بالمستخدم الحالي"));
                 }
 
                 log.info("[PROVIDER-PORTAL] GET /api/provider/my-contract/services, providerId={}, page={}, size={}",
@@ -746,7 +753,7 @@ public class ProviderPortalController {
                         if (activeContract == null) {
                                 log.warn("[PROVIDER-PORTAL] No active contract found for provider {}", providerId);
                                 return ResponseEntity.ok(ApiResponse.success(
-                                                "No active contract found",
+                                                "لم يتم العثور على عقد نشط",
                                                 org.springframework.data.domain.Page.empty()));
                         }
 
@@ -770,7 +777,6 @@ public class ProviderPortalController {
                                                 // Get service info from pricing item
                                                 String serviceCode = item.getServiceCode();
                                                 String serviceName = item.getServiceName();
-                                                String serviceNameAr = item.getServiceName();
                                                 String categoryName = item.getCategoryName();
                                                 Long medicalServiceId = null; // Initialize to null
 
@@ -810,11 +816,11 @@ public class ProviderPortalController {
                                         pageable,
                                         pricingItems.getTotalElements());
 
-                        return ResponseEntity.ok(ApiResponse.success("Contract services retrieved", resultPage));
+                        return ResponseEntity.ok(ApiResponse.success("تم استرداد خدمات العقد", resultPage));
                 } catch (Exception e) {
                         log.error("[PROVIDER-PORTAL] Error fetching my contract services: {}", e.getMessage(), e);
                         return ResponseEntity.ok(ApiResponse.success(
-                                        "Unable to fetch services",
+                                        "تعذر جلب الخدمات",
                                         org.springframework.data.domain.Page.empty()));
                 }
         }
@@ -837,7 +843,7 @@ public class ProviderPortalController {
          */
         @GetMapping("/my-contract/services/requiring-preauth")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN', 'INSURANCE_ADMIN')")
-        @Operation(summary = "Get services requiring pre-approval (Provider Portal)", description = "Returns contract services that require pre-approval based on member's benefit policy")
+        @Operation(summary = "جلب الخدمات التي تتطلب موافقة مسبقة (بوابة المزود)", description = "يعرض خدمات العقد التي تتطلب موافقة مسبقة بناءً على سياسة مزايا العضو")
         public ResponseEntity<ApiResponse<java.util.List<MyContractServiceDto>>> getServicesRequiringPreAuth(
                         @RequestParam Long memberId,
                         @RequestParam(defaultValue = "0") int page,
@@ -847,7 +853,7 @@ public class ProviderPortalController {
 
                 if (providerId == null) {
                         return ResponseEntity.badRequest()
-                                        .body(ApiResponse.error("No provider bound to current user"));
+                                        .body(ApiResponse.error("لا يوجد مزود مرتبط بالمستخدم الحالي"));
                 }
 
                 log.info(
@@ -862,7 +868,7 @@ public class ProviderPortalController {
                         if (activeContract == null) {
                                 log.warn("[PROVIDER-PORTAL] No active contract found for provider {}", providerId);
                                 return ResponseEntity.ok(ApiResponse.success(
-                                                "No active contract found",
+                                                "لم يتم العثور على عقد نشط",
                                                 java.util.Collections.emptyList()));
                         }
 
@@ -873,7 +879,7 @@ public class ProviderPortalController {
                         if (member == null || member.getBenefitPolicy() == null) {
                                 log.warn("[PROVIDER-PORTAL] Member {} not found or has no benefit policy", memberId);
                                 return ResponseEntity.ok(ApiResponse.success(
-                                                "Member has no benefit policy",
+                                                "العضو ليس لديه سياسة مزايا",
                                                 java.util.Collections.emptyList()));
                         }
 
@@ -886,9 +892,12 @@ public class ProviderPortalController {
                         // 4. Filter only services that require pre-approval from benefit policy
                         java.util.List<MyContractServiceDto> servicesRequiringPA = allPricingItems.stream()
                                         .filter(item -> {
-                                                Long serviceId = item.getMedicalService() != null ? item.getMedicalService().getId() : null;
-                                                if (serviceId == null) return false;
-                                                
+                                                Long serviceId = item.getMedicalService() != null
+                                                                ? item.getMedicalService().getId()
+                                                                : null;
+                                                if (serviceId == null)
+                                                        return false;
+
                                                 // Check if this service requires pre-approval in the member's policy
                                                 // Passing null for encounterType as this is a general lookup
                                                 return benefitPolicyRuleService.requiresPreApproval(policyId, serviceId,
@@ -931,24 +940,17 @@ public class ProviderPortalController {
                                         servicesRequiringPA.size(), memberId, activeContract.getId());
 
                         return ResponseEntity.ok(ApiResponse.success(
-                                        "Services requiring pre-approval retrieved",
+                                        "تم استرداد الخدمات التي تتطلب موافقة مسبقة",
                                         servicesRequiringPA));
                 } catch (Exception e) {
                         log.error("[PROVIDER-PORTAL] Error fetching services requiring pre-auth: {}", e.getMessage(),
                                         e);
                         return ResponseEntity.ok(ApiResponse.success(
-                                        "Unable to fetch services",
+                                        "تعذر جلب الخدمات",
                                         java.util.Collections.emptyList()));
                 }
         }
 
-        // ═══════════════════════════════════════════════════════════════════════════
-        // DTO CLASSES FOR MY CONTRACT ENDPOINTS
-        // ═══════════════════════════════════════════════════════════════════════════
-
-        /**
-         * Response DTO for my-contract endpoint
-         */
         @lombok.Data
         @lombok.Builder
         @lombok.NoArgsConstructor
@@ -993,7 +995,7 @@ public class ProviderPortalController {
          */
         @GetMapping("/documents")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN')")
-        @Operation(summary = "Get provider documents (unified list)", description = "Returns a unified list of core documents and operational attachments (visits, claims, pre-auths).")
+        @Operation(summary = "جلب مستندات المزود (قائمة موحدة)", description = "يعرض قائمة موحدة من المستندات الأساسية والمرفقات التشغيلية (الزيارات، المطالبات، التفويضات المسبقة).")
         public ResponseEntity<ApiResponse<Page<com.waad.tba.modules.provider.dto.ProviderDocumentDto>>> getMyDocuments(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "10") int size,
@@ -1021,13 +1023,13 @@ public class ProviderPortalController {
                 } catch (Exception e) {
                         log.error("❌ ERROR in getMyDocuments: {}", e.getMessage(), e);
                         return ResponseEntity.internalServerError()
-                                        .body(ApiResponse.error("Failed to fetch documents: " + e.getMessage()));
+                                        .body(ApiResponse.error("فشل جلب المستندات: " + e.getMessage()));
                 }
         }
 
         @GetMapping("/documents/stats")
         @PreAuthorize("hasAnyRole('PROVIDER', 'SUPER_ADMIN')")
-        @Operation(summary = "Get provider documents statistics")
+        @Operation(summary = "جلب إحصائيات مستندات المزود")
         public ResponseEntity<ApiResponse<java.util.Map<String, Long>>> getMyDocumentStats() {
 
                 try {

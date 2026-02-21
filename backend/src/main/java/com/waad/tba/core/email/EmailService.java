@@ -20,6 +20,9 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:3000}")
+    private String portalUrl;
+
     // Send plain text
     public void sendText(String to, String subject, String body) {
         try {
@@ -37,18 +40,19 @@ public class EmailService {
             throw new RuntimeException("Failed to send email");
         }
     }
+
     // Backwards compatibility: generic send method
     public void send(String to, String subject, String body) {
         sendText(to, subject, body);
     }
+
     // Send HTML email
     public void sendHtml(String to, String subject, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
 
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-                            StandardCharsets.UTF_8.name());
+            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
+                    StandardCharsets.UTF_8.name());
 
             helper.setTo(to);
             helper.setFrom("شركة وعد لإدارة النفقات الطبية <support@alwahacare.com>");
@@ -84,17 +88,18 @@ public class EmailService {
 
     /**
      * Send Claim Submitted notification
-     * @param to Recipient email
-     * @param memberName Member name
-     * @param claimNumber Claim number
+     * 
+     * @param to             Recipient email
+     * @param memberName     Member name
+     * @param claimNumber    Claim number
      * @param submissionDate Submission date
-     * @param providerName Provider name
-     * @param claimAmount Claim amount
-     * @param claimId Claim ID for portal link
+     * @param providerName   Provider name
+     * @param claimAmount    Claim amount
+     * @param claimId        Claim ID for portal link
      */
     public void sendClaimSubmittedNotification(String to, String memberName, String claimNumber,
-                                                String submissionDate, String providerName,
-                                                String claimAmount, String claimId) {
+            String submissionDate, String providerName,
+            String claimAmount, String claimId) {
         try {
             ClassPathResource resource = new ClassPathResource("templates/email/claim-submitted.html");
             String template = Files.readString(resource.getFile().toPath());
@@ -107,7 +112,7 @@ public class EmailService {
                     .replace("{{claimAmount}}", claimAmount)
                     .replace("{{claimId}}", claimId)
                     .replace("{{year}}", String.valueOf(java.time.Year.now().getValue()))
-                    .replace("{{portalUrl}}", "http://localhost:3000"); // TODO: من الـ config
+                    .replace("{{portalUrl}}", portalUrl); // FIXED: Loaded from config
 
             sendHtml(to, "تم تقديم مطالبتك بنجاح - رقم " + claimNumber, html);
             log.info("✅ Claim submitted notification sent to {}", to);
@@ -120,26 +125,27 @@ public class EmailService {
 
     /**
      * Send Claim Approved notification
-     * @param to Recipient email
-     * @param memberName Member name
-     * @param claimNumber Claim number
-     * @param approvalDate Approval date
-     * @param providerName Provider name
-     * @param totalAmount Total amount
-     * @param approvedAmount Approved amount
-     * @param patientShare Patient share
+     * 
+     * @param to                 Recipient email
+     * @param memberName         Member name
+     * @param claimNumber        Claim number
+     * @param approvalDate       Approval date
+     * @param providerName       Provider name
+     * @param totalAmount        Total amount
+     * @param approvedAmount     Approved amount
+     * @param patientShare       Patient share
      * @param coveragePercentage Coverage percentage
-     * @param paymentMethod Payment method
-     * @param referenceNumber Reference number
+     * @param paymentMethod      Payment method
+     * @param referenceNumber    Reference number
      * @param paymentDestination Payment destination
-     * @param claimId Claim ID for portal link
+     * @param claimId            Claim ID for portal link
      */
     public void sendClaimApprovedNotification(String to, String memberName, String claimNumber,
-                                               String approvalDate, String providerName,
-                                               String totalAmount, String approvedAmount,
-                                               String patientShare, String coveragePercentage,
-                                               String paymentMethod, String referenceNumber,
-                                               String paymentDestination, String claimId) {
+            String approvalDate, String providerName,
+            String totalAmount, String approvedAmount,
+            String patientShare, String coveragePercentage,
+            String paymentMethod, String referenceNumber,
+            String paymentDestination, String claimId) {
         try {
             ClassPathResource resource = new ClassPathResource("templates/email/claim-approved.html");
             String template = Files.readString(resource.getFile().toPath());
@@ -158,7 +164,7 @@ public class EmailService {
                     .replace("{{paymentDestination}}", paymentDestination)
                     .replace("{{claimId}}", claimId)
                     .replace("{{year}}", String.valueOf(java.time.Year.now().getValue()))
-                    .replace("{{portalUrl}}", "http://localhost:3000"); // TODO: من الـ config
+                    .replace("{{portalUrl}}", portalUrl); // FIXED: Loaded from config
 
             sendHtml(to, "🎉 مبروك! تمت الموافقة على مطالبتك - رقم " + claimNumber, html);
             log.info("✅ Claim approved notification sent to {}", to);
@@ -171,22 +177,23 @@ public class EmailService {
 
     /**
      * Send Claim Rejected notification
-     * @param to Recipient email
-     * @param memberName Member name
-     * @param claimNumber Claim number
-     * @param rejectionDate Rejection date
-     * @param providerName Provider name
-     * @param claimAmount Claim amount
-     * @param reviewerName Reviewer name
+     * 
+     * @param to              Recipient email
+     * @param memberName      Member name
+     * @param claimNumber     Claim number
+     * @param rejectionDate   Rejection date
+     * @param providerName    Provider name
+     * @param claimAmount     Claim amount
+     * @param reviewerName    Reviewer name
      * @param rejectionReason Rejection reason
      * @param additionalNotes Additional notes (optional)
-     * @param claimId Claim ID for portal link
+     * @param claimId         Claim ID for portal link
      */
     public void sendClaimRejectedNotification(String to, String memberName, String claimNumber,
-                                               String rejectionDate, String providerName,
-                                               String claimAmount, String reviewerName,
-                                               String rejectionReason, String additionalNotes,
-                                               String claimId) {
+            String rejectionDate, String providerName,
+            String claimAmount, String reviewerName,
+            String rejectionReason, String additionalNotes,
+            String claimId) {
         try {
             ClassPathResource resource = new ClassPathResource("templates/email/claim-rejected.html");
             String template = Files.readString(resource.getFile().toPath());
@@ -204,12 +211,12 @@ public class EmailService {
                     .replace("{{additionalNotes}}", additionalNotes != null ? additionalNotes : "")
                     .replace("{{claimId}}", claimId)
                     .replace("{{year}}", String.valueOf(java.time.Year.now().getValue()))
-                    .replace("{{portalUrl}}", "http://localhost:3000"); // TODO: من الـ config
+                    .replace("{{portalUrl}}", portalUrl); // FIXED: Loaded from config
 
             // Handle conditional sections (Mustache-like syntax)
             if (hasNotes) {
                 html = html.replaceAll("\\{\\{#hasAdditionalNotes\\}\\}", "")
-                          .replaceAll("\\{\\{/hasAdditionalNotes\\}\\}", "");
+                        .replaceAll("\\{\\{/hasAdditionalNotes\\}\\}", "");
             } else {
                 html = html.replaceAll("\\{\\{#hasAdditionalNotes\\}\\}[\\s\\S]*?\\{\\{/hasAdditionalNotes\\}\\}", "");
             }

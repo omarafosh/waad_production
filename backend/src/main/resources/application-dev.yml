@@ -5,7 +5,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/tba_waad_system}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}  # Default for local dev only
+    password: ${DB_PASSWORD:postgres} # Default for local dev only
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -15,7 +15,7 @@ spring:
   # ==============================
   jpa:
     hibernate:
-      ddl-auto: create-drop  # Recreate schema to fix column mismatch
+      ddl-auto: create-drop # Recreate schema to fix column mismatch
     show-sql: ${SHOW_SQL:true}
     properties:
       hibernate:
@@ -36,13 +36,13 @@ server:
   servlet:
     session:
       cookie:
-        secure: false  # HTTP allowed in dev
+        secure: false # HTTP allowed in dev
 
 # ==============================
 # 🔐 JWT (Development)
 # ==============================
 jwt:
-  secret: ${JWT_SECRET:VGhpcy1pcy1hLUJhc2U2NC1leGFtcGxlLXNlY3JldC0uLi4=}
+  secret: ${JWT_SECRET:v2_waad_tba_system_secure_stateless_secret_key_2026_stabilization}
   expiration: 86400000
 
 # ==============================
@@ -51,7 +51,7 @@ jwt:
 app:
   security:
     require-email-verification: false
-  
+
   frontend:
     cors:
       allowed-origins: http://localhost:3000,http://localhost:5174
@@ -73,3 +73,26 @@ logging:
     com.waad.tba: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+
+# ==============================
+# 🧠 Caching (Development)
+# ==============================
+spring:
+  cache:
+    type: jcache
+
+# ==============================
+# 🚦 Rate Limiting (Development)
+# ==============================
+bucket4j:
+  enabled: true
+  cache-to-use: jcache
+  filters:
+    - cache-name: rate-limit-bucket
+      url: /api/auth/login
+      strategy: first
+      rate-limits:
+        - bandwidths:
+            - capacity: 100 # Relaxed for dev
+              time: 1
+              unit: minutes

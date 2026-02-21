@@ -23,48 +23,48 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PdfTemplateService {
-    
+
     private final TemplateEngine templateEngine;
     private final PdfCompanySettingsService companySettingsService;
-    
+
     /**
      * Process template with data and company settings
      * 
      * @param templateName Thymeleaf template name (without .html extension)
-     * @param variables Data variables for the template
-     * @param locale Locale for internationalization (ar, en)
+     * @param variables    Data variables for the template
+     * @param locale       Locale for internationalization (ar, en)
      * @return Processed HTML string ready for PDF conversion
      */
     public String processTemplate(String templateName, Map<String, Object> variables, Locale locale) {
         log.debug("[PdfTemplateService] Processing template: {} with locale: {}", templateName, locale);
-        
+
         // Get active company settings
         PdfCompanySettings settings = companySettingsService.getActiveSettings();
-        
+
         // Create Thymeleaf context
         Context context = new Context(locale);
-        
+
         // Add company settings to context
         context.setVariable("company", settings);
-        
+
         // Add user variables
         if (variables != null) {
             variables.forEach(context::setVariable);
         }
-        
+
         // Process template
         String html = templateEngine.process(templateName, context);
-        
-        log.debug("[PdfTemplateService] Template processed successfully: {} ({} chars)", 
-            templateName, html.length());
-        
+
+        log.debug("[PdfTemplateService] Template processed successfully: {} ({} chars)",
+                templateName, html.length());
+
         return html;
     }
-    
+
     /**
      * Process template with Arabic locale (default)
      */
     public String processTemplate(String templateName, Map<String, Object> variables) {
-        return processTemplate(templateName, variables, new Locale("ar", "SA"));
+        return processTemplate(templateName, variables, Locale.forLanguageTag("ar-SA"));
     }
 }

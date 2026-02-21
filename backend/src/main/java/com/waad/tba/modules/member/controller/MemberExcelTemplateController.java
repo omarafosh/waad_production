@@ -10,7 +10,6 @@ import com.waad.tba.modules.member.service.MemberExcelImportService;
 import com.waad.tba.modules.member.service.MemberExcelTemplateService;
 import com.waad.tba.modules.rbac.util.SecurityConstants;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,13 +37,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Member Excel Import", description = "System-generated Excel template download and import")
 public class MemberExcelTemplateController {
-    
+
     private final MemberExcelTemplateService templateService;
     private final MemberExcelImportService importService;
     private final ExcelColumnMappingService columnMappingService;
     private final com.waad.tba.security.AuthorizationService authorizationService;
-    private final com.waad.tba.modules.member.repository.MemberImportLogRepository importLogRepository;
-    
+
     /**
      * Download Excel template for members import
      * 
@@ -52,28 +50,26 @@ public class MemberExcelTemplateController {
      */
     @GetMapping("/template")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('MEMBER_IMPORT')")
-    @Operation(
-        summary = "Download Members Import Template",
-        description = "Downloads a system-generated Excel template for importing members. " +
-                     "Only files downloaded from this endpoint are accepted for import."
-    )
+    @Operation(summary = "Download Members Import Template", description = "Downloads a system-generated Excel template for importing members. "
+            +
+            "Only files downloaded from this endpoint are accepted for import.")
     public ResponseEntity<byte[]> downloadTemplate() throws IOException {
         log.info("[MemberImport] Template download requested");
-        
+
         byte[] excelData = templateService.generateTemplate();
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "Members_Import_Template.xlsx");
         headers.setContentLength(excelData.length);
-        
+
         log.info("[MemberImport] Template generated: {} bytes", excelData.length);
-        
+
         return ResponseEntity.ok()
-            .headers(headers)
-            .body(excelData);
+                .headers(headers)
+                .body(excelData);
     }
-    
+
     /**
      * Import members from Excel file
      * 
@@ -81,35 +77,33 @@ public class MemberExcelTemplateController {
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('MEMBER_IMPORT')")
-    @Operation(
-        summary = "Import Members from Excel",
-        description = "Imports members from a system-generated Excel template. " +
-                     "Only creates new members (no updates in Phase 1). " +
-                     "Card numbers are auto-generated. Employer lookup is mandatory."
-    )
+    @Operation(summary = "Import Members from Excel", description = "Imports members from a system-generated Excel template. "
+            +
+            "Only creates new members (no updates in Phase 1). " +
+            "Card numbers are auto-generated. Employer lookup is mandatory.")
     public ResponseEntity<ApiResponse<ExcelImportResult>> importMembers(
-            @RequestParam("file") MultipartFile file
-    ) {
+            @RequestParam("file") MultipartFile file) {
         log.info("[MemberImport] Import requested: {}", file.getOriginalFilename());
-        
+
         ExcelImportResult result = templateService.importFromExcel(file);
-        
+
         log.info("[MemberImport] Import completed - Created: {}, Rejected: {}, Failed: {}",
-            result.getSummary().getCreated(),
-            result.getSummary().getRejected(),
-            result.getSummary().getFailed());
-        
+                result.getSummary().getCreated(),
+                result.getSummary().getRejected(),
+                result.getSummary().getFailed());
+
         if (result.isSuccess()) {
             return ResponseEntity.ok(ApiResponse.success(result.getMessageEn(), result));
         } else {
-            // FIX: Return 200 OK even for validation errors so frontend can display the error report
+            // FIX: Return 200 OK even for validation errors so frontend can display the
+            // error report
             return ResponseEntity.ok()
-                .body(ApiResponse.<ExcelImportResult>builder()
-                    .status("error")
-                    .message(result.getMessageEn())
-                    .data(result)
-                    .timestamp(java.time.LocalDateTime.now())
-                    .build());
+                    .body(ApiResponse.<ExcelImportResult>builder()
+                            .status("error")
+                            .message(result.getMessageEn())
+                            .data(result)
+                            .timestamp(java.time.LocalDateTime.now())
+                            .build());
         }
     }
 
@@ -127,7 +121,8 @@ public class MemberExcelTemplateController {
             return ResponseEntity.ok(ApiResponse.success("تم تحليل الملف واكتشاف الأعمدة بنجاح", detection));
         } catch (Throwable t) {
             log.error("[MemberImport] Column detection critical error: {}", t.getMessage(), t);
-            String errorMsg = (t instanceof Exception) ? "خطأ في تحليل الملف: " + t.getMessage() : "خطأ تقني في معالجة الملف. يرجى مراجعة الدعم الفني.";
+            String errorMsg = (t instanceof Exception) ? "خطأ في تحليل الملف: " + t.getMessage()
+                    : "خطأ تقني في معالجة الملف. يرجى مراجعة الدعم الفني.";
             return ResponseEntity.status(500).body(ApiResponse.error(errorMsg));
         }
     }
@@ -148,7 +143,8 @@ public class MemberExcelTemplateController {
             return ResponseEntity.ok(ApiResponse.success("تم تحليل المعاينة بنجاح", preview));
         } catch (Throwable t) {
             log.error("[MemberImport] Preview critical error: {}", t.getMessage(), t);
-            String errorMsg = (t instanceof Exception) ? "خطأ في تحليل المعاينة: " + t.getMessage() : "خطأ تقني في معالجة المعاينة. يرجى مراجعة الدعم الفني.";
+            String errorMsg = (t instanceof Exception) ? "خطأ في تحليل المعاينة: " + t.getMessage()
+                    : "خطأ تقني في معالجة المعاينة. يرجى مراجعة الدعم الفني.";
             return ResponseEntity.status(500).body(ApiResponse.error(errorMsg));
         }
     }
@@ -166,12 +162,13 @@ public class MemberExcelTemplateController {
             @RequestParam(value = "batchId", required = false) String batchId,
             @RequestParam(value = "headerRowNumber", required = false) Integer headerRowNumber,
             @RequestParam(value = "importPolicy", defaultValue = "UPDATE") String importPolicy) {
-        log.info("[MemberImport] Execute requested: employer={}, policy={}, header={}, policy={}", employerId, benefitPolicyId, headerRowNumber, importPolicy);
+        log.info("[MemberImport] Execute requested: employer={}, policy={}, header={}, policy={}", employerId,
+                benefitPolicyId, headerRowNumber, importPolicy);
         try {
             if (batchId == null || batchId.isBlank()) {
                 batchId = java.util.UUID.randomUUID().toString();
             }
-            
+
             // Save MultipartFile to a stable temp file for background processing
             java.io.File tempFile = importService.saveToTempFile(file);
 
@@ -181,8 +178,9 @@ public class MemberExcelTemplateController {
             Long userId = currentUser != null ? currentUser.getId() : null;
 
             // Trigger background import with stable file and user context
-            importService.executeImport(tempFile, batchId, employerId, benefitPolicyId, headerRowNumber, importPolicy, username, userId);
-            
+            importService.executeImport(tempFile, batchId, employerId, benefitPolicyId, headerRowNumber, importPolicy,
+                    username, userId);
+
             // Return batchId immediately so frontend can monitor progress
             MemberImportResultDto result = MemberImportResultDto.builder()
                     .batchId(batchId)
@@ -212,7 +210,8 @@ public class MemberExcelTemplateController {
     @GetMapping("/errors/{batchId}")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('MEMBER_IMPORT')")
     @Operation(summary = "Get import errors")
-    public ResponseEntity<ApiResponse<List<com.waad.tba.modules.member.dto.MemberImportResultDto.ImportErrorDetailDto>>> getImportErrors(@PathVariable String batchId) {
+    public ResponseEntity<ApiResponse<List<com.waad.tba.modules.member.dto.MemberImportResultDto.ImportErrorDetailDto>>> getImportErrors(
+            @PathVariable String batchId) {
         return ResponseEntity.ok(ApiResponse.success(importService.getImportErrors(batchId)));
     }
 }

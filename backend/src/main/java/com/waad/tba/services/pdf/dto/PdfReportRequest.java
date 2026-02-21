@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Request for PDF Report Generation
@@ -21,27 +20,27 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PdfReportRequest<T> {
-    
+
     /**
      * Report metadata (title, orientation, tracking, etc.)
      */
     private PdfReportMetadata metadata;
-    
+
     /**
      * Main data DTO (can be any type: MemberResponseDto, ProviderDto, etc.)
      */
     private T data;
-    
+
     /**
      * Optional: List data for table-based reports
      */
     private List<T> dataList;
-    
+
     /**
      * Optional: Attachments to embed in PDF
      */
     private List<PdfAttachment> attachments;
-    
+
     /**
      * PDF attachment (image, document, etc.)
      */

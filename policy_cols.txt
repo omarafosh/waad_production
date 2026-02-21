@@ -1,0 +1,26 @@
+--- benefit_policies ---
+1: id (bigint) Nullable=NO Default=None
+2: active (boolean) Nullable=NO Default=None
+3: created_at (timestamp without time zone) Nullable=NO Default=None
+4: created_by (character varying) Nullable=YES Default=None
+5: updated_at (timestamp without time zone) Nullable=NO Default=None
+6: updated_by (character varying) Nullable=YES Default=None
+7: valid_from (timestamp without time zone) Nullable=YES Default=None
+8: valid_to (timestamp without time zone) Nullable=YES Default=None
+9: version (bigint) Nullable=YES Default=None
+10: annual_limit (numeric) Nullable=NO Default=None
+11: covered_members_count (integer) Nullable=YES Default=None
+12: default_coverage_percent (integer) Nullable=NO Default=None
+13: default_waiting_period_days (integer) Nullable=YES Default=None
+14: description (character varying) Nullable=YES Default=None
+15: distribution_type (character varying) Nullable=NO Default=None
+16: end_date (date) Nullable=NO Default=None
+17: name (character varying) Nullable=NO Default=None
+18: notes (character varying) Nullable=YES Default=None
+19: per_family_limit (numeric) Nullable=YES Default=None
+20: per_member_limit (numeric) Nullable=YES Default=None
+21: policy_code (character varying) Nullable=YES Default=None
+22: start_date (date) Nullable=NO Default=None
+23: status (character varying) Nullable=NO Default=None
+24: employer_org_id (bigint) Nullable=NO Default=None
+25: insurance_org_id (bigint) Nullable=YES Default=None

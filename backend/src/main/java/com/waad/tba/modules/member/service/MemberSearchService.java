@@ -66,20 +66,22 @@ public class MemberSearchService {
             if (!members.isEmpty()) {
                 Member found = members.get(0);
                 if (found.isPrincipal()) {
-                    log.info("found principal via smart suffix stripping: {} -> {}", cleanQuery, potentialPrincipalCard);
+                    log.info("found principal via smart suffix stripping: {} -> {}", cleanQuery,
+                            potentialPrincipalCard);
                     targetMember = found;
                 }
             }
         }
 
         if (targetMember == null) {
-            throw new com.waad.tba.common.exception.ResourceNotFoundException("Member not found with Barcode or Card Number: " + cleanQuery);
+            throw new com.waad.tba.common.exception.ResourceNotFoundException(
+                    "Member not found with Barcode or Card Number: " + cleanQuery);
         }
 
         // Resolve Principal (If dependent found, get parent)
         Member principal = (targetMember.getParent() != null) ? targetMember.getParent() : targetMember;
         List<Member> dependents = memberRepository.findByParentId(principal.getId());
-        
+
         return mapper.toFamilyEligibilityResponse(principal, dependents);
     }
 
@@ -143,7 +145,7 @@ public class MemberSearchService {
         return memberRepository.findAll(spec, pageable).map(member -> {
             MemberViewDto dto = mapper.toViewDto(member);
             if (Boolean.FALSE.equals(member.getActive())) {
-                dto.setStatus(Member.MemberStatus.TERMINATED);
+                dto.setStatus(Member.MemberStatus.TERMINATED.name());
             }
             return dto;
         });
@@ -152,12 +154,12 @@ public class MemberSearchService {
     public void applySecurityFilter(Root<Member> root, CriteriaBuilder cb, List<Predicate> predicates) {
         User currentUser = authorizationService.getCurrentUser();
         Set<Long> permittedIds = authorizationService.getPermittedEmployerIdsForUser(currentUser);
-        
+
         if (permittedIds != null) {
             if (permittedIds.isEmpty()) {
-                log.warn("🚨 Security Enforcement: User {} has no permitted organizations. Access blocked.", 
-                    currentUser != null ? currentUser.getUsername() : "UNKNOWN");
-                predicates.add(cb.disjunction()); 
+                log.warn("🚨 Security Enforcement: User {} has no permitted organizations. Access blocked.",
+                        currentUser != null ? currentUser.getUsername() : "UNKNOWN");
+                predicates.add(cb.disjunction());
             } else {
                 predicates.add(root.get("employerOrganization").get("id").in(permittedIds));
             }

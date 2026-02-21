@@ -41,6 +41,7 @@ public class MemberOperationService {
     private final UnifiedMemberMapper mapper;
     private final MemberLifecycleService lifecycleService;
 
+    @SuppressWarnings("deprecation")
     @Transactional
     public MemberViewDto createPrincipalMember(MemberCreateDto dto) {
         if (dto.getParentId() != null) {
@@ -55,7 +56,8 @@ public class MemberOperationService {
                     .orElseGet(() -> organizationRepository.findByActiveTrue().stream()
                             .findFirst()
                             .map(Organization::getId)
-                            .orElseThrow(() -> new BusinessRuleException("No Active Organization found to assign VIP member.")));
+                            .orElseThrow(() -> new BusinessRuleException(
+                                    "No Active Organization found to assign VIP member.")));
         }
 
         if (employerId == null) {
@@ -64,12 +66,13 @@ public class MemberOperationService {
 
         final Long targetEmployerId = employerId;
         Organization employerOrg = organizationRepository.findById(targetEmployerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employer organization not found: " + targetEmployerId));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Employer organization not found: " + targetEmployerId));
 
         BenefitPolicy benefitPolicy = resolveBenefitPolicy(dto, targetEmployerId);
 
         Member principal = mapper.toEntity(dto);
-        
+
         if (Boolean.TRUE.equals(dto.getIsFastTrack())) {
             principal.setStatus(Member.MemberStatus.PENDING_VERIFICATION);
             principal.setIsVip(true);
@@ -115,7 +118,8 @@ public class MemberOperationService {
         dependent.setBarcode(barcodeGenerator.generateFromCardNumber(dependent));
 
         dependent = memberRepository.save(dependent);
-        lifecycleService.logWorkflowHistory(dependent, null, dependent.getStatus().name(), "Initial Creation (Dependent)");
+        lifecycleService.logWorkflowHistory(dependent, null, dependent.getStatus().name(),
+                "Initial Creation (Dependent)");
 
         return dependent;
     }
@@ -123,7 +127,8 @@ public class MemberOperationService {
     private BenefitPolicy resolveBenefitPolicy(MemberCreateDto dto, Long targetEmployerId) {
         if (dto.getBenefitPolicyId() != null) {
             return benefitPolicyRepository.findById(dto.getBenefitPolicyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Benefit policy not found: " + dto.getBenefitPolicyId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Benefit policy not found: " + dto.getBenefitPolicyId()));
         } else {
             return benefitPolicyRepository.findActiveEffectivePolicyForEmployer(targetEmployerId, LocalDate.now())
                     .orElse(null);
@@ -133,10 +138,11 @@ public class MemberOperationService {
     public byte[] exportMembersToExcel(List<MemberViewDto> members) throws IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Members");
-            
+
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"الاسم الكامل", "رقم البطاقة", "الباركود", "الرقم المدني", "النوع", "الحالة", "جهة العمل", "عدد التابعين"};
-            
+            String[] headers = { "الاسم الكامل", "رقم البطاقة", "الباركود", "الرقم المدني", "النوع", "الحالة",
+                    "جهة العمل", "عدد التابعين" };
+
             CellStyle headerStyle = createHeaderStyle(workbook);
 
             for (int i = 0; i < headers.length; i++) {
@@ -153,7 +159,7 @@ public class MemberOperationService {
                 row.createCell(2).setCellValue(member.getBarcode() != null ? member.getBarcode() : "");
                 row.createCell(3).setCellValue(member.getCivilId() != null ? member.getCivilId() : "");
                 row.createCell(4).setCellValue("PRINCIPAL".equalsIgnoreCase(member.getType()) ? "أصيل" : "تابع");
-                row.createCell(5).setCellValue(member.getStatus() != null ? member.getStatus().name() : "");
+                row.createCell(5).setCellValue(member.getStatus() != null ? member.getStatus() : "");
                 row.createCell(6).setCellValue(member.getEmployerName() != null ? member.getEmployerName() : "");
                 row.createCell(7).setCellValue(member.getDependentsCount() != null ? member.getDependentsCount() : 0);
             }

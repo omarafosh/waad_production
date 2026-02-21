@@ -6,7 +6,6 @@ import com.waad.tba.common.lifecycle.dto.LifecycleResult;
 import com.waad.tba.common.lifecycle.dto.ValidationResult;
 import com.waad.tba.common.lifecycle.enums.LifecycleAction;
 import com.waad.tba.modules.member.entity.Member;
-import com.waad.tba.modules.member.entity.Member.MemberStatus;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -34,11 +33,10 @@ public class MemberLifecycleAdapter implements LifecycleAdapter<Member> {
 
         List<LifecycleAction> actions = new ArrayList<>();
         long pendingClaimsCount = claimRepository.countByMemberIdAndStatusIn(entityId, List.of(
-            com.waad.tba.modules.claim.entity.ClaimStatus.SUBMITTED,
-            com.waad.tba.modules.claim.entity.ClaimStatus.UNDER_REVIEW,
-            com.waad.tba.modules.claim.entity.ClaimStatus.RETURNED_FOR_INFO
-        ));
-        
+                com.waad.tba.modules.claim.entity.ClaimStatus.SUBMITTED,
+                com.waad.tba.modules.claim.entity.ClaimStatus.UNDER_REVIEW,
+                com.waad.tba.modules.claim.entity.ClaimStatus.RETURNED_FOR_INFO));
+
         switch (member.getStatus()) {
             case DRAFT:
             case PENDING:
@@ -47,9 +45,9 @@ public class MemberLifecycleAdapter implements LifecycleAdapter<Member> {
                 break;
             case ACTIVE:
                 if (pendingClaimsCount == 0) {
-                     actions.add(LifecycleAction.TERMINATE);
+                    actions.add(LifecycleAction.TERMINATE);
                 }
-                actions.add(LifecycleAction.SUSPEND); 
+                actions.add(LifecycleAction.SUSPEND);
                 break;
             case SUSPENDED:
                 actions.add(LifecycleAction.RESTORE);
@@ -72,12 +70,12 @@ public class MemberLifecycleAdapter implements LifecycleAdapter<Member> {
     public ValidationResult validate(Long entityId, LifecycleAction action) {
         if (action == LifecycleAction.TERMINATE) {
             long pendingClaims = claimRepository.countByMemberIdAndStatusIn(entityId, List.of(
-                com.waad.tba.modules.claim.entity.ClaimStatus.SUBMITTED,
-                com.waad.tba.modules.claim.entity.ClaimStatus.UNDER_REVIEW
-            ));
-            
+                    com.waad.tba.modules.claim.entity.ClaimStatus.SUBMITTED,
+                    com.waad.tba.modules.claim.entity.ClaimStatus.UNDER_REVIEW));
+
             if (pendingClaims > 0) {
-                return ValidationResult.invalid("لا يمكن إنهاء عضوية العضو لوجود " + pendingClaims + " مطالبات معلقة. يرجى تسوية المطالبات أولاً.");
+                return ValidationResult.invalid("لا يمكن إنهاء عضوية العضو لوجود " + pendingClaims
+                        + " مطالبات معلقة. يرجى تسوية المطالبات أولاً.");
             }
         }
 

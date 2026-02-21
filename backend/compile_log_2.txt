@@ -1,0 +1,121 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.waad:tba-backend >------------------------
+[INFO] Building TBA-WAAD Backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ tba-backend ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 34 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ tba-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 639 source files with javac [debug deprecation parameters release 21] to target\classes
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/benefitpolicy/entity/BenefitRuleTemplate.java:[39,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 1 warning
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[46,38] cannot find symbol
+  symbol:   class VisitContextResponse
+  location: package com.waad.tba.modules.visit.dto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[72,2] cannot find symbol
+  symbol: class Validated
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[397,159] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[398,160] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[530,43] cannot find symbol
+  symbol:   class List
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[584,104] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[704,43] cannot find symbol
+  symbol:   class List
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[991,25] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[992,25] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[991,35] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[992,35] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[979,9] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[982,9] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[980,9] cannot find symbol
+  symbol:   class LocalDate
+  location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto.MyContractServiceDtoBuilder
+[INFO] 14 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.496 s
+[INFO] Finished at: 2026-02-20T08:14:52+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project tba-backend: Compilation failure: Compilation failure: 
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[46,38] cannot find symbol
+[ERROR]   symbol:   class VisitContextResponse
+[ERROR]   location: package com.waad.tba.modules.visit.dto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[72,2] cannot find symbol
+[ERROR]   symbol: class Validated
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[397,159] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[398,160] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[530,43] cannot find symbol
+[ERROR]   symbol:   class List
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[584,104] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[704,43] cannot find symbol
+[ERROR]   symbol:   class List
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[991,25] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[992,25] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[991,35] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[992,35] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[979,9] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[982,9] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto
+[ERROR] /D:/Backend/waadTbaSystem2026-main_final/waadTbaSystem2026-main/backend/src/main/java/com/waad/tba/modules/provider/controller/ProviderPortalController.java:[980,9] cannot find symbol
+[ERROR]   symbol:   class LocalDate
+[ERROR]   location: class com.waad.tba.modules.provider.controller.ProviderPortalController.MyContractServiceDto.MyContractServiceDtoBuilder
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the '-e' switch
+[ERROR] Re-run Maven using the '-X' switch to enable verbose output
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/CompilationFailureException

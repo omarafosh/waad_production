@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.waad.tba.common.entity.Organization;
@@ -60,7 +58,7 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     // ==================== UNIFIED MEMBER ARCHITECTURE ====================
     // Self-Referencing Relationship for Principal/Dependent Structure
-    
+
     /**
      * Parent Member (Principal) - NULL for principal members, set for dependents.
      * This creates a self-referencing tree structure where:
@@ -144,7 +142,7 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
     private BenefitPolicy benefitPolicy;
 
     // ==================== ENTERPRISE SMART CARD FIELDS ====================
-    
+
     @Column(name = "relationship_code", length = 5)
     private String relationshipCode; // P, D, S, C, T, G
 
@@ -166,7 +164,6 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
 
     @Column(name = "secondary_status", length = 50)
     private String secondaryStatus;
-
 
     // Fast-Track / VIP Features
     @Column(name = "is_vip")
@@ -191,7 +188,7 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
     private String civilId;
 
     // ==================== UNIFIED IDENTIFICATION SYSTEM ====================
-    
+
     /**
      * Card Number (رقم بطاقة العضو) - UNIFIED for family.
      * 
@@ -228,32 +225,28 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
         if (isPrincipal()) {
             if (this.barcode == null || this.barcode.trim().isEmpty()) {
                 throw new IllegalStateException(
-                    "Principal Member cannot be persisted without a valid barcode. " +
-                    "Use BarcodeGeneratorService.generateForMember()."
-                );
+                        "Principal Member cannot be persisted without a valid barcode. " +
+                                "Use BarcodeGeneratorService.generateForMember().");
             }
         } else if (isDependent()) {
             // IMPORTANT: Dependents should NOT have barcode
             if (this.barcode != null && !this.barcode.trim().isEmpty()) {
                 throw new IllegalStateException(
-                    "Dependent Member should NOT have a barcode. " +
-                    "Barcode is only for Principal members."
-                );
+                        "Dependent Member should NOT have a barcode. " +
+                                "Barcode is only for Principal members.");
             }
             // Dependents MUST have a parent
             if (this.parent == null) {
                 throw new IllegalStateException(
-                    "Dependent Member must have a parent (Principal Member)."
-                );
+                        "Dependent Member must have a parent (Principal Member).");
             }
             // Dependents MUST have a relationship
             if (this.relationship == null) {
                 throw new IllegalStateException(
-                    "Dependent Member must have a relationship type (e.g., SON, DAUGHTER, WIFE)."
-                );
+                        "Dependent Member must have a relationship type (e.g., SON, DAUGHTER, WIFE).");
             }
         }
-        
+
         // Set default gender if not provided
         if (this.gender == null) {
             this.gender = Gender.UNDEFINED;
@@ -311,15 +304,10 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
     @Column(length = 100, name = "policy_number")
     private String policyNumber;
 
-    // Employment Information
-    @Column(length = 100, name = "employee_number")
-    private String employeeNumber;
-
-    @Column(name = "join_date")
-    private LocalDate joinDate;
-
-    @Column(length = 100)
-    private String occupation;
+    // Normalized Employment Data (One Member -> Many Employment Records)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<MemberEmploymentDetails> employmentDetails = new ArrayList<>();
 
     // Membership Status
     @Enumerated(EnumType.STRING)
@@ -377,16 +365,83 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
         return benefitPolicy != null && benefitPolicy.isEffectiveOn(date);
     }
 
+    /**
+     * Get the active employment details for this member.
+     * Returns the first active employment record found, or null.
+     */
+    @Transient
+    public MemberEmploymentDetails getActiveEmployment() {
+        if (employmentDetails == null || employmentDetails.isEmpty()) {
+            return null;
+        }
+        return employmentDetails.stream()
+                .filter(MemberEmploymentDetails::isActive)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Helper to get/set employment fields for backward compatibility.
+     * These delegate to the active employment record.
+     */
+    @Transient
+    public LocalDate getJoinDate() {
+        MemberEmploymentDetails active = getActiveEmployment();
+        return active != null ? active.getJoinDate() : null;
+    }
+
+    @Transient
+    public void setJoinDate(LocalDate joinDate) {
+        // Only set if we have an active employment record, otherwise ignore or handle
+        // appropriately
+        // For simple setters, we might need to ensure an employment record exists,
+        // but creating one requires an Employer Organization which might not be set
+        // yet.
+        // This is best handled by the service layer, but for compatibility:
+        MemberEmploymentDetails active = getActiveEmployment();
+        if (active != null) {
+            active.setJoinDate(joinDate);
+        }
+    }
+
+    @Transient
+    public String getEmployeeNumber() {
+        MemberEmploymentDetails active = getActiveEmployment();
+        return active != null ? active.getEmployeeNumber() : null;
+    }
+
+    @Transient
+    public void setEmployeeNumber(String employeeNumber) {
+        MemberEmploymentDetails active = getActiveEmployment();
+        if (active != null) {
+            active.setEmployeeNumber(employeeNumber);
+        }
+    }
+
+    @Transient
+    public String getOccupation() {
+        MemberEmploymentDetails active = getActiveEmployment();
+        return active != null ? active.getOccupation() : null;
+    }
+
+    @Transient
+    public void setOccupation(String occupation) {
+        MemberEmploymentDetails active = getActiveEmployment();
+        if (active != null) {
+            active.setOccupation(occupation);
+        }
+    }
+
     // ==================== ENUMS ====================
-    
+
     /**
      * Member Type - AUTO-CALCULATED based on parent_id.
      * PRINCIPAL: parent = null (head of family, has barcode)
      * DEPENDENT: parent != null (family member, uses parent's barcode)
      */
     public enum MemberType {
-        PRINCIPAL,  // Parent = null, has barcode, can have dependents
-        DEPENDENT   // Parent != null, no barcode, has relationship
+        PRINCIPAL, // Parent = null, has barcode, can have dependents
+        DEPENDENT // Parent != null, no barcode, has relationship
     }
 
     /**
@@ -394,14 +449,14 @@ public class Member extends com.waad.tba.common.entity.SoftDeleteEntity {
      * NULL for PRINCIPAL members.
      */
     public enum Relationship {
-        WIFE,      // زوجة
-        HUSBAND,   // زوج
-        SON,       // ابن
-        DAUGHTER,  // ابنة
-        FATHER,    // أب
-        MOTHER,    // أم
-        BROTHER,   // أخ
-        SISTER     // أخت
+        WIFE, // زوجة
+        HUSBAND, // زوج
+        SON, // ابن
+        DAUGHTER, // ابنة
+        FATHER, // أب
+        MOTHER, // أم
+        BROTHER, // أخ
+        SISTER // أخت
     }
 
     public enum Gender {

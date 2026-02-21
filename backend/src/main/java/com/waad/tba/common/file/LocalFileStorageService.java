@@ -218,11 +218,7 @@ public class LocalFileStorageService implements FileStorageService {
         return ALLOWED_DOCUMENT_TYPES.contains(contentType);
     }
     
-    private String getFileExtension(String filename) {
-        int lastDot = filename.lastIndexOf('.');
-        return lastDot > 0 ? filename.substring(lastDot) : "";
-    }
-    
+ 
     private Long getCurrentUserId() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

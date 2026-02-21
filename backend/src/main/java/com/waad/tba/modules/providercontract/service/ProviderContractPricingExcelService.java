@@ -20,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.util.*;
 
 /**
@@ -58,45 +57,44 @@ public class ProviderContractPricingExcelService {
      * Column name mappings (supports both Arabic and English)
      */
     private static final Map<String, String> COLUMN_MAPPINGS = Map.ofEntries(
-        // Sequence
-        Map.entry("تسلسل", "sequence"),
-        Map.entry("sequence", "sequence"),
-        
-        // Price List Name
-        Map.entry("قائمة الأسعار", "priceListName"),
-        Map.entry("price list", "priceListName"),
-        Map.entry("pricelist", "priceListName"),
-        
-        // Service Name
-        Map.entry("قالب المنتج", "serviceName"),
-        Map.entry("service name", "serviceName"),
-        Map.entry("product template", "serviceName"),
-        
-        // Service Code
-        Map.entry("كود منتج المورد", "serviceCode"),
-        Map.entry("supplier product code", "serviceCode"),
-        Map.entry("service code", "serviceCode"),
-        Map.entry("code", "serviceCode"),
-        
-        // Currency
-        Map.entry("العملة", "currency"),
-        Map.entry("currency", "currency"),
-        
-        // Quantity (ignored)
-        Map.entry("الكمية", "quantity"),
-        Map.entry("quantity", "quantity"),
-        
-        // Contract Price
-        Map.entry("السعر", "contractPrice"),
-        Map.entry("price", "contractPrice"),
-        Map.entry("سعر", "contractPrice")
-    );
+            // Sequence
+            Map.entry("تسلسل", "sequence"),
+            Map.entry("sequence", "sequence"),
+
+            // Price List Name
+            Map.entry("قائمة الأسعار", "priceListName"),
+            Map.entry("price list", "priceListName"),
+            Map.entry("pricelist", "priceListName"),
+
+            // Service Name
+            Map.entry("قالب المنتج", "serviceName"),
+            Map.entry("service name", "serviceName"),
+            Map.entry("product template", "serviceName"),
+
+            // Service Code
+            Map.entry("كود منتج المورد", "serviceCode"),
+            Map.entry("supplier product code", "serviceCode"),
+            Map.entry("service code", "serviceCode"),
+            Map.entry("code", "serviceCode"),
+
+            // Currency
+            Map.entry("العملة", "currency"),
+            Map.entry("currency", "currency"),
+
+            // Quantity (ignored)
+            Map.entry("الكمية", "quantity"),
+            Map.entry("quantity", "quantity"),
+
+            // Contract Price
+            Map.entry("السعر", "contractPrice"),
+            Map.entry("price", "contractPrice"),
+            Map.entry("سعر", "contractPrice"));
 
     /**
      * Import pricing items from Excel file
      * 
      * @param contractId The provider contract ID
-     * @param file Excel file (.xlsx or .xls)
+     * @param file       Excel file (.xlsx or .xls)
      * @return Import result with statistics
      */
     @Transactional
@@ -108,7 +106,7 @@ public class ProviderContractPricingExcelService {
                 .orElseThrow(() -> new IllegalArgumentException("Contract not found: " + contractId));
 
         if (contract.getStatus() == ProviderContract.ContractStatus.EXPIRED ||
-            contract.getStatus() == ProviderContract.ContractStatus.TERMINATED) {
+                contract.getStatus() == ProviderContract.ContractStatus.TERMINATED) {
             throw new IllegalStateException("Cannot import pricing for EXPIRED or TERMINATED contract");
         }
 
@@ -119,7 +117,7 @@ public class ProviderContractPricingExcelService {
         int skipped = 0;
 
         try (InputStream is = file.getInputStream();
-             Workbook workbook = WorkbookFactory.create(is)) {
+                Workbook workbook = WorkbookFactory.create(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
             Row headerRow = sheet.getRow(0);
@@ -174,7 +172,7 @@ public class ProviderContractPricingExcelService {
                     BigDecimal contractPriceValue = getCellValueAsDecimal(row, columnIndices.get("contractPrice"));
                     String currencyValue = getCellValueAsString(row, columnIndices.get("currency"));
 
-                    log.debug("Row {}: serviceCode='{}', serviceName='{}', price={}", 
+                    log.debug("Row {}: serviceCode='{}', serviceName='{}', price={}",
                             rowNum + 1, serviceCodeValue, serviceNameValue, contractPriceValue);
 
                     // Validate required fields
@@ -203,16 +201,16 @@ public class ProviderContractPricingExcelService {
                     if (serviceCodeValue != null && !serviceCodeValue.isBlank()) {
                         service = serviceByCode.get(serviceCodeValue.trim().toUpperCase());
                         if (service != null) {
-                            log.debug("Row {}: Found service by code: {} -> {}", 
+                            log.debug("Row {}: Found service by code: {} -> {}",
                                     rowNum + 1, serviceCodeValue, service.getName());
                         }
                     }
                     if (service == null && serviceNameValue != null && !serviceNameValue.isBlank()) {
                         String trimmedName = serviceNameValue.trim();
                         service = serviceByName.get(trimmedName);
-                        
+
                         if (service != null) {
-                            log.debug("Row {}: ✓ Found service by name: '{}' -> {}", 
+                            log.debug("Row {}: ✓ Found service by name: '{}' -> {}",
                                     rowNum + 1, trimmedName, service.getCode());
                         } else {
                             // Try case-insensitive match as fallback
@@ -221,14 +219,14 @@ public class ProviderContractPricingExcelService {
                                     .map(Map.Entry::getValue)
                                     .findFirst()
                                     .orElse(null);
-                            
+
                             if (service != null) {
-                                log.debug("Row {}: ✓ Found service by case-insensitive name: '{}' -> {}", 
+                                log.debug("Row {}: ✓ Found service by case-insensitive name: '{}' -> {}",
                                         rowNum + 1, trimmedName, service.getCode());
                             } else {
                                 log.warn("Row {}: ✗ Service NOT found for name: '{}'", rowNum + 1, trimmedName);
                                 if (log.isDebugEnabled()) {
-                                    log.debug("  Available names (first 10): {}", 
+                                    log.debug("  Available names (first 10): {}",
                                             serviceByName.keySet().stream().limit(10).toList());
                                 }
                             }
@@ -257,15 +255,17 @@ public class ProviderContractPricingExcelService {
                         continue;
                     }
 
-                    BigDecimal basePrice = BigDecimal.ZERO; // EnterpriseMedicalService might not have basePrice directly or it's named differently
-                    // If EnterpriseMedicalService has a base price field, use it. Otherwise, default to 0 for contracts.
+                    BigDecimal basePrice = BigDecimal.ZERO; // EnterpriseMedicalService might not have basePrice
+                                                            // directly or it's named differently
+                    // If EnterpriseMedicalService has a base price field, use it. Otherwise,
+                    // default to 0 for contracts.
                     // Given the entity viewed previously, it doesn't seem to have basePrice.
                     // We might need to look it up from somewhere or leave at 0.
                     // For now, setting to 0 to avoid compilation error if field is missing.
 
                     // Set currency (default: LYD)
-                    String currency = (currencyValue != null && !currencyValue.isBlank()) 
-                            ? currencyValue.trim().toUpperCase() 
+                    String currency = (currencyValue != null && !currencyValue.isBlank())
+                            ? currencyValue.trim().toUpperCase()
                             : "LYD";
 
                     // Check if pricing item already exists (upsert)
@@ -281,11 +281,11 @@ public class ProviderContractPricingExcelService {
                         existing.setUpdatedBy(currentUser);
                         existing.setActive(true);
                         // discountPercent calculated automatically via @PreUpdate
-                        
+
                         pricingRepository.save(existing);
                         updated++;
-                        
-                        log.debug("Updated pricing: contract={}, service={}, price={}", 
+
+                        log.debug("Updated pricing: contract={}, service={}, price={}",
                                 contractId, service.getCode(), contractPriceValue);
                     } else {
                         // INSERT
@@ -300,11 +300,11 @@ public class ProviderContractPricingExcelService {
                                 .createdBy(currentUser)
                                 .updatedBy(currentUser)
                                 .build();
-                        
+
                         pricingRepository.save(newItem);
                         inserted++;
-                        
-                        log.debug("Inserted pricing: contract={}, service={}, price={}", 
+
+                        log.debug("Inserted pricing: contract={}, service={}, price={}",
                                 contractId, service.getCode(), contractPriceValue);
                     }
 
@@ -340,8 +340,7 @@ public class ProviderContractPricingExcelService {
         boolean success = (inserted + updated) > 0;
         String message = String.format(
                 "تم استيراد %d عنصر تسعير بنجاح (إضافة: %d، تحديث: %d، تخطي: %d، فشل: %d)",
-                inserted + updated, inserted, updated, skipped, errors.size()
-        );
+                inserted + updated, inserted, updated, skipped, errors.size());
 
         return ExcelImportResultDto.builder()
                 .success(success)
@@ -363,7 +362,8 @@ public class ProviderContractPricingExcelService {
         log.info("Excel Header Row Analysis:");
         for (int i = 0; i < headerRow.getLastCellNum(); i++) {
             Cell cell = headerRow.getCell(i);
-            if (cell == null) continue;
+            if (cell == null)
+                continue;
 
             String columnName = cell.getStringCellValue().trim().toLowerCase();
             String mappedName = COLUMN_MAPPINGS.get(columnName);
@@ -389,7 +389,7 @@ public class ProviderContractPricingExcelService {
             if (service.getCode() != null) {
                 byCode.put(service.getCode().toUpperCase(), service);
             }
-            
+
             // Index by name (Arabic or English)
             if (service.getName() != null && !service.getName().isBlank()) {
                 byName.put(service.getName().trim(), service);
@@ -399,7 +399,7 @@ public class ProviderContractPricingExcelService {
             }
         }
 
-        log.info("Built service maps: {} by code, {} by name entries (total services: {})", 
+        log.info("Built service maps: {} by code, {} by name entries (total services: {})",
                 byCode.size(), byName.size(), allServices.size());
     }
 
@@ -420,10 +420,12 @@ public class ProviderContractPricingExcelService {
      * Get cell value as String
      */
     private String getCellValueAsString(Row row, Integer colIndex) {
-        if (colIndex == null) return null;
+        if (colIndex == null)
+            return null;
 
         Cell cell = row.getCell(colIndex);
-        if (cell == null) return null;
+        if (cell == null)
+            return null;
 
         switch (cell.getCellType()) {
             case STRING:
@@ -441,10 +443,12 @@ public class ProviderContractPricingExcelService {
      * Get cell value as BigDecimal
      */
     private BigDecimal getCellValueAsDecimal(Row row, Integer colIndex) {
-        if (colIndex == null) return null;
+        if (colIndex == null)
+            return null;
 
         Cell cell = row.getCell(colIndex);
-        if (cell == null) return null;
+        if (cell == null)
+            return null;
 
         try {
             switch (cell.getCellType()) {
@@ -453,7 +457,8 @@ public class ProviderContractPricingExcelService {
                             .setScale(2, RoundingMode.HALF_UP);
                 case STRING:
                     String value = cell.getStringCellValue().trim();
-                    if (value.isEmpty()) return null;
+                    if (value.isEmpty())
+                        return null;
                     return new BigDecimal(value).setScale(2, RoundingMode.HALF_UP);
                 default:
                     return null;

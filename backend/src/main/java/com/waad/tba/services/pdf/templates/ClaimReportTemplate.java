@@ -1,7 +1,6 @@
 package com.waad.tba.services.pdf.templates;
 
 import com.lowagie.text.*;
-import com.lowagie.text.pdf.PdfPTable;
 import com.waad.tba.modules.claim.dto.ClaimResponseDto;
 import com.waad.tba.services.pdf.PdfTableBuilder;
 import com.waad.tba.services.pdf.config.PdfFontConfig;

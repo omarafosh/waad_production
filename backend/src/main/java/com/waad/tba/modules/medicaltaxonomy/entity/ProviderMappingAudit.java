@@ -6,8 +6,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
-import com.waad.tba.modules.medicaltaxonomy.entity.ProviderRawService;
 
 @Entity
 @Table(name = "provider_mapping_audit")

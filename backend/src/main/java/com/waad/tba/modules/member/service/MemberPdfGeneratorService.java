@@ -20,10 +20,11 @@ import java.util.List;
 @Service
 public class MemberPdfGeneratorService {
 
-    public byte[] generateMembersPdf(List<MemberViewDto> members, String filterDescription, SettingDto settings) throws DocumentException {
+    public byte[] generateMembersPdf(List<MemberViewDto> members, String filterDescription, SettingDto settings)
+            throws DocumentException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate());
-        
+
         PdfWriter writer = PdfWriter.getInstance(document, outputStream);
         writer.setPageEvent(new PdfPageEventHelper() {
             @Override
@@ -31,19 +32,20 @@ public class MemberPdfGeneratorService {
                 addFooter(writer, document, settings);
             }
         });
-        
+
         document.open();
         addHeader(document, filterDescription, settings);
         addMembersTable(document, members);
         document.close();
-        
+
         return outputStream.toByteArray();
     }
 
     private void addHeader(Document document, String filterDescription, SettingDto settings) throws DocumentException {
         // ... (Header logic extracted from original MemberPdfExportService)
         Font companyNameFont = new Font(Font.HELVETICA, 16, Font.BOLD);
-        Paragraph companyName = new Paragraph(settings.getSystemName() != null ? settings.getSystemName() : "TBA WAAD", companyNameFont);
+        Paragraph companyName = new Paragraph(settings.getSystemName() != null ? settings.getSystemName() : "TBA WAAD",
+                companyNameFont);
         companyName.setAlignment(Element.ALIGN_CENTER);
         document.add(companyName);
 
@@ -52,7 +54,7 @@ public class MemberPdfGeneratorService {
         Paragraph title = new Paragraph("تقرير قائمة المنتفعين", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
         document.add(title);
-        
+
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         Font timestampFont = new Font(Font.HELVETICA, 10, Font.ITALIC);
         Paragraph timestampPara = new Paragraph("تاريخ ووقت الإنشاء: " + timestamp, timestampFont);
@@ -66,14 +68,15 @@ public class MemberPdfGeneratorService {
     }
 
     private void addMembersTable(Document document, List<MemberViewDto> members) throws DocumentException {
-        float[] columnWidths = {0.5f, 1.0f, 1.5f, 1.2f, 1.5f, 1.2f, 1.0f, 0.8f, 1.0f, 1.0f};
+        float[] columnWidths = { 0.5f, 1.0f, 1.5f, 1.2f, 1.5f, 1.2f, 1.0f, 0.8f, 1.0f, 1.0f };
         PdfPTable table = new PdfPTable(columnWidths);
         table.setWidthPercentage(100);
-        
+
         Font headerFont = new Font(Font.HELVETICA, 10, Font.BOLD);
         headerFont.setColor(255, 255, 255);
-        
-        String[] headers = {"#", "الباركود", "الاسم الكامل", "الرقم الوطني", "الشريك", "وثيقة المنافع", "التابعين", "الحالة", "البطاقة", "الهاتف"};
+
+        String[] headers = { "#", "الباركود", "الاسم الكامل", "الرقم الوطني", "الشريك", "وثيقة المنافع", "التابعين",
+                "الحالة", "البطاقة", "الهاتف" };
         for (String h : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
             cell.setBackgroundColor(new Color(41, 98, 255));
@@ -91,9 +94,10 @@ public class MemberPdfGeneratorService {
             table.addCell(new Phrase(m.getCivilId() != null ? m.getCivilId() : "-", dataFont));
             table.addCell(new Phrase(m.getEmployerName() != null ? m.getEmployerName() : "-", dataFont));
             table.addCell(new Phrase(m.getPolicyNumber() != null ? m.getPolicyNumber() : "-", dataFont));
-            table.addCell(new Phrase(String.valueOf(m.getDependents() != null ? m.getDependents().size() : 0), dataFont));
-            table.addCell(new Phrase(m.getStatus() != null ? m.getStatus().name() : "-", dataFont));
-            table.addCell(new Phrase(m.getCardStatus() != null ? m.getCardStatus().name() : "-", dataFont));
+            table.addCell(
+                    new Phrase(String.valueOf(m.getDependents() != null ? m.getDependents().size() : 0), dataFont));
+            table.addCell(new Phrase(m.getStatus() != null ? m.getStatus() : "-", dataFont));
+            table.addCell(new Phrase(m.getCardStatus() != null ? m.getCardStatus() : "-", dataFont));
             table.addCell(new Phrase(m.getPhone() != null ? m.getPhone() : "-", dataFont));
         }
         document.add(table);
@@ -103,10 +107,11 @@ public class MemberPdfGeneratorService {
         PdfContentByte cb = writer.getDirectContent();
         Font footerFont = new Font(Font.HELVETICA, 8, Font.NORMAL);
         float yPosition = document.bottom() - 10;
-        
-        String text = "© " + LocalDateTime.now().getYear() + " " + (settings.getSystemName() != null ? settings.getSystemName() : "WAAD") + 
-                     " | Page " + writer.getPageNumber();
-        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(text, footerFont), 
-                                  document.getPageSize().getWidth() / 2, yPosition, 0);
+
+        String text = "© " + LocalDateTime.now().getYear() + " "
+                + (settings.getSystemName() != null ? settings.getSystemName() : "WAAD") +
+                " | Page " + writer.getPageNumber();
+        ColumnText.showTextAligned(cb, Element.ALIGN_CENTER, new Phrase(text, footerFont),
+                document.getPageSize().getWidth() / 2, yPosition, 0);
     }
 }

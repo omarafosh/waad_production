@@ -755,7 +755,7 @@ public class BenefitPolicyService {
     }
 
     /**
-     * Generate a unique policy code in format POL-YYYY-XXX
+     * Generate a unique policy code in format 
      * Example: POL-2025-001, POL-2025-002, etc.
      */
     private String generatePolicyCode() {
@@ -778,7 +778,6 @@ public class BenefitPolicyService {
             }
         }
         
-        // Format: POL-YYYY-XXX (zero-padded to 3 digits)
         String generatedCode = String.format("POL-%d-%03d", year, nextSequence);
         log.debug("Generated policy code: {}", generatedCode);
         return generatedCode;

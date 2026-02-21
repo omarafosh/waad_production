@@ -3,7 +3,6 @@ package com.waad.tba.modules.claim.dto;
 import java.math.BigDecimal;
 
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +23,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClaimApproveDto {
-    
+
     /**
      * The amount approved by the reviewer.
      * Must be positive and not exceed requested amount.
@@ -32,12 +31,12 @@ public class ClaimApproveDto {
      */
     @DecimalMin(value = "0.01", message = "المبلغ المعتمد يجب أن يكون أكبر من صفر")
     private BigDecimal approvedAmount;
-    
+
     /**
      * Optional notes from the reviewer.
      */
     private String notes;
-    
+
     /**
      * Whether to use system-calculated amount instead of manual.
      * If true, approvedAmount is ignored and calculated from cost breakdown.

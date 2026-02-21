@@ -12,11 +12,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * Legacy reviewer company entity - READ ONLY.
+ * Legacy reviewer company entity.
  * 
- * @deprecated Use {@link com.waad.tba.common.entity.Organization} with type=REVIEWER instead.
- *             This entity is kept for backward compatibility only. All new code must use Organization.
- *             Writing to this entity is prohibited - use Organization with OrganizationType.REVIEWER.
+ * NOTE: The 'organizations' table is now exclusively for EMPLOYERS.
+ * Reviewer companies should continue to use this entity or a dedicated table.
  */
 @Deprecated
 @Entity
@@ -36,11 +35,11 @@ public class ReviewerCompany {
     private String name;
 
     private String medicalDirector;
-    
+
     private String phone;
-    
+
     private String email;
-    
+
     private String address;
 
     @Builder.Default

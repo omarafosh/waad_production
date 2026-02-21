@@ -25,17 +25,18 @@ public class ComplianceAuditService {
     @Transactional(readOnly = true)
     public Map<String, Object> getNetworkComplianceStats() {
         String query = "SELECT " +
-                       "  (SELECT COUNT(*) FROM providers) as total_providers, " +
-                       "  (SELECT COUNT(*) FROM provider_insurance_partnerships WHERE active = TRUE) as active_partnerships, " +
-                       "  (SELECT COUNT(DISTINCT insurance_org_id) FROM provider_insurance_partnerships WHERE active = TRUE) as covered_insurance_companies";
-        
+                "  (SELECT COUNT(*) FROM providers) as total_providers, " +
+                "  (SELECT COUNT(*) FROM provider_insurance_partnerships WHERE active = TRUE) as active_partnerships, "
+                +
+                "  (SELECT COUNT(DISTINCT insurance_org_id) FROM provider_insurance_partnerships WHERE active = TRUE) as covered_insurance_companies";
+
         Object[] results = (Object[]) entityManager.createNativeQuery(query).getSingleResult();
-        
+
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalProviders", results[0]);
         stats.put("activePartnerships", results[1]);
         stats.put("coveredInsuranceCompanies", results[2]);
-        
+
         return stats;
     }
 
@@ -45,15 +46,16 @@ public class ComplianceAuditService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getPlanUtilizationReport() {
         String query = "SELECT bp.name, bp.policy_code, bp.annual_limit, " +
-                       "COALESCE(SUM(c.approved_amount), 0) as total_spent, " +
-                       "COUNT(DISTINCT m.id) as insured_count " +
-                       "FROM benefit_policies bp " +
-                       "LEFT JOIN members m ON bp.id = m.benefit_policy_id " +
-                       "LEFT JOIN claims c ON m.id = c.member_id AND c.status = 'APPROVED' " +
-                       "GROUP BY bp.id, bp.name, bp.policy_code, bp.annual_limit";
-        
-        List<Object[]> results = entityManager.createNativeQuery(query).getResultList();
-        
+                "COALESCE(SUM(c.approved_amount), 0) as total_spent, " +
+                "COUNT(DISTINCT m.id) as insured_count " +
+                "FROM benefit_policies bp " +
+                "LEFT JOIN members m ON bp.id = m.benefit_policy_id " +
+                "LEFT JOIN claims c ON m.id = c.member_id AND c.status = 'APPROVED' " +
+                "GROUP BY bp.id, bp.name, bp.policy_code, bp.annual_limit";
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = (List<Object[]>) entityManager.createNativeQuery(query).getResultList();
+
         return results.stream().map(row -> {
             Map<String, Object> map = new HashMap<>();
             map.put("planName", row[0]);
@@ -71,14 +73,18 @@ public class ComplianceAuditService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getRecentStatusTransitions(int limit) {
         String query = "SELECT m.full_name, h.from_status, h.to_status, h.changed_at, h.changed_by, h.reason " +
-                       "FROM member_workflow_history h " +
-                       "JOIN members m ON h.member_id = m.id " +
-                       "ORDER BY h.changed_at DESC LIMIT :limit";
-        
-        List<Object[]> results = entityManager.createNativeQuery(query)
+                "FROM member_workflow_history h " +
+                "JOIN members m ON h.member_id = m.id " +
+                "ORDER BY h.changed_at DESC LIMIT :limit";
+
+        List<?> rawResults = entityManager.createNativeQuery(query)
                 .setParameter("limit", limit)
                 .getResultList();
-        
+
+        List<Object[]> results = rawResults.stream()
+                .map(r -> (Object[]) r)
+                .toList();
+
         return results.stream().map(row -> {
             Map<String, Object> map = new HashMap<>();
             map.put("member", row[0]);

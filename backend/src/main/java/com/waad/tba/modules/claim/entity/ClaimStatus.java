@@ -1,40 +1,38 @@
 package com.waad.tba.modules.claim.entity;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Claim lifecycle status enum with strict transition rules.
  * 
  * LIFECYCLE FLOW:
  * ┌────────┐
- * │ DRAFT  │ ─── Initial state for newly created claims
+ * │ DRAFT │ ─── Initial state for newly created claims
  * └────┬───┘
- *      │ submit()
- *      ▼
+ * │ submit()
+ * ▼
  * ┌────────────┐
- * │ SUBMITTED  │ ─── Claim submitted for review
+ * │ SUBMITTED │ ─── Claim submitted for review
  * └─────┬──────┘
- *       │ startReview()
- *       ▼
- * ┌──────────────┐       ┌───────────────────┐
+ * │ startReview()
+ * ▼
+ * ┌──────────────┐ ┌───────────────────┐
  * │ UNDER_REVIEW │──────▶│ RETURNED_FOR_INFO │ (needs more info)
- * └──────┬───────┘       └─────────┬─────────┘
- *        │                         │ resubmit()
- *        │ ◄───────────────────────┘
- *        │
- *   ┌────┴────┐
- *   ▼         ▼
- * ┌──────────┐  ┌──────────┐
- * │ APPROVED │  │ REJECTED │ ─── Terminal (requires comment)
- * └────┬─────┘  └──────────┘
- *      │
- *      │ settle()
- *      ▼
+ * └──────┬───────┘ └─────────┬─────────┘
+ * │ │ resubmit()
+ * │ ◄───────────────────────┘
+ * │
+ * ┌────┴────┐
+ * ▼ ▼
+ * ┌──────────┐ ┌──────────┐
+ * │ APPROVED │ │ REJECTED │ ─── Terminal (requires comment)
+ * └────┬─────┘ └──────────┘
+ * │
+ * │ settle()
+ * ▼
  * ┌──────────┐
- * │ SETTLED  │ ─── Payment completed (Terminal)
+ * │ SETTLED │ ─── Payment completed (Terminal)
  * └──────────┘
  * 
  * LEGACY MAPPING:
@@ -49,43 +47,43 @@ public enum ClaimStatus {
      * Can be edited freely. No review or approval possible.
      */
     DRAFT("مسودة", false, false),
-    
+
     /**
      * Claim submitted for review.
      * Waiting to be picked up by a reviewer.
      */
     SUBMITTED("مقدم", false, false),
-    
+
     /**
      * Claim is actively being reviewed.
      * Reviewer can approve, reject, or request more information.
      */
     UNDER_REVIEW("قيد المراجعة", false, false),
-    
+
     /**
      * Additional information requested from submitter.
      * Claim returns to submitter for clarification.
      */
     RETURNED_FOR_INFO("إعادة للاستكمال", false, false),
-    
+
     /**
      * Approval in progress - async processing.
      * Financial calculations and validations are being executed in background.
      */
     APPROVAL_IN_PROGRESS("جاري معالجة الموافقة", false, false),
-    
+
     /**
      * Claim approved for payment.
      * May be full or partial approval (see approvedAmount).
      */
     APPROVED("موافق عليه", true, false),
-    
+
     /**
      * Claim rejected. Requires reviewerComment.
      * Terminal state - cannot be changed.
      */
     REJECTED("مرفوض", true, true),
-    
+
     /**
      * Claim cancelled by submitter or system before being approved.
      * Terminal state.
@@ -155,7 +153,7 @@ public enum ClaimStatus {
     }
 
     // ========== LEGACY COMPATIBILITY ==========
-    
+
     /**
      * @deprecated Use SUBMITTED or UNDER_REVIEW instead
      */
@@ -163,14 +161,15 @@ public enum ClaimStatus {
     public static ClaimStatus PENDING_REVIEW() {
         return SUBMITTED;
     }
-    
+
     /**
      * Map legacy status strings to new statuses.
      * Useful for data migration.
      */
     public static ClaimStatus fromLegacy(String legacyStatus) {
-        if (legacyStatus == null) return DRAFT;
-        
+        if (legacyStatus == null)
+            return DRAFT;
+
         return switch (legacyStatus.toUpperCase()) {
             case "PENDING_REVIEW" -> SUBMITTED;
             case "PREAPPROVED" -> SUBMITTED; // PreApproval is separate entity

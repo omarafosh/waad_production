@@ -2,6 +2,7 @@ package com.waad.tba.modules.member.service;
 
 import com.waad.tba.modules.member.dto.FamilyEligibilityResponseDto;
 import com.waad.tba.modules.member.dto.MemberCreateDto;
+import com.waad.tba.modules.member.dto.MemberSearchCriteria;
 import com.waad.tba.modules.member.dto.MemberUpdateDto;
 import com.waad.tba.modules.member.dto.MemberViewDto;
 import com.waad.tba.modules.member.entity.Member;
@@ -90,7 +91,8 @@ public interface UnifiedMemberService {
     /**
      * جلب كافة الأعضاء مع ترقيم الصفحات والفلاتر.
      */
-    Page<MemberViewDto> getAllMembers(Pageable pageable, Long organizationId, String status, String type, boolean deleted);
+    Page<MemberViewDto> getAllMembers(Pageable pageable, Long organizationId, String status, String type,
+            boolean deleted);
 
     /**
      * حساب عدد الأعضاء بناءً على الفلاتر.
@@ -98,19 +100,9 @@ public interface UnifiedMemberService {
     long countMembers(Long organizationId, String status, String type, boolean deleted);
 
     /**
-     * البحث المتقدم عن الأعضاء.
+     * البحث المتقدم عن الأعضاء باستخدام المعايير الموحدة.
      */
-    Page<MemberViewDto> searchMembers(String searchTerm, String civilId, String barcode, String cardNumber, Long organizationId, Long benefitPolicyId, String status, String type, boolean deleted, Pageable pageable);
-
-    /**
-     * إنشاء عضو (متوافق مع المشغلات القديمة).
-     */
-    MemberViewDto createMember(MemberCreateDto dto);
-
-    /**
-     * إضافة تابع لعضو أصيل (متوافق مع المشغلات القديمة).
-     */
-    MemberViewDto addDependent(Long principalId, com.waad.tba.modules.member.dto.DependentMemberDto dto);
+    Page<MemberViewDto> searchMembersAdvanced(MemberSearchCriteria criteria, Pageable pageable);
 
     /**
      * جلب كافة التابعين لعضو أصيل.
@@ -125,5 +117,5 @@ public interface UnifiedMemberService {
     /**
      * تصدير قائمة الأعضاء إلى ملف إكسل.
      */
-    byte[] exportMembersToExcel(String searchTerm, String civilId, String barcode, String cardNumber, Long organizationId, Long benefitPolicyId, String status, String type, boolean deleted) throws IOException;
+    byte[] exportMembersToExcel(MemberSearchCriteria criteria) throws IOException;
 }

@@ -1,0 +1,40 @@
+version: "2"
+type: backend
+tech_stack:
+  - Java 21
+  - Spring Boot 3.5
+  - PostgreSQL
+  - Redis
+  - JWT / Session Auth
+features:
+  - name: Authentication API
+    description: User login, registration, password reset, and session management.
+    files:
+      - src/main/java/com/waad/tba/modules/auth/controller/AuthController.java
+      - src/main/java/com/waad/tba/modules/auth/service/AuthService.java
+    endpoints:
+      - method: POST
+        path: /api/auth/login
+        description: Authenticate user and return JWT
+        auth_required: false
+      - method: POST
+        path: /api/auth/register
+        description: Register new user
+        auth_required: false
+      - method: GET
+        path: /api/auth/me
+        description: Get current user profile
+        auth_required: true
+      - method: POST
+        path: /api/auth/forgot-password
+        description: Request password reset OTP
+        auth_required: false
+    depends_on:
+      - RBAC System
+known_limitations:
+  - issue: RuntimeException on account lockout instead of specific error
+    location: src/main/java/com/waad/tba/modules/auth/service/AuthService.java
+    impact: Confusing error response for users
+  - issue: User Enumeration hole in reset password
+    location: src/main/java/com/waad/tba/modules/auth/service/AuthService.java
+    impact: Security risk (Privacy leak)

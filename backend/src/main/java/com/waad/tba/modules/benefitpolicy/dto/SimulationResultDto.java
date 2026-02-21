@@ -2,7 +2,6 @@ package com.waad.tba.modules.benefitpolicy.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import java.math.BigDecimal;
 
 /**
  * Result DTO for benefit coverage simulation.

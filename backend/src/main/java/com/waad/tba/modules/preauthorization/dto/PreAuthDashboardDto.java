@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 /**
  * DTO for PreAuthorization Dashboard Statistics and Analytics
@@ -68,12 +67,12 @@ public class PreAuthDashboardDto {
         private long pendingCount;
         private long approvedCount;
         private long rejectedCount;
-        
+
         private BigDecimal totalRequestedAmount;
         private BigDecimal totalApprovedAmount;
         private BigDecimal averageApprovedAmount;
-        
-        private double approvalRate;  // Percentage
+
+        private double approvalRate; // Percentage
         private double rejectionRate; // Percentage
     }
 
@@ -91,7 +90,7 @@ public class PreAuthDashboardDto {
         private long cancelled;
         private long expired;
         private long underReview;
-        
+
         private BigDecimal pendingAmount;
         private BigDecimal approvedAmount;
         private BigDecimal rejectedAmount;
@@ -140,7 +139,7 @@ public class PreAuthDashboardDto {
     public static class RecentActivity {
         private Long preAuthId;
         private String referenceNumber;
-        private String action;        // CREATED, APPROVED, REJECTED, etc.
+        private String action; // CREATED, APPROVED, REJECTED, etc.
         private String actionBy;
         private String timestamp;
         private String notes;

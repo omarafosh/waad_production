@@ -9,8 +9,7 @@ import com.waad.tba.modules.benefitpolicy.service.BenefitPolicyRuleService;
 import com.waad.tba.modules.benefitpolicy.dto.BenefitPolicyRuleResponseDto;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import com.waad.tba.modules.medicaltaxonomy.repository.MedicalServiceRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
@@ -18,8 +17,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-import java.util.List;
-import java.util.Map;
 
 /**
  * Requirement 3 & 8: Benefit Plan-Driven Coverage Model

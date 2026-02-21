@@ -33,7 +33,8 @@ import java.util.*;
  * - Detailed error reporting
  * 
  * Template Columns:
- * | code | name | category_code | description | base_price | cost | requires_pre_approval | active |
+ * | code | name | category_code | description | base_price | cost |
+ * requires_pre_approval | active |
  */
 @Slf4j
 @Service
@@ -60,29 +61,29 @@ public class MedicalServiceBulkImportService {
         try (Workbook workbook = new XSSFWorkbook()) {
             // Create main data sheet
             Sheet dataSheet = workbook.createSheet(TEMPLATE_SHEET);
-            
+
             // Create header style
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle requiredStyle = createRequiredHeaderStyle(workbook);
-            
+
             // Header row - Only name is required, others are optional
             Row headerRow = dataSheet.createRow(0);
             String[] headers = {
-                "name *", "code", "category", "description", 
-                "price", "status"
+                    "name *", "code", "category", "description",
+                    "price", "status"
             };
             String[] headersAr = {
-                "الاسم *", "الرمز", "التصنيف", "الوصف",
-                "السعر", "الحالة"
+                    "الاسم *", "الرمز", "التصنيف", "الوصف",
+                    "السعر", "الحالة"
             };
-            
+
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
                 // Only name (first column) is required
                 cell.setCellStyle(i == 0 ? requiredStyle : headerStyle);
             }
-            
+
             // Arabic header row
             Row arHeaderRow = dataSheet.createRow(1);
             for (int i = 0; i < headersAr.length; i++) {
@@ -90,30 +91,30 @@ public class MedicalServiceBulkImportService {
                 cell.setCellValue(headersAr[i]);
                 cell.setCellStyle(headerStyle);
             }
-            
+
             // Example row - showing that only name is required
             Row exampleRow = dataSheet.createRow(2);
-            exampleRow.createCell(0).setCellValue("فحص شامل");  // name (required)
-            exampleRow.createCell(1).setCellValue("SRV-001");    // code (optional)
-            exampleRow.createCell(2).setCellValue("مختبر");      // category (optional)
+            exampleRow.createCell(0).setCellValue("فحص شامل"); // name (required)
+            exampleRow.createCell(1).setCellValue("SRV-001"); // code (optional)
+            exampleRow.createCell(2).setCellValue("مختبر"); // category (optional)
             exampleRow.createCell(3).setCellValue("فحص طبي شامل"); // description (optional)
-            exampleRow.createCell(4).setCellValue("50.00");      // price (optional)
-            exampleRow.createCell(5).setCellValue("ACTIVE");     // status (optional, default ACTIVE)
-            
+            exampleRow.createCell(4).setCellValue("50.00"); // price (optional)
+            exampleRow.createCell(5).setCellValue("ACTIVE"); // status (optional, default ACTIVE)
+
             // Auto-size columns
             for (int i = 0; i < headers.length; i++) {
                 dataSheet.autoSizeColumn(i);
             }
-            
+
             // Create categories reference sheet
             createCategoriesReferenceSheet(workbook);
-            
+
             // Create instructions sheet
             createInstructionsSheet(workbook);
-            
+
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
-            
+
             log.info("[BulkImport] Template generated successfully");
             return out.toByteArray();
         }
@@ -121,7 +122,7 @@ public class MedicalServiceBulkImportService {
 
     private void createCategoriesReferenceSheet(Workbook workbook) {
         Sheet catSheet = workbook.createSheet(CATEGORIES_SHEET);
-        
+
         // Header
         CellStyle headerStyle = createHeaderStyle(workbook);
         Row headerRow = catSheet.createRow(0);
@@ -129,7 +130,7 @@ public class MedicalServiceBulkImportService {
         headerRow.createCell(1).setCellValue("Name / الاسم");
         headerRow.getCell(0).setCellStyle(headerStyle);
         headerRow.getCell(1).setCellStyle(headerStyle);
-        
+
         // Load categories from database
         List<MedicalCategory> categories = categoryRepository.findByActiveTrue();
         int rowNum = 1;
@@ -138,7 +139,7 @@ public class MedicalServiceBulkImportService {
             row.createCell(0).setCellValue(cat.getCode() != null ? cat.getCode() : "");
             row.createCell(1).setCellValue(cat.getName() != null ? cat.getName() : "");
         }
-        
+
         catSheet.autoSizeColumn(0);
         catSheet.autoSizeColumn(1);
     }
@@ -146,34 +147,34 @@ public class MedicalServiceBulkImportService {
     private void createInstructionsSheet(Workbook workbook) {
         // Note: Sheet names cannot contain / character
         Sheet instSheet = workbook.createSheet("Instructions - تعليمات");
-        
+
         String[] instructions = {
-            "تعليمات استيراد الخدمات الطبية",
-            "=============================",
-            "",
-            "الأعمدة الإجبارية (*) :",
-            "- name: اسم الخدمة (إجباري)",
-            "",
-            "الأعمدة الاختيارية:",
-            "- code: رمز الخدمة (اختياري - يتم توليده تلقائياً إذا لم يُحدد)",
-            "- category: اسم أو رمز التصنيف (اختياري)",
-            "- description: وصف الخدمة (اختياري)",
-            "- price: السعر الأساسي (اختياري - رقم >= 0)",
-            "- status: الحالة ACTIVE/INACTIVE (اختياري - الافتراضي: ACTIVE)",
-            "",
-            "ملاحظات مهمة:",
-            "- ابدأ البيانات من الصف 3 (بعد صفي الترويسة)",
-            "- لا تحذف صفي الترويسة",
-            "- إذا كان الرمز موجوداً سيتم تحديث الخدمة",
-            "- إذا كان الاسم مكرراً بدون رمز، سيتم تجاهل الصف",
-            "- يدعم النظام استيراد 12,500 صف أو أكثر"
+                "تعليمات استيراد الخدمات الطبية",
+                "=============================",
+                "",
+                "الأعمدة الإجبارية (*) :",
+                "- name: اسم الخدمة (إجباري)",
+                "",
+                "الأعمدة الاختيارية:",
+                "- code: رمز الخدمة (اختياري - يتم توليده تلقائياً إذا لم يُحدد)",
+                "- category: اسم أو رمز التصنيف (اختياري)",
+                "- description: وصف الخدمة (اختياري)",
+                "- price: السعر الأساسي (اختياري - رقم >= 0)",
+                "- status: الحالة ACTIVE/INACTIVE (اختياري - الافتراضي: ACTIVE)",
+                "",
+                "ملاحظات مهمة:",
+                "- ابدأ البيانات من الصف 3 (بعد صفي الترويسة)",
+                "- لا تحذف صفي الترويسة",
+                "- إذا كان الرمز موجوداً سيتم تحديث الخدمة",
+                "- إذا كان الاسم مكرراً بدون رمز، سيتم تجاهل الصف",
+                "- يدعم النظام استيراد 12,500 صف أو أكثر"
         };
-        
+
         for (int i = 0; i < instructions.length; i++) {
             Row row = instSheet.createRow(i);
             row.createCell(0).setCellValue(instructions[i]);
         }
-        
+
         instSheet.autoSizeColumn(0);
     }
 
@@ -234,17 +235,17 @@ public class MedicalServiceBulkImportService {
             Map<String, MedicalCategory> categoryCache = loadCategoryCache();
             Set<String> existingCodes = loadExistingCodes();
 
-            log.info("[BulkImport] Loaded {} categories, {} existing services", 
-                     categoryCache.size(), existingCodes.size());
+            log.info("[BulkImport] Loaded {} categories, {} existing services",
+                    categoryCache.size(), existingCodes.size());
 
             // Process rows (start from row 3, after 2 header rows)
             int lastRow = sheet.getLastRowNum();
             int startRow = 2; // 0-indexed, so row 3 in Excel
-            
+
             log.info("[BulkImport] Processing rows {} to {}", startRow + 1, lastRow + 1);
 
             List<MedicalService> batchToSave = new ArrayList<>();
-            
+
             for (int rowNum = startRow; rowNum <= lastRow; rowNum++) {
                 Row row = sheet.getRow(rowNum);
                 if (row == null || isEmptyRow(row)) {
@@ -257,7 +258,7 @@ public class MedicalServiceBulkImportService {
                     MedicalService service = processRow(row, rowNum + 1, categoryCache, existingCodes, summary);
                     if (service != null) {
                         batchToSave.add(service);
-                        
+
                         // Save in batches
                         if (batchToSave.size() >= BATCH_SIZE) {
                             saveBatch(batchToSave);
@@ -282,7 +283,7 @@ public class MedicalServiceBulkImportService {
                     duration, summary.getTotal(), summary.getInserted(), summary.getUpdated(), summary.getFailed());
 
             String message = buildSuccessMessage(summary, duration);
-            
+
             return ExcelImportResultDto.builder()
                     .success(summary.getInserted() + summary.getUpdated() > 0)
                     .summary(summary)
@@ -295,23 +296,24 @@ public class MedicalServiceBulkImportService {
         }
     }
 
-    private MedicalService processRow(Row row, int rowNum, 
-                                      Map<String, MedicalCategory> categoryCache,
-                                      Set<String> existingCodes,
-                                      ImportSummary summary) {
-        // Extract data - NEW COLUMN ORDER: name*, code, category, description, price, status
-        String nameRaw = getCellString(row, 0);        // Column 0: name (REQUIRED)
-        String codeRaw = getCellString(row, 1);        // Column 1: code (optional)
-        String categoryCode = getCellString(row, 2);   // Column 2: category (optional)
-        String description = getCellString(row, 3);    // Column 3: description (optional)
+    private MedicalService processRow(Row row, int rowNum,
+            Map<String, MedicalCategory> categoryCache,
+            Set<String> existingCodes,
+            ImportSummary summary) {
+        // Extract data - NEW COLUMN ORDER: name*, code, category, description, price,
+        // status
+        String nameRaw = getCellString(row, 0); // Column 0: name (REQUIRED)
+        String codeRaw = getCellString(row, 1); // Column 1: code (optional)
+        String categoryCode = getCellString(row, 2); // Column 2: category (optional)
+        String description = getCellString(row, 3); // Column 3: description (optional)
         BigDecimal basePrice = getCellDecimal(row, 4); // Column 4: price (optional)
-        String status = getCellString(row, 5);         // Column 5: status (optional, default ACTIVE)
+        String status = getCellString(row, 5); // Column 5: status (optional, default ACTIVE)
 
         // Validate required fields - ONLY name is required
         if (nameRaw == null || nameRaw.trim().isEmpty()) {
             throw new BusinessRuleException("Row " + rowNum + ": name is required (الاسم مطلوب)");
         }
-        
+
         // Trim the name (final for lambda usage)
         final String name = nameRaw.trim();
 
@@ -333,7 +335,8 @@ public class MedicalServiceBulkImportService {
             }
             // Log warning if category not found, but don't fail
             if (category == null) {
-                log.warn("[BulkImport] Row {}: category not found: {}, skipping category assignment", rowNum, categoryCode);
+                log.warn("[BulkImport] Row {}: category not found: {}, skipping category assignment", rowNum,
+                        categoryCode);
             }
         }
 
@@ -341,12 +344,13 @@ public class MedicalServiceBulkImportService {
         boolean isActive = true;
         if (status != null && !status.trim().isEmpty()) {
             String statusLower = status.trim().toLowerCase();
-            isActive = !statusLower.equals("inactive") && !statusLower.equals("غير نشط") && !statusLower.equals("no") && !statusLower.equals("0");
+            isActive = !statusLower.equals("inactive") && !statusLower.equals("غير نشط") && !statusLower.equals("no")
+                    && !statusLower.equals("0");
         }
 
         // Check if update or insert by code
         boolean isUpdate = existingCodes.contains(code.toUpperCase());
-        
+
         MedicalService service;
         if (isUpdate) {
             service = serviceRepository.findByCode(code)
@@ -361,7 +365,7 @@ public class MedicalServiceBulkImportService {
                 summary.setSkipped(summary.getSkipped() + 1);
                 return null;
             }
-            
+
             service = new MedicalService();
             service.setCode(code);
             service.setCreatedAt(LocalDateTime.now());
@@ -380,7 +384,8 @@ public class MedicalServiceBulkImportService {
         if (basePrice != null) {
             service.setBasePrice(basePrice);
         }
-        // service.setRequiresPA(false); // DEPRECATED: pre-approval now comes from BenefitPolicyRule
+        // service.setRequiresPA(false); // DEPRECATED: pre-approval now comes from
+        // BenefitPolicyRule
         service.setActive(isActive);
         service.setUpdatedAt(LocalDateTime.now());
 
@@ -399,7 +404,7 @@ public class MedicalServiceBulkImportService {
     private Map<String, MedicalCategory> loadCategoryCache() {
         List<MedicalCategory> categories = categoryRepository.findAll();
         Map<String, MedicalCategory> cache = new HashMap<>();
-        
+
         for (MedicalCategory cat : categories) {
             if (cat.getCode() != null) {
                 cache.put(cat.getCode().trim().toUpperCase(), cat);
@@ -408,7 +413,7 @@ public class MedicalServiceBulkImportService {
                 cache.put(cat.getName().trim(), cat);
             }
         }
-        
+
         return cache;
     }
 
@@ -431,7 +436,7 @@ public class MedicalServiceBulkImportService {
         if (file == null || file.isEmpty()) {
             throw new BusinessRuleException("الملف فارغ");
         }
-        
+
         String filename = file.getOriginalFilename();
         if (filename == null || (!filename.endsWith(".xlsx") && !filename.endsWith(".xls"))) {
             throw new BusinessRuleException("نوع الملف غير صحيح. يجب أن يكون ملف Excel (.xlsx أو .xls)");
@@ -439,7 +444,8 @@ public class MedicalServiceBulkImportService {
     }
 
     private boolean isEmptyRow(Row row) {
-        if (row == null) return true;
+        if (row == null)
+            return true;
         // Only check first column (name) since it's the only required field
         Cell cell = row.getCell(0);
         if (cell != null && cell.getCellType() != CellType.BLANK) {
@@ -453,8 +459,9 @@ public class MedicalServiceBulkImportService {
 
     private String getCellString(Row row, int colIndex) {
         Cell cell = row.getCell(colIndex);
-        if (cell == null) return null;
-        
+        if (cell == null)
+            return null;
+
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue();
@@ -475,15 +482,17 @@ public class MedicalServiceBulkImportService {
 
     private BigDecimal getCellDecimal(Row row, int colIndex) {
         Cell cell = row.getCell(colIndex);
-        if (cell == null) return null;
-        
+        if (cell == null)
+            return null;
+
         try {
             switch (cell.getCellType()) {
                 case NUMERIC:
                     return BigDecimal.valueOf(cell.getNumericCellValue());
                 case STRING:
                     String value = cell.getStringCellValue();
-                    if (value == null || value.trim().isEmpty()) return null;
+                    if (value == null || value.trim().isEmpty())
+                        return null;
                     return new BigDecimal(value.trim());
                 default:
                     return null;
@@ -493,20 +502,23 @@ public class MedicalServiceBulkImportService {
         }
     }
 
+    @SuppressWarnings("unused")
     private Boolean getCellBoolean(Row row, int colIndex) {
         Cell cell = row.getCell(colIndex);
-        if (cell == null) return null;
-        
+        if (cell == null)
+            return null;
+
         try {
             switch (cell.getCellType()) {
                 case BOOLEAN:
                     return cell.getBooleanCellValue();
                 case STRING:
                     String value = cell.getStringCellValue();
-                    if (value == null || value.trim().isEmpty()) return null;
+                    if (value == null || value.trim().isEmpty())
+                        return null;
                     value = value.trim().toLowerCase();
-                    return value.equals("yes") || value.equals("نعم") || 
-                           value.equals("true") || value.equals("1");
+                    return value.equals("yes") || value.equals("نعم") ||
+                            value.equals("true") || value.equals("1");
                 case NUMERIC:
                     return cell.getNumericCellValue() == 1;
                 default:
@@ -528,12 +540,11 @@ public class MedicalServiceBulkImportService {
 
     private String buildSuccessMessage(ImportSummary summary, long durationMs) {
         return String.format(
-            "تم الاستيراد في %.1f ثانية | الإجمالي: %d | جديد: %d | محدث: %d | فاشل: %d",
-            durationMs / 1000.0,
-            summary.getTotal(),
-            summary.getInserted(),
-            summary.getUpdated(),
-            summary.getFailed()
-        );
+                "تم الاستيراد في %.1f ثانية | الإجمالي: %d | جديد: %d | محدث: %d | فاشل: %d",
+                durationMs / 1000.0,
+                summary.getTotal(),
+                summary.getInserted(),
+                summary.getUpdated(),
+                summary.getFailed());
     }
 }

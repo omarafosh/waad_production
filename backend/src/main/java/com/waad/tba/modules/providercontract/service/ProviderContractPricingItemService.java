@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,8 +74,6 @@ public class ProviderContractPricingItemService {
 
         return page.map(item -> ProviderContractPricingItemResponseDto.fromEntity(item));
     }
-
-
 
     /**
      * Get pricing item by ID
@@ -188,7 +185,7 @@ public class ProviderContractPricingItemService {
 
             serviceName = service.getName();
             serviceCode = service.getCode();
-            
+
             // Auto-populate specialty if not provided and service has it
             if (dto.getSpecialty() == null || dto.getSpecialty().isBlank()) {
                 dto.setSpecialty(service.getSpecialty());
@@ -335,11 +332,12 @@ public class ProviderContractPricingItemService {
      * Batch update multiple pricing items in a contract
      */
     @Transactional
-    public List<ProviderContractPricingItemResponseDto> updateBulk(Long contractId, Map<Long, ProviderContractPricingItemUpdateDto> updates) {
+    public List<ProviderContractPricingItemResponseDto> updateBulk(Long contractId,
+            Map<Long, ProviderContractPricingItemUpdateDto> updates) {
         log.info("Batch updating {} pricing items for contract: {}", updates.size(), contractId);
-        
+
         verifyContractExists(contractId);
-        
+
         List<ProviderContractPricingItemResponseDto> results = new ArrayList<>();
         for (var entry : updates.entrySet()) {
             results.add(update(entry.getKey(), entry.getValue()));
@@ -354,7 +352,7 @@ public class ProviderContractPricingItemService {
     @Transactional
     public int adjustPricesByPercentage(Long contractId, BigDecimal percentageChange) {
         log.info("Applying {}% price adjustment to contract: {}", percentageChange, contractId);
-        
+
         ProviderContract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new BusinessRuleException("Contract not found"));
 
@@ -363,7 +361,8 @@ public class ProviderContractPricingItemService {
         }
 
         List<ProviderContractPricingItem> items = pricingRepository.findByContractIdAndActiveTrue(contractId);
-        BigDecimal multiplier = BigDecimal.ONE.add(percentageChange.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP));
+        BigDecimal multiplier = BigDecimal.ONE
+                .add(percentageChange.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP));
 
         for (ProviderContractPricingItem item : items) {
             BigDecimal newPrice = item.getContractPrice().multiply(multiplier).setScale(2, RoundingMode.HALF_UP);
@@ -527,7 +526,9 @@ public class ProviderContractPricingItemService {
                         .id(p.getMedicalService().getId())
                         .code(p.getMedicalService().getCode())
                         .name(p.getMedicalService().getName())
-                        .categoryName(p.getMedicalService().getCategoryName() != null ? p.getMedicalService().getCategoryName() : p.getCategoryName())
+                        .categoryName(p.getMedicalService().getCategoryName() != null
+                                ? p.getMedicalService().getCategoryName()
+                                : p.getCategoryName())
                         .contractPrice(p.getContractPrice())
                         .basePrice(p.getBasePrice())
                         .discountPercent(p.getDiscountPercent())

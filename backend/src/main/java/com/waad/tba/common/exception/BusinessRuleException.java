@@ -14,25 +14,35 @@ import com.waad.tba.common.error.ErrorCode;
  */
 public class BusinessRuleException extends RuntimeException {
     private static final long serialVersionUID = 1L;
-    
+
     private final ErrorCode errorCode;
+    private final Object[] args;
 
     public BusinessRuleException(String message) {
-        super(message);
-        this.errorCode = ErrorCode.BUSINESS_RULE_VIOLATION;
+        this(ErrorCode.BUSINESS_RULE_VIOLATION, message, null);
     }
 
     public BusinessRuleException(ErrorCode errorCode, String message) {
+        this(errorCode, message, null);
+    }
+
+    public BusinessRuleException(ErrorCode errorCode, String message, Object[] args) {
         super(message);
         this.errorCode = errorCode;
+        this.args = args;
     }
 
     public BusinessRuleException(String message, Throwable cause) {
         super(message, cause);
         this.errorCode = ErrorCode.BUSINESS_RULE_VIOLATION;
+        this.args = null;
     }
 
     public ErrorCode getErrorCode() {
         return errorCode;
+    }
+
+    public Object[] getArgs() {
+        return args;
     }
 }

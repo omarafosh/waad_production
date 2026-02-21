@@ -1,6 +1,5 @@
 package com.waad.tba.modules.benefitpolicy.entity;
 
-import com.waad.tba.modules.benefitpolicy.enums.DistributionType;
 import com.waad.tba.modules.medicaltaxonomy.entity.MedicalService;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
@@ -21,9 +20,9 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "coverage_distributions", indexes = {
-    @Index(name = "idx_dist_policy", columnList = "benefit_policy_id"),
-    @Index(name = "idx_dist_category", columnList = "medical_category"),
-    @Index(name = "idx_dist_service", columnList = "medical_service_id")
+        @Index(name = "idx_dist_policy", columnList = "benefit_policy_id"),
+        @Index(name = "idx_dist_category", columnList = "medical_category"),
+        @Index(name = "idx_dist_service", columnList = "medical_service_id")
 })
 @Data
 @Builder
@@ -42,7 +41,7 @@ public class CoverageDistribution {
     private BenefitPolicy benefitPolicy;
 
     /**
-     * Target Category for the limit. 
+     * Target Category for the limit.
      */
     @Column(name = "medical_category", length = 100)
     private String medicalCategory;

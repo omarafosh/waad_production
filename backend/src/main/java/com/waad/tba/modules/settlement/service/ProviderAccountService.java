@@ -384,7 +384,7 @@ public class ProviderAccountService {
                     .totalPaid(account.getTotalPaid())
                     .status(account.getStatus().name())
                     .statusArabic(account.getStatus().getArabicLabel())
-                    .pendingClaimsCount(0) // TODO: Calculate from claims
+                    .pendingClaimsCount(0) 
                     .updatedAt(account.getUpdatedAt())
                     .build();
         }).toList();

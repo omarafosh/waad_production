@@ -35,51 +35,53 @@ public class UnifiedMemberMapper {
      */
     public Member toEntity(MemberCreateDto dto) {
         return Member.builder()
-            .fullName(dto.getFullName())
-            .civilId(dto.getCivilId() != null && !dto.getCivilId().trim().isEmpty() ? dto.getCivilId().trim() : null)
-            .birthDate(dto.getBirthDate())
-            .gender(dto.getGender())
-            .maritalStatus(dto.getMaritalStatus())
-            .phone(dto.getPhone())
-            .email(dto.getEmail())
-            .address(dto.getAddress())
-            .nationality(dto.getNationality())
-            .policyNumber(dto.getPolicyNumber())
-            .employeeNumber(dto.getEmployeeNumber())
-            .joinDate(dto.getJoinDate())
-            .occupation(dto.getOccupation())
-            .status(dto.getStatus() != null ? dto.getStatus() : Member.MemberStatus.ACTIVE)
-            .startDate(dto.getStartDate())
-            .endDate(dto.getEndDate())
-            .cardStatus(dto.getCardStatus() != null ? dto.getCardStatus() : Member.CardStatus.ACTIVE)
-            .notes(dto.getNotes())
-            .active(dto.getActive() != null ? dto.getActive() : true)
-            .isVip(Boolean.TRUE.equals(dto.getIsVip()))
-            .isUrgent(Boolean.TRUE.equals(dto.getIsUrgent()))
-            .emergencyNotes(dto.getEmergencyNotes())
-            .build();
+                .fullName(dto.getFullName())
+                .civilId(
+                        dto.getCivilId() != null && !dto.getCivilId().trim().isEmpty() ? dto.getCivilId().trim() : null)
+                .birthDate(dto.getBirthDate())
+                .gender(dto.getGender())
+                .maritalStatus(dto.getMaritalStatus())
+                .phone(dto.getPhone())
+                .email(dto.getEmail())
+                .address(dto.getAddress())
+                .nationality(dto.getNationality())
+                .policyNumber(dto.getPolicyNumber())
+                // .employeeNumber(dto.getEmployeeNumber()) // Moved to MemberEmploymentDetails
+                // .joinDate(dto.getJoinDate()) // Moved to MemberEmploymentDetails
+                // .occupation(dto.getOccupation()) // Moved to MemberEmploymentDetails
+                .status(dto.getStatus() != null ? dto.getStatus() : Member.MemberStatus.ACTIVE)
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
+                .cardStatus(dto.getCardStatus() != null ? dto.getCardStatus() : Member.CardStatus.ACTIVE)
+                .notes(dto.getNotes())
+                .active(dto.getActive() != null ? dto.getActive() : true)
+                .isVip(Boolean.TRUE.equals(dto.getIsVip()))
+                .isUrgent(Boolean.TRUE.equals(dto.getIsUrgent()))
+                .emergencyNotes(dto.getEmergencyNotes())
+                .build();
     }
 
     /**
      * Convert DependentMemberDto to Member entity.
-     * NOTE: This does NOT set barcode (always NULL), cardNumber (generated), parent (set by service).
+     * NOTE: This does NOT set barcode (always NULL), cardNumber (generated), parent
+     * (set by service).
      */
     public Member toEntity(DependentMemberDto dto) {
         return Member.builder()
-            .relationship(dto.getRelationship()) // REQUIRED for dependents
-            .fullName(dto.getFullName())
-            .civilId(dto.getCivilId() != null && !dto.getCivilId().trim().isEmpty() ? dto.getCivilId().trim() : null)
-            .birthDate(dto.getBirthDate())
-            .gender(dto.getGender() != null ? dto.getGender() : Member.Gender.UNDEFINED)
-            .maritalStatus(dto.getMaritalStatus())
-            .phone(dto.getPhone())
-            .email(dto.getEmail())
-            .occupation(dto.getOccupation())
-            .notes(dto.getNotes())
-            .active(dto.getActive() != null ? dto.getActive() : true)
-            .status(Member.MemberStatus.ACTIVE) // Default
-            .cardStatus(Member.CardStatus.ACTIVE) // Default
-            .build();
+                .relationship(dto.getRelationship()) // REQUIRED for dependents
+                .fullName(dto.getFullName())
+                .civilId(
+                        dto.getCivilId() != null && !dto.getCivilId().trim().isEmpty() ? dto.getCivilId().trim() : null)
+                .birthDate(dto.getBirthDate())
+                .gender(dto.getGender() != null ? dto.getGender() : Member.Gender.UNDEFINED)
+                .maritalStatus(dto.getMaritalStatus())
+                .phone(dto.getPhone())
+                .email(dto.getEmail())
+                .notes(dto.getNotes())
+                .active(dto.getActive() != null ? dto.getActive() : true)
+                .status(Member.MemberStatus.ACTIVE) // Default
+                .cardStatus(Member.CardStatus.ACTIVE) // Default
+                .build();
     }
 
     /**
@@ -116,15 +118,18 @@ public class UnifiedMemberMapper {
         if (dto.getPolicyNumber() != null) {
             entity.setPolicyNumber(dto.getPolicyNumber());
         }
-        if (dto.getEmployeeNumber() != null) {
-            entity.setEmployeeNumber(dto.getEmployeeNumber());
-        }
-        if (dto.getJoinDate() != null) {
-            entity.setJoinDate(dto.getJoinDate());
-        }
-        if (dto.getOccupation() != null) {
-            entity.setOccupation(dto.getOccupation());
-        }
+        /*
+         * // Moved to MemberEmploymentDetails
+         * if (dto.getEmployeeNumber() != null) {
+         * entity.setEmployeeNumber(dto.getEmployeeNumber());
+         * }
+         * if (dto.getJoinDate() != null) {
+         * entity.setJoinDate(dto.getJoinDate());
+         * }
+         * if (dto.getOccupation() != null) {
+         * entity.setOccupation(dto.getOccupation());
+         * }
+         */
         if (dto.getStatus() != null) {
             entity.setStatus(dto.getStatus());
         }
@@ -146,7 +151,7 @@ public class UnifiedMemberMapper {
         if (dto.getActive() != null) {
             entity.setActive(dto.getActive());
         }
-        
+
         if (dto.getIsVip() != null) {
             entity.setIsVip(dto.getIsVip());
         }
@@ -156,7 +161,7 @@ public class UnifiedMemberMapper {
         if (dto.getEmergencyNotes() != null) {
             entity.setEmergencyNotes(dto.getEmergencyNotes());
         }
-        
+
         // Relationship can be updated for dependents only
         if (dto.getRelationship() != null && entity.isDependent()) {
             entity.setRelationship(dto.getRelationship());
@@ -168,18 +173,18 @@ public class UnifiedMemberMapper {
      */
     public MemberViewDto toViewDto(Member entity, List<Member> dependents) {
         MemberViewDto dto = toViewDto(entity);
-        
+
         // Add dependent information
         if (dependents != null && !dependents.isEmpty()) {
             List<DependentViewDto> dependentDtos = dependents.stream()
-                .map(this::toDependentViewDto)
-                .collect(Collectors.toList());
+                    .map(this::toDependentViewDto)
+                    .collect(Collectors.toList());
             dto.setDependents(dependentDtos);
             dto.setDependentsCount(dependentDtos.size());
         } else {
             dto.setDependentsCount(0);
         }
-        
+
         return dto;
     }
 
@@ -188,69 +193,70 @@ public class UnifiedMemberMapper {
      */
     public MemberViewDto toViewDto(Member entity) {
         MemberViewDto dto = MemberViewDto.builder()
-            .id(entity.getId())
-            .type(entity.getType().name()) // PRINCIPAL or DEPENDENT
-            .fullName(entity.getFullName())
-            .civilId(entity.getCivilId())
-            .cardNumber(entity.getCardNumber())
-            .barcode(entity.getBarcode()) // NULL for dependents
-            .birthDate(entity.getBirthDate())
-            .gender(entity.getGender())
-            .maritalStatus(entity.getMaritalStatus())
-            .phone(entity.getPhone())
-            .email(entity.getEmail())
-            .address(entity.getAddress())
-            .nationality(entity.getNationality())
-            .policyNumber(entity.getPolicyNumber())
-            .employeeNumber(entity.getEmployeeNumber())
-            .joinDate(entity.getJoinDate())
-            .occupation(entity.getOccupation())
-            .status(entity.getStatus())
-            .startDate(entity.getStartDate())
-            .endDate(entity.getEndDate())
-            .cardStatus(entity.getCardStatus())
-            .blockedReason(entity.getBlockedReason())
-            .eligibilityStatus(entity.getEligibilityStatus())
-            .photoUrl(entity.getPhotoUrl())
-            .relationshipCode(entity.getRelationshipCode())
-            .providerCode(entity.getProviderCode())
-            .companyCode(entity.getCompanyCode())
-            .internalIdPart(entity.getInternalIdPart())
-            .cardActivatedAt(entity.getCardActivatedAt())
-            .isSmartCard(Boolean.TRUE.equals(entity.getIsSmartCard()))
-            .secondaryStatus(entity.getSecondaryStatus())
-            .notes(entity.getNotes())
-            .active(entity.getActive())
-            .createdBy(entity.getCreatedBy())
-            .updatedBy(entity.getUpdatedBy())
-            .createdAt(entity.getCreatedAt())
-            .updatedAt(entity.getUpdatedAt())
-            .dependentsCount(entity.getDependentsCount())
-            .isVip(Boolean.TRUE.equals(entity.getIsVip()))
-            .isUrgent(Boolean.TRUE.equals(entity.getIsUrgent()))
-            .emergencyNotes(entity.getEmergencyNotes())
-            .build();
-        
+                .id(entity.getId())
+                .type(entity.getType().name()) // PRINCIPAL or DEPENDENT
+                .fullName(entity.getFullName())
+                .civilId(entity.getCivilId())
+                .cardNumber(entity.getCardNumber())
+                .barcode(entity.getBarcode()) // NULL for dependents
+                .birthDate(entity.getBirthDate())
+                .gender(entity.getGender() != null ? entity.getGender().name() : null)
+                .maritalStatus(entity.getMaritalStatus() != null ? entity.getMaritalStatus().name() : null)
+                .phone(entity.getPhone())
+                .email(entity.getEmail())
+                .address(entity.getAddress())
+                .nationality(entity.getNationality())
+                .policyNumber(entity.getPolicyNumber())
+                // .employeeNumber(entity.getEmployeeNumber()) // Moved to
+                // MemberEmploymentDetails
+                // .joinDate(entity.getJoinDate()) // Moved to MemberEmploymentDetails
+                // .occupation(entity.getOccupation()) // Moved to MemberEmploymentDetails
+                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                .startDate(entity.getStartDate())
+                .endDate(entity.getEndDate())
+                .cardStatus(entity.getCardStatus() != null ? entity.getCardStatus().name() : null)
+                .blockedReason(entity.getBlockedReason())
+                .eligibilityStatus(entity.getEligibilityStatus())
+                .photoUrl(entity.getPhotoUrl())
+                .relationshipCode(entity.getRelationshipCode())
+                .providerCode(entity.getProviderCode())
+                .companyCode(entity.getCompanyCode())
+                .internalIdPart(entity.getInternalIdPart())
+                .cardActivatedAt(entity.getCardActivatedAt())
+                .isSmartCard(Boolean.TRUE.equals(entity.getIsSmartCard()))
+                .secondaryStatus(entity.getSecondaryStatus())
+                .notes(entity.getNotes())
+                .active(entity.getActive())
+                .createdBy(entity.getCreatedBy())
+                .updatedBy(entity.getUpdatedBy())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .dependentsCount(entity.getDependentsCount())
+                .isVip(Boolean.TRUE.equals(entity.getIsVip()))
+                .isUrgent(Boolean.TRUE.equals(entity.getIsUrgent()))
+                .emergencyNotes(entity.getEmergencyNotes())
+                .build();
+
         // Set organization/policy info
         if (entity.getEmployerOrganization() != null) {
             dto.setEmployerId(entity.getEmployerOrganization().getId());
             dto.setEmployerName(entity.getEmployerOrganization().getName());
         }
-        
+
         if (entity.getBenefitPolicy() != null) {
             dto.setBenefitPolicyId(entity.getBenefitPolicy().getId());
             dto.setBenefitPolicyName(entity.getBenefitPolicy().getName());
             dto.setBenefitPolicyCode(entity.getBenefitPolicy().getPolicyCode());
             dto.setBenefitPolicyStatus(entity.getBenefitPolicy().getStatus().name());
         }
-        
+
         // Set parent/relationship info if dependent
         if (entity.isDependent()) {
             dto.setParentId(entity.getParent().getId());
             dto.setParentFullName(entity.getParent().getFullName());
-            dto.setRelationship(entity.getRelationship());
+            dto.setRelationship(entity.getRelationship() != null ? entity.getRelationship().name() : null);
         }
-        
+
         return dto;
     }
 
@@ -261,30 +267,30 @@ public class UnifiedMemberMapper {
         if (!entity.isDependent()) {
             throw new IllegalArgumentException("Cannot convert principal to DependentViewDto");
         }
-        
+
         return DependentViewDto.builder()
-            .id(entity.getId())
-            .relationship(entity.getRelationship())
-            .fullName(entity.getFullName())
-            .civilId(entity.getCivilId())
-            .cardNumber(entity.getCardNumber())
-            .birthDate(entity.getBirthDate())
-            .gender(entity.getGender())
-            .maritalStatus(entity.getMaritalStatus())
-            .phone(entity.getPhone())
-            .email(entity.getEmail())
-            .occupation(entity.getOccupation())
-            .status(entity.getStatus())
-            .active(entity.getActive())
-            .eligibilityStatus(entity.getEligibilityStatus())
-            .notes(entity.getNotes())
-            .createdAt(entity.getCreatedAt())
-            .updatedAt(entity.getUpdatedAt())
-            .photoUrl(entity.getPhotoUrl())
-            .parentId(entity.getParent().getId())
-            .parentFullName(entity.getParent().getFullName())
-            .familyBarcode(entity.getFamilyBarcode()) // Inherited from principal
-            .build();
+                .id(entity.getId())
+                .relationship(entity.getRelationship() != null ? entity.getRelationship().name() : null)
+                .fullName(entity.getFullName())
+                .civilId(entity.getCivilId())
+                .cardNumber(entity.getCardNumber())
+                .birthDate(entity.getBirthDate())
+                .gender(entity.getGender() != null ? entity.getGender().name() : null)
+                .maritalStatus(entity.getMaritalStatus() != null ? entity.getMaritalStatus().name() : null)
+                .phone(entity.getPhone())
+                .email(entity.getEmail())
+                // .occupation(entity.getOccupation()) // Moved to MemberEmploymentDetails
+                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                .active(entity.getActive())
+                .eligibilityStatus(entity.getEligibilityStatus())
+                .notes(entity.getNotes())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .photoUrl(entity.getPhotoUrl())
+                .parentId(entity.getParent().getId())
+                .parentFullName(entity.getParent().getFullName())
+                .familyBarcode(entity.getFamilyBarcode()) // Inherited from principal
+                .build();
     }
 
     /**
@@ -293,27 +299,27 @@ public class UnifiedMemberMapper {
     public FamilyEligibilityResponseDto toFamilyEligibilityResponse(Member principal, List<Member> dependents) {
         // Convert principal
         MemberViewDto principalDto = toViewDto(principal);
-        
+
         // Convert dependents
         List<DependentViewDto> dependentDtos = dependents.stream()
-            .map(this::toDependentViewDto)
-            .collect(Collectors.toList());
-        
+                .map(this::toDependentViewDto)
+                .collect(Collectors.toList());
+
         // Count eligible members - safely handle null values
         int eligibleCount = 0;
         boolean principalActive = Boolean.TRUE.equals(principal.getActive());
         boolean principalEligible = Boolean.TRUE.equals(principal.getEligibilityStatus());
         boolean principalHasEmployer = principal.getEmployerOrganization() != null;
-        
+
         // Principal is eligible if active, eligible status is true, and has employer
         if (principalActive && principalEligible && principalHasEmployer) {
             eligibleCount++;
         }
-        
+
         eligibleCount += (int) dependents.stream()
-            .filter(d -> Boolean.TRUE.equals(d.getActive()) && Boolean.TRUE.equals(d.getEligibilityStatus()))
-            .count();
-        
+                .filter(d -> Boolean.TRUE.equals(d.getActive()) && Boolean.TRUE.equals(d.getEligibilityStatus()))
+                .count();
+
         // Determine eligibility - also check if principal has employer
         boolean eligible = eligibleCount > 0 && principalHasEmployer;
         String message;
@@ -324,20 +330,24 @@ public class UnifiedMemberMapper {
         } else {
             message = "جميع أفراد العائلة غير مؤهلين";
         }
-        
+
         return FamilyEligibilityResponseDto.builder()
-            .eligible(eligible)
-            .message(message)
-            .principal(principalDto)
-            .dependents(dependentDtos)
-            .totalFamilyMembers(1 + dependents.size())
-            .eligibleMembersCount(eligibleCount)
-            .familyBarcode(principal.getBarcode())
-            .benefitPolicyId(principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getId() : null)
-            .benefitPolicyName(principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getName() : null)
-            .benefitPolicyStatus(principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getStatus().name() : null)
-            .employerOrgId(principal.getEmployerOrganization() != null ? principal.getEmployerOrganization().getId() : null)
-            .employerOrgName(principal.getEmployerOrganization() != null ? principal.getEmployerOrganization().getName() : null)
-            .build();
+                .eligible(eligible)
+                .message(message)
+                .principal(principalDto)
+                .dependents(dependentDtos)
+                .totalFamilyMembers(1 + dependents.size())
+                .eligibleMembersCount(eligibleCount)
+                .familyBarcode(principal.getBarcode())
+                .benefitPolicyId(principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getId() : null)
+                .benefitPolicyName(principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getName() : null)
+                .benefitPolicyStatus(
+                        principal.getBenefitPolicy() != null ? principal.getBenefitPolicy().getStatus().name() : null)
+                .employerOrgId(principal.getEmployerOrganization() != null ? principal.getEmployerOrganization().getId()
+                        : null)
+                .employerOrgName(
+                        principal.getEmployerOrganization() != null ? principal.getEmployerOrganization().getName()
+                                : null)
+                .build();
     }
 }

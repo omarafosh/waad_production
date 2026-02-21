@@ -113,7 +113,6 @@ public class BenefitPolicyController {
             // Admin viewing all - support includeDeleted if implemented in service
             // For now, if no employer selected, we might default to active only OR implement findAll(includeDeleted)
             if (includeDeleted) {
-                // TODO: Implement findAll(includeDeleted, pageable) in service if needed for super admin
                 // For now, fallback to active only or all depending on service implementation
                  result = benefitPolicyService.findAll(includeDeleted, pageable);
             } else {

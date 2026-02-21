@@ -63,7 +63,8 @@ public class PreAuthorizationService {
     // ==================== CREATE ====================
 
     /**
-     * Create a new pre-authorization with contract price lookup (CANONICAL REBUILD 2026-01-16)
+     * Create a new pre-authorization with contract price lookup (CANONICAL REBUILD
+     * 2026-01-16)
      * 
      * ARCHITECTURAL LAWS:
      * 1. Pre-authorization MUST be linked to an existing Visit
@@ -75,15 +76,15 @@ public class PreAuthorizationService {
      */
     @Transactional
     public PreAuthorizationResponseDto createPreAuthorization(PreAuthorizationCreateDto dto, String createdBy) {
-        log.info("[PRE-AUTH] Creating pre-authorization: visitId={}, medicalServiceId={}", 
-                 dto.getVisitId(), dto.getMedicalServiceId());
+        log.info("[PRE-AUTH] Creating pre-authorization: visitId={}, medicalServiceId={}",
+                dto.getVisitId(), dto.getMedicalServiceId());
 
         // ═══════════════════════════════════════════════════════════════════════════
         // PROVIDER PORTAL: Validate and enforce provider ID from JWT
         // ═══════════════════════════════════════════════════════════════════════════
         User currentUser = authorizationService.getCurrentUser();
         validateAndEnforceProviderId(dto, currentUser);
-        
+
         // ═══════════════════════════════════════════════════════════════════════════
         // ARCHITECTURAL GUARD: Validate system invariants before processing
         // ═══════════════════════════════════════════════════════════════════════════
@@ -94,23 +95,23 @@ public class PreAuthorizationService {
         // ═══════════════════════════════════════════════════════════════════════════
         Visit visit = visitRepository.findById(dto.getVisitId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "ARCHITECTURAL VIOLATION: Visit not found with ID: " + dto.getVisitId() + 
-                    ". Pre-authorization MUST be created from an existing Visit."));
-        
+                        "ARCHITECTURAL VIOLATION: Visit not found with ID: " + dto.getVisitId() +
+                                ". Pre-authorization MUST be created from an existing Visit."));
+
         if (visit.getStatus() != null && "CANCELLED".equals(visit.getStatus().toString())) {
             throw new IllegalArgumentException("Cannot create pre-authorization for a cancelled visit");
         }
-        
+
         // Get member from visit
         Member member = visit.getMember();
         if (member == null) {
             throw new IllegalArgumentException("Visit has no associated member");
         }
-        
+
         if (!member.getActive()) {
             throw new IllegalArgumentException("Member is not active");
         }
-        
+
         log.info("[PRE-AUTH] Visit {} validated. Member: {}", dto.getVisitId(), member.getId());
 
         // ═══════════════════════════════════════════════════════════════════════════
@@ -118,7 +119,7 @@ public class PreAuthorizationService {
         // ═══════════════════════════════════════════════════════════════════════════
         Provider provider = providerRepository.findById(dto.getProviderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found with ID: " + dto.getProviderId()));
-        
+
         if (!provider.getActive()) {
             throw new IllegalArgumentException("Provider is not active");
         }
@@ -127,18 +128,18 @@ public class PreAuthorizationService {
         // STEP 3: Validate MedicalService (ARCHITECTURAL LAW: No free-text services)
         MedicalService service = medicalServiceRepository.findById(dto.getMedicalServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "ARCHITECTURAL VIOLATION: Medical Service not found with ID: " + dto.getMedicalServiceId() + 
-                    ". Service MUST be selected from catalog."));
-        
+                        "ARCHITECTURAL VIOLATION: Medical Service not found with ID: " + dto.getMedicalServiceId() +
+                                ". Service MUST be selected from catalog."));
+
         if (!service.isActive()) {
             throw new IllegalArgumentException("Medical service is not active");
         }
-        
+
         // NOTE: requiresPA check removed from MedicalService.
         // PA requirement is now determined by BenefitPolicyRule.requiresPreApproval.
         // Providers can submit PreAuthorization for ANY service - the insurance company
         // will decide whether to approve based on policy rules.
-        
+
         log.info("[PRE-AUTH] Medical Service validated: {} ({})", service.getCode(), service.getName());
 
         // ═══════════════════════════════════════════════════════════════════════════
@@ -146,28 +147,27 @@ public class PreAuthorizationService {
         // ═══════════════════════════════════════════════════════════════════════════
         LocalDate requestDate = dto.getRequestDate() != null ? dto.getRequestDate() : LocalDate.now();
         BigDecimal contractPrice = null;
-        
+
         try {
             EffectivePriceResponseDto priceResponse = providerContractService.getEffectivePrice(
                     dto.getProviderId(),
                     service.getCode(),
-                    requestDate
-            );
-            
+                    requestDate);
+
             if (priceResponse.isHasContract()) {
                 contractPrice = priceResponse.getContractPrice();
-                log.info("[PRE-AUTH] Contract price resolved: {} LYD for service {}", 
-                         contractPrice, service.getCode());
+                log.info("[PRE-AUTH] Contract price resolved: {} LYD for service {}",
+                        contractPrice, service.getCode());
             } else {
                 // ARCHITECTURAL LAW: Service MUST be in Provider Contract
                 throw new IllegalArgumentException(
-                    "ARCHITECTURAL VIOLATION: Service '" + service.getCode() + 
-                    "' is not covered by Provider's contract. Select a covered service.");
+                        "ARCHITECTURAL VIOLATION: Service '" + service.getCode() +
+                                "' is not covered by Provider's contract. Select a covered service.");
             }
         } catch (ResourceNotFoundException e) {
             throw new IllegalArgumentException(
-                "ARCHITECTURAL VIOLATION: No active contract found for provider " + dto.getProviderId() + 
-                ". Provider must have an active contract to create pre-authorizations.");
+                    "ARCHITECTURAL VIOLATION: No active contract found for provider " + dto.getProviderId() +
+                            ". Provider must have an active contract to create pre-authorizations.");
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
@@ -192,21 +192,21 @@ public class PreAuthorizationService {
         }
 
         PreAuthorization preAuth = PreAuthorization.builder()
-                .preAuthNumber(referenceNumber)      // Legacy column (required by database)
+                .preAuthNumber(referenceNumber) // Legacy column (required by database)
                 .referenceNumber(referenceNumber)
                 .memberId(member.getId())
                 .providerId(dto.getProviderId())
-                .visit(visit)                        // FK to Visit
-                .medicalService(service)             // FK to MedicalService (NO FREE-TEXT)
-                .serviceCode(service.getCode())      // Denormalized snapshot
-                .serviceName(service.getName())      // Denormalized snapshot
-                .serviceType(serviceType)            // Legacy column (required by database)
+                .visit(visit) // FK to Visit
+                .medicalService(service) // FK to MedicalService (NO FREE-TEXT)
+                .serviceCode(service.getCode()) // Denormalized snapshot
+                .serviceName(service.getName()) // Denormalized snapshot
+                .serviceType(serviceType) // Legacy column (required by database)
                 .serviceCategory(service.getCategoryName())
                 .requestDate(requestDate)
-                .expectedServiceDate(requestDate)    // Default: same as request date
+                .expectedServiceDate(requestDate) // Default: same as request date
                 .expiryDate(expiryDate)
-                .contractPrice(contractPrice)        // AUTO-RESOLVED from contract
-                .requiresPA(true)                    // PreAuthorization always requires PA (that's why it exists)
+                .contractPrice(contractPrice) // AUTO-RESOLVED from contract
+                .requiresPA(true) // PreAuthorization always requires PA (that's why it exists)
                 .currency(dto.getCurrency() != null ? dto.getCurrency() : "LYD")
                 .status(PreAuthStatus.PENDING)
                 .priority(priority)
@@ -221,11 +221,11 @@ public class PreAuthorizationService {
         // STEP 6: Save and Return
         // ═══════════════════════════════════════════════════════════════════════════
         preAuth = preAuthorizationRepository.save(preAuth);
-        log.info("[PRE-AUTH] Created pre-authorization: id={}, ref={}, contractPrice={}", 
-                 preAuth.getId(), preAuth.getReferenceNumber(), contractPrice);
+        log.info("[PRE-AUTH] Created pre-authorization: id={}, ref={}, contractPrice={}",
+                preAuth.getId(), preAuth.getReferenceNumber(), contractPrice);
 
         // Log audit trail
-        auditService.logCreate(preAuth.getId(), preAuth.getReferenceNumber(), createdBy, 
+        auditService.logCreate(preAuth.getId(), preAuth.getReferenceNumber(), createdBy,
                 "Created with contract price: " + contractPrice + " LYD");
 
         return mapToResponseDto(preAuth, member, provider, service);
@@ -237,7 +237,8 @@ public class PreAuthorizationService {
      * Update pre-authorization (only if PENDING)
      */
     @Transactional
-    public PreAuthorizationResponseDto updatePreAuthorization(Long id, PreAuthorizationUpdateDto dto, String updatedBy) {
+    public PreAuthorizationResponseDto updatePreAuthorization(Long id, PreAuthorizationUpdateDto dto,
+            String updatedBy) {
         log.info("[PRE-AUTH] Updating pre-authorization {}", id);
 
         PreAuthorization preAuth = preAuthorizationRepository.findById(id)
@@ -254,7 +255,6 @@ public class PreAuthorizationService {
         // Capture old state for audit
         String oldDiagnosisCode = preAuth.getDiagnosisCode();
         String oldDiagnosisDescription = preAuth.getDiagnosisDescription();
-        String oldNotes = preAuth.getNotes();
 
         // Update allowed fields (price CANNOT be changed - canonical law)
         if (dto.getPriority() != null) {
@@ -281,11 +281,11 @@ public class PreAuthorizationService {
 
         // Audit logging
         if (dto.getDiagnosisCode() != null && !dto.getDiagnosisCode().equals(oldDiagnosisCode)) {
-            auditService.logUpdate(id, preAuth.getReferenceNumber(), updatedBy, 
+            auditService.logUpdate(id, preAuth.getReferenceNumber(), updatedBy,
                     "diagnosisCode", oldDiagnosisCode, dto.getDiagnosisCode());
         }
         if (dto.getDiagnosisDescription() != null && !dto.getDiagnosisDescription().equals(oldDiagnosisDescription)) {
-            auditService.logUpdate(id, preAuth.getReferenceNumber(), updatedBy, 
+            auditService.logUpdate(id, preAuth.getReferenceNumber(), updatedBy,
                     "diagnosisDescription", oldDiagnosisDescription, dto.getDiagnosisDescription());
         }
 
@@ -306,20 +306,22 @@ public class PreAuthorizationService {
      * Approve pre-authorization with copay calculation
      */
     @Transactional
-    public PreAuthorizationResponseDto approvePreAuthorization(Long id, PreAuthorizationApproveDto dto, String approvedBy) {
+    public PreAuthorizationResponseDto approvePreAuthorization(Long id, PreAuthorizationApproveDto dto,
+            String approvedBy) {
         log.info("[PRE-AUTH] Approving pre-authorization {}", id);
 
         PreAuthorization preAuth = preAuthorizationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PreAuthorization not found with ID: " + id));
 
         if (!preAuth.canBeApproved()) {
-            throw new IllegalStateException("PreAuthorization cannot be approved in current status: " + preAuth.getStatus());
+            throw new IllegalStateException(
+                    "PreAuthorization cannot be approved in current status: " + preAuth.getStatus());
         }
 
         // Validate approved amount against contract price
         if (preAuth.getContractPrice() != null && dto.getApprovedAmount().compareTo(preAuth.getContractPrice()) > 0) {
-            log.warn("[PRE-AUTH] Approved amount {} exceeds contract price {}", 
-                     dto.getApprovedAmount(), preAuth.getContractPrice());
+            log.warn("[PRE-AUTH] Approved amount {} exceeds contract price {}",
+                    dto.getApprovedAmount(), preAuth.getContractPrice());
         }
 
         // Calculate copay
@@ -329,15 +331,15 @@ public class PreAuthorizationService {
         // Approve
         preAuth.approve(dto.getApprovedAmount(), copayAmount, approvedBy);
         preAuth.setCopayPercentage(copayPercentage);
-        
+
         if (dto.getApprovalNotes() != null) {
-            preAuth.setNotes((preAuth.getNotes() != null ? preAuth.getNotes() + "\n" : "") + 
-                            "Approval Notes: " + dto.getApprovalNotes());
+            preAuth.setNotes((preAuth.getNotes() != null ? preAuth.getNotes() + "\n" : "") +
+                    "Approval Notes: " + dto.getApprovalNotes());
         }
 
         preAuth = preAuthorizationRepository.save(preAuth);
-        log.info("[PRE-AUTH] Approved pre-authorization {} with amount {} and copay {}", 
-                 id, dto.getApprovedAmount(), copayAmount);
+        log.info("[PRE-AUTH] Approved pre-authorization {} with amount {} and copay {}",
+                id, dto.getApprovedAmount(), copayAmount);
 
         // Update visit status if linked
         if (preAuth.getVisit() != null) {
@@ -349,8 +351,8 @@ public class PreAuthorizationService {
 
         // Log audit trail
         auditService.logApprove(id, preAuth.getReferenceNumber(), approvedBy,
-                "Approved amount: " + dto.getApprovedAmount() + 
-                (dto.getCopayPercentage() != null ? ", Copay: " + dto.getCopayPercentage() + "%" : ""));
+                "Approved amount: " + dto.getApprovedAmount() +
+                        (dto.getCopayPercentage() != null ? ", Copay: " + dto.getCopayPercentage() + "%" : ""));
 
         // Fetch related entities for response
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
@@ -366,7 +368,8 @@ public class PreAuthorizationService {
      * Reject pre-authorization
      */
     @Transactional
-    public PreAuthorizationResponseDto rejectPreAuthorization(Long id, PreAuthorizationRejectDto dto, String rejectedBy) {
+    public PreAuthorizationResponseDto rejectPreAuthorization(Long id, PreAuthorizationRejectDto dto,
+            String rejectedBy) {
         log.info("[PRE-AUTH] Rejecting pre-authorization {}", id);
 
         PreAuthorization preAuth = preAuthorizationRepository.findById(id)
@@ -441,7 +444,7 @@ public class PreAuthorizationService {
 
         preAuthorizationRepository.save(preAuth);
         log.info("[PRE-AUTH] Deleted pre-authorization {}", id);
-        
+
         // Log audit trail
         auditService.logDelete(id, preAuth.getReferenceNumber(), deletedBy);
     }
@@ -454,11 +457,11 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public PreAuthorizationResponseDto getPreAuthorizationById(Long id) {
         log.info("[PRE-AUTH] Fetching pre-authorization by ID: {}", id);
-        
+
         User currentUser = authorizationService.getCurrentUser();
         if (!authorizationService.canAccessPreAuthorization(currentUser, id)) {
-            log.warn("❌ Access denied: user {} attempted to access preAuth {}", 
-                currentUser != null ? currentUser.getUsername() : "null", id);
+            log.warn("❌ Access denied: user {} attempted to access preAuth {}",
+                    currentUser != null ? currentUser.getUsername() : "null", id);
             throw new AccessDeniedException("Access denied to this pre-authorization");
         }
 
@@ -478,7 +481,8 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public PreAuthorizationResponseDto getPreAuthorizationByReference(String referenceNumber) {
         PreAuthorization preAuth = preAuthorizationRepository.findByReferenceNumberAndActiveTrue(referenceNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("PreAuthorization not found with reference: " + referenceNumber));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "PreAuthorization not found with reference: " + referenceNumber));
 
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
@@ -493,7 +497,7 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public Page<PreAuthorizationResponseDto> getAllPreAuthorizations(Pageable pageable) {
         User currentUser = authorizationService.getCurrentUser();
-        
+
         // Apply RBAC filtering
         if (authorizationService.isProvider(currentUser)) {
             providerContextGuard.validateProviderBinding(currentUser);
@@ -502,7 +506,7 @@ public class PreAuthorizationService {
             return preAuthorizationRepository.findByProviderIdAndActiveTrue(providerId, pageable)
                     .map(this::mapToResponseDtoLight);
         }
-        
+
         if (authorizationService.isEmployerAdmin(currentUser)) {
             Long employerId = authorizationService.getEmployerFilterForUser(currentUser);
             log.info("🔒 Filtering pre-authorizations for employer: {}", employerId);
@@ -520,12 +524,12 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public Page<PreAuthorizationResponseDto> getPreAuthorizationsByMember(Long memberId, Pageable pageable) {
         User currentUser = authorizationService.getCurrentUser();
-        
+
         // Validate access to member first
         if (!authorizationService.canAccessMember(currentUser, memberId)) {
             throw new AccessDeniedException("Access denied to member: " + memberId);
         }
-        
+
         Page<PreAuthorization> preAuths = preAuthorizationRepository.findByMemberIdAndActiveTrue(memberId, pageable);
         return preAuths.map(this::mapToResponseDtoLight);
     }
@@ -536,13 +540,14 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public Page<PreAuthorizationResponseDto> getPreAuthorizationsByProvider(Long providerId, Pageable pageable) {
         User currentUser = authorizationService.getCurrentUser();
-        
+
         // Validate access to provider
         if (!authorizationService.canAccessProvider(currentUser, providerId)) {
             throw new AccessDeniedException("Access denied to provider: " + providerId);
         }
-        
-        Page<PreAuthorization> preAuths = preAuthorizationRepository.findByProviderIdAndActiveTrue(providerId, pageable);
+
+        Page<PreAuthorization> preAuths = preAuthorizationRepository.findByProviderIdAndActiveTrue(providerId,
+                pageable);
         return preAuths.map(this::mapToResponseDtoLight);
     }
 
@@ -552,7 +557,7 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public Page<PreAuthorizationResponseDto> getPreAuthorizationsByStatus(PreAuthStatus status, Pageable pageable) {
         User currentUser = authorizationService.getCurrentUser();
-        
+
         // Apply RBAC filtering
         if (authorizationService.isProvider(currentUser)) {
             providerContextGuard.validateProviderBinding(currentUser);
@@ -560,15 +565,17 @@ public class PreAuthorizationService {
             return preAuthorizationRepository.findByProviderIdAndStatusAndActiveTrue(providerId, status, pageable)
                     .map(this::mapToResponseDtoLight);
         }
-        
+
         return preAuthorizationRepository.findByStatusAndActiveTrue(status, pageable)
                 .map(this::mapToResponseDtoLight);
     }
 
     /**
-     * Get pending pre-authorizations for inbox (Operations Queue) - CANONICAL 2026-01-26
+     * Get pending pre-authorizations for inbox (Operations Queue) - CANONICAL
+     * 2026-01-26
      * 
-     * Returns pre-authorizations with PENDING or UNDER_REVIEW status for processing.
+     * Returns pre-authorizations with PENDING or UNDER_REVIEW status for
+     * processing.
      * Mirrors ClaimService.getPendingClaims() behavior.
      * 
      * FIFO pattern - oldest first for fair processing.
@@ -578,33 +585,36 @@ public class PreAuthorizationService {
      * - UNDER_REVIEW: Currently being reviewed by operations staff
      * 
      * @param pageable Pagination parameters (page, size, sort)
-     * @return Page of PreAuthorizationResponseDto with all required fields for inbox display
+     * @return Page of PreAuthorizationResponseDto with all required fields for
+     *         inbox display
      */
     @Transactional(readOnly = true)
     public Page<PreAuthorizationResponseDto> getPendingInbox(Pageable pageable) {
         log.info("[SERVICE] Fetching pending pre-authorizations for inbox (PENDING + UNDER_REVIEW)");
-        
+
         User currentUser = authorizationService.getCurrentUser();
         List<PreAuthStatus> inboxStatuses = List.of(PreAuthStatus.PENDING, PreAuthStatus.UNDER_REVIEW);
-        
+
         // PROVIDER sees only THEIR pending requests
         if (authorizationService.isProvider(currentUser)) {
             providerContextGuard.validateProviderBinding(currentUser);
             Long providerId = currentUser.getProviderId();
             log.info("🔒 Filtering inbox for provider: {}", providerId);
-            
+
             // This requires a repository method: findByStatusInAndProviderIdAndActiveTrue
-            // For now, we'll implement a custom query in repository if needed, or filter here.
-            // Let's assume we need to add findByStatusInAndProviderIdAndActiveTrue to repository.
-            return preAuthorizationRepository.findByStatusInAndProviderIdAndActiveTrue(inboxStatuses, providerId, pageable)
+            // For now, we'll implement a custom query in repository if needed, or filter
+            // here.
+            // Let's assume we need to add findByStatusInAndProviderIdAndActiveTrue to
+            // repository.
+            return preAuthorizationRepository
+                    .findByStatusInAndProviderIdAndActiveTrue(inboxStatuses, providerId, pageable)
                     .map(this::mapToResponseDtoLight);
         }
 
         Page<PreAuthorization> preAuths = preAuthorizationRepository.findByStatusIn(
-                inboxStatuses, 
-                pageable
-        );
-        
+                inboxStatuses,
+                pageable);
+
         log.info("[SERVICE] Found {} pre-authorizations in inbox", preAuths.getTotalElements());
         return preAuths.map(this::mapToResponseDtoLight);
     }
@@ -615,17 +625,16 @@ public class PreAuthorizationService {
     @Transactional(readOnly = true)
     public PreAuthorizationResponseDto findValidPreAuthorization(Long memberId, Long providerId, String serviceCode) {
         List<PreAuthorization> validPreAuths = preAuthorizationRepository.findValidPreAuthorizations(
-                memberId, providerId, serviceCode, LocalDate.now()
-        );
+                memberId, providerId, serviceCode, LocalDate.now());
 
         if (validPreAuths.isEmpty()) {
-            throw new ResourceNotFoundException("No valid pre-authorization found for member " + memberId + 
-                                               ", provider " + providerId + ", service " + serviceCode);
+            throw new ResourceNotFoundException("No valid pre-authorization found for member " + memberId +
+                    ", provider " + providerId + ", service " + serviceCode);
         }
 
         // Return the most recent one
         PreAuthorization preAuth = validPreAuths.get(0);
-        
+
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
         MedicalService service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
@@ -651,13 +660,15 @@ public class PreAuthorizationService {
         }
 
         if (preAuth.getStatus() != PreAuthStatus.PENDING) {
-            throw new IllegalStateException("Only PENDING pre-authorizations can be started for review. Current status: " + preAuth.getStatus());
+            throw new IllegalStateException(
+                    "Only PENDING pre-authorizations can be started for review. Current status: "
+                            + preAuth.getStatus());
         }
 
         // Transition to UNDER_REVIEW
         preAuth.setStatus(PreAuthStatus.UNDER_REVIEW);
         preAuth.setUpdatedBy(reviewedBy);
-        
+
         preAuth = preAuthorizationRepository.save(preAuth);
         log.info("[PRE-AUTH] Pre-authorization {} is now UNDER_REVIEW by {}", id, reviewedBy);
 
@@ -670,7 +681,7 @@ public class PreAuthorizationService {
         }
 
         // Log audit trail
-        auditService.logUpdate(id, preAuth.getReferenceNumber(), reviewedBy, 
+        auditService.logUpdate(id, preAuth.getReferenceNumber(), reviewedBy,
                 "status", "PENDING", "UNDER_REVIEW");
 
         // Fetch related entities for response
@@ -687,7 +698,7 @@ public class PreAuthorizationService {
      * Check if a member has a valid pre-authorization for a specific service.
      * Returns the valid pre-authorization if found, null otherwise.
      * 
-     * @param memberId The member ID
+     * @param memberId    The member ID
      * @param serviceCode The medical service code
      * @return Valid PreAuthorizationResponseDto or null if not found
      */
@@ -714,8 +725,8 @@ public class PreAuthorizationService {
                 .max((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
                 .orElse(validPreAuths.get(0));
 
-        log.info("[PRE-AUTH] Found valid pre-authorization {} for member {} and service {}", 
-                 preAuth.getReferenceNumber(), memberId, serviceCode);
+        log.info("[PRE-AUTH] Found valid pre-authorization {} for member {} and service {}",
+                preAuth.getReferenceNumber(), memberId, serviceCode);
 
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
@@ -732,17 +743,17 @@ public class PreAuthorizationService {
     @Transactional
     public int markExpiredPreAuthorizations() {
         log.info("[PRE-AUTH] Marking expired pre-authorizations");
-        
+
         List<PreAuthorization> expiredList = preAuthorizationRepository.findExpiredPreAuthorizations(LocalDate.now());
-        
+
         for (PreAuthorization preAuth : expiredList) {
             preAuth.markAsExpired();
         }
-        
+
         if (!expiredList.isEmpty()) {
             preAuthorizationRepository.saveAll(expiredList);
         }
-        
+
         log.info("[PRE-AUTH] Marked {} expired pre-authorizations", expiredList.size());
         return expiredList.size();
     }
@@ -770,8 +781,8 @@ public class PreAuthorizationService {
     /**
      * Map to response DTO with full details (CANONICAL REBUILD 2026-01-16)
      */
-    private PreAuthorizationResponseDto mapToResponseDto(PreAuthorization preAuth, Member member, 
-                                                         Provider provider, MedicalService service) {
+    private PreAuthorizationResponseDto mapToResponseDto(PreAuthorization preAuth, Member member,
+            Provider provider, MedicalService service) {
         Integer daysUntilExpiry = null;
         if (preAuth.getExpiryDate() != null) {
             daysUntilExpiry = (int) ChronoUnit.DAYS.between(LocalDate.now(), preAuth.getExpiryDate());
@@ -779,7 +790,7 @@ public class PreAuthorizationService {
 
         // Get visit info
         Visit visit = preAuth.getVisit();
-        
+
         return PreAuthorizationResponseDto.builder()
                 .id(preAuth.getId())
                 .referenceNumber(preAuth.getReferenceNumber())
@@ -793,9 +804,15 @@ public class PreAuthorizationService {
                 .memberCardNumber(member != null ? member.getCardNumber() : null)
                 .memberNationalNumber(member != null ? member.getCivilId() : null)
                 // Employer info (جهة العمل)
-                .employerId(member != null && member.getEmployerOrganization() != null ? member.getEmployerOrganization().getId() : null)
-                .employerName(member != null && member.getEmployerOrganization() != null ? member.getEmployerOrganization().getName() : null)
-                .employerCode(member != null && member.getEmployerOrganization() != null ? member.getEmployerOrganization().getCode() : null)
+                .employerId(member != null && member.getEmployerOrganization() != null
+                        ? member.getEmployerOrganization().getId()
+                        : null)
+                .employerName(member != null && member.getEmployerOrganization() != null
+                        ? member.getEmployerOrganization().getName()
+                        : null)
+                .employerCode(member != null && member.getEmployerOrganization() != null
+                        ? member.getEmployerOrganization().getCode()
+                        : null)
                 // Provider info
                 .providerId(preAuth.getProviderId())
                 .providerName(provider != null ? provider.getName() : null)
@@ -853,12 +870,12 @@ public class PreAuthorizationService {
         Member member = memberRepository.findById(preAuth.getMemberId()).orElse(null);
         Provider provider = providerRepository.findById(preAuth.getProviderId()).orElse(null);
         MedicalService service = preAuth.getMedicalService();
-        
+
         // Fallback: try to find service by code if not loaded
         if (service == null && preAuth.getServiceCode() != null) {
             service = medicalServiceRepository.findByCode(preAuth.getServiceCode()).orElse(null);
         }
-        
+
         return mapToResponseDto(preAuth, member, provider, service);
     }
 
@@ -868,11 +885,11 @@ public class PreAuthorizationService {
      * 
      * Rules (HARDENED 2026-01-16):
      * - PROVIDER users: providerId ALWAYS comes from ProviderContextGuard (session)
-     *   ANY providerId from request is IGNORED to prevent data leakage
+     * ANY providerId from request is IGNORED to prevent data leakage
      * - SUPER_ADMIN/INSURANCE_ADMIN can set any providerId
      * - Other users can set any providerId
      * 
-     * @param dto The pre-authorization creation DTO
+     * @param dto         The pre-authorization creation DTO
      * @param currentUser The currently authenticated user
      */
     private void validateAndEnforceProviderId(PreAuthorizationCreateDto dto, User currentUser) {
@@ -889,18 +906,19 @@ public class PreAuthorizationService {
             // ═══════════════════════════════════════════════════════════════════════════
             providerContextGuard.validateProviderBinding(currentUser);
             Long userProviderId = currentUser.getProviderId();
-            
+
             // Log if request contained different providerId (potential attack/bug)
             if (dto.getProviderId() != null && !dto.getProviderId().equals(userProviderId)) {
-                log.warn("🚨 PROVIDER_ID_OVERRIDE: User {} requested providerId={} but enforced to {} (potential security issue)", 
-                    currentUser.getUsername(), dto.getProviderId(), userProviderId);
+                log.warn(
+                        "🚨 PROVIDER_ID_OVERRIDE: User {} requested providerId={} but enforced to {} (potential security issue)",
+                        currentUser.getUsername(), dto.getProviderId(), userProviderId);
             }
-            
+
             // ALWAYS override with user's providerId - NO EXCEPTIONS
             dto.setProviderId(userProviderId);
-            
-            log.info("🔒 PROVIDER {} creating pre-auth with their providerId: {} (enforced by ProviderContextGuard)", 
-                currentUser.getUsername(), userProviderId);
+
+            log.info("🔒 PROVIDER {} creating pre-auth with their providerId: {} (enforced by ProviderContextGuard)",
+                    currentUser.getUsername(), userProviderId);
         } else if (authorizationService.isAdmin(currentUser)) {
             // ADMIN user (SUPER or INSURANCE) can set any provider
             log.info("🔓 ADMIN user {} creating pre-auth - any providerId allowed", currentUser.getUsername());

@@ -80,6 +80,7 @@ public class ProviderContractResponseDto {
     /**
      * Convert entity to response DTO
      */
+    @SuppressWarnings("deprecation")
     public static ProviderContractResponseDto fromEntity(ProviderContract entity) {
         if (entity == null) {
             return null;

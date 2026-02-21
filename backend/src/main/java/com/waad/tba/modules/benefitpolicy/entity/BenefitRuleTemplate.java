@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entity representing a reusable group of coverage rules (a template or package).
+ * Entity representing a reusable group of coverage rules (a template or
+ * package).
  * These templates can be applied to a BenefitPolicy to quickly set up rules.
  */
 @Entity
@@ -32,9 +33,11 @@ public class BenefitRuleTemplate {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Builder.Default
     @Column(name = "is_system")
-    private boolean isSystem;
+    private boolean isSystem = false;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
 

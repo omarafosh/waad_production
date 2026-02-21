@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import jsconfigPaths from 'vite-jsconfig-paths';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
@@ -33,30 +33,10 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@ant-design/icons': path.resolve(__dirname, 'node_modules/@ant-design/icons'),
-        'api': path.resolve(__dirname, 'src/api'),
-        'assets': path.resolve(__dirname, 'src/assets'),
-        'components': path.resolve(__dirname, 'src/components'),
-        'config': path.resolve(__dirname, 'src/config'),
-        'constants': path.resolve(__dirname, 'src/constants'),
-        'contexts': path.resolve(__dirname, 'src/contexts'),
-        'data': path.resolve(__dirname, 'src/data'),
-        'hooks': path.resolve(__dirname, 'src/hooks'),
-        'layout': path.resolve(__dirname, 'src/layout'),
-        'locales': path.resolve(__dirname, 'src/locales'),
-        'menu-items': path.resolve(__dirname, 'src/menu-items'),
-        'metrics': path.resolve(__dirname, 'src/metrics'),
-        'pages': path.resolve(__dirname, 'src/pages'),
-        'providers': path.resolve(__dirname, 'src/providers'),
-        'routes': path.resolve(__dirname, 'src/routes'),
-        'sections': path.resolve(__dirname, 'src/sections'),
-        'services': path.resolve(__dirname, 'src/services'),
-        'store': path.resolve(__dirname, 'src/store'),
-        'themes': path.resolve(__dirname, 'src/themes'),
-        'utils': path.resolve(__dirname, 'src/utils')
+        '@ant-design/icons': path.resolve(__dirname, 'node_modules/@ant-design/icons')
       }
     },
-    plugins: [react(), jsconfigPaths()],
+    plugins: [react(), tsconfigPaths()],
 
     optimizeDeps: {
       include: ['@mui/material/Tooltip', 'react', 'react-dom', 'react-router-dom']

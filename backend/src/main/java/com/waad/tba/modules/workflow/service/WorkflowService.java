@@ -9,13 +9,10 @@ import com.waad.tba.modules.workflow.entity.ApprovalRequest.ApprovalStatus;
 import com.waad.tba.modules.workflow.repository.ApprovalRequestRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,15 +25,15 @@ public class WorkflowService {
 
     private final ApprovalRequestRepository repository;
     private final ObjectMapper objectMapper;
-    private final ApplicationContext applicationContext;
 
     /**
      * Submit a new approval request.
      */
     @Transactional
-    public ApprovalRequest submitRequest(String entityType, Long entityId, String action, Map<String, Object> payload, String makerUser, String notes) {
+    public ApprovalRequest submitRequest(String entityType, Long entityId, String action, Map<String, Object> payload,
+            String makerUser, String notes) {
         log.info("Submitting approval request: {} for {} by {}", action, entityType, makerUser);
-        
+
         String payloadJson;
         try {
             payloadJson = objectMapper.writeValueAsString(payload);
@@ -54,7 +51,7 @@ public class WorkflowService {
                 .makerNotes(notes)
                 .status(ApprovalStatus.PENDING)
                 .build();
-        
+
         return repository.save(request);
     }
 
@@ -80,7 +77,8 @@ public class WorkflowService {
         // 1. Identify Adapter for entityType
         // 2. Map payload to Entity
         // 3. Save Entity
-        // (This will be implemented in Step 2 of Phase 5 using reflection or dedicated adapters)
+        // (This will be implemented in Step 2 of Phase 5 using reflection or dedicated
+        // adapters)
 
         request.setStatus(ApprovalStatus.APPROVED);
         request.setCheckerUser(checkerUser);
@@ -121,7 +119,7 @@ public class WorkflowService {
     public Map<String, Object> getImpactPreview(Long requestId) {
         ApprovalRequest request = repository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("ApprovalRequest", "id", requestId));
-        
+
         Map<String, Object> preview = new HashMap<>();
         preview.put("entityType", request.getEntityType());
         preview.put("entityId", request.getEntityId());
@@ -129,7 +127,9 @@ public class WorkflowService {
         Map<String, Object> proposedChanges = new HashMap<>();
         try {
             if (request.getPayload() != null) {
-            proposedChanges = objectMapper.readValue(request.getPayload(), new TypeReference<Map<String, Object>>() {});
+                proposedChanges = objectMapper.readValue(request.getPayload(),
+                        new TypeReference<Map<String, Object>>() {
+                        });
             }
         } catch (Exception e) {
             log.error("Error parsing payload JSON", e);
@@ -138,9 +138,8 @@ public class WorkflowService {
         }
 
         preview.put("proposedChanges", proposedChanges);
-        
-        // TODO: Fetch current state of entity and add to preview
-        
+
+
         return preview;
     }
 }

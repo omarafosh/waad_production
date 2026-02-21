@@ -1,11 +1,14 @@
 package com.waad.tba.modules.settlement.controller;
 
 import com.waad.tba.modules.provider.entity.Provider;
+import com.waad.tba.modules.rbac.entity.User;
+import com.waad.tba.modules.rbac.repository.UserRepository;
 import com.waad.tba.modules.settlement.dto.*;
 import com.waad.tba.modules.settlement.entity.SettlementBatch;
 import com.waad.tba.modules.settlement.entity.SettlementBatch.BatchStatus;
 import com.waad.tba.modules.settlement.entity.SettlementBatch.PaymentMethod;
 import com.waad.tba.modules.settlement.service.SettlementBatchService;
+import com.waad.tba.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,12 +41,24 @@ import java.util.stream.Collectors;
 public class SettlementBatchController {
 
     private final SettlementBatchService batchService;
+    private final com.waad.tba.security.AuthorizationService authorizationService;
+    private final UserRepository userRepository;
 
-    // TODO: Use a proper UserDetails/Principal object to get ID. 
-    // For now assuming a placeholder or adapting to existing security context.
-    // In real app: @AuthenticationPrincipal UserPrincipal user
-    private Long getCurrentUserId() {
-        return 1L; // Mock ID for development if security not fully integrated yet, or extract from context
+    /**
+     * Get the currently authenticated user's ID.
+     * Replaces the previous mock implementation with a real security check.
+     */
+    private Long getCurrentUserId(UserPrincipal principal) {
+        if (principal != null && principal.getId() != null) {
+            return principal.getId();
+        }
+
+        User user = authorizationService.getCurrentUser();
+        if (user == null) {
+            log.warn("Unauthorized attempt to access settlement API");
+            throw new RuntimeException("Unauthorized: Authenticated user not found");
+        }
+        return user.getId();
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -57,9 +72,10 @@ public class SettlementBatchController {
     @PreAuthorize("hasAuthority('SETTLEMENT_CREATE')")
     @Operation(summary = "Create a new settlement batch", description = "Creates a DRAFT batch for a provider")
     public ResponseEntity<BatchSummaryDTO> createBatch(
-            @Valid @RequestBody CreateBatchRequest request) {
-        
-        BatchSummaryDTO batch = batchService.createBatch(request, getCurrentUserId());
+            @Valid @RequestBody CreateBatchRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        BatchSummaryDTO batch = batchService.createBatch(request, getCurrentUserId(currentUser));
         return ResponseEntity.status(HttpStatus.CREATED).body(batch);
     }
 
@@ -75,9 +91,10 @@ public class SettlementBatchController {
     @Operation(summary = "Add claims to batch", description = "Adds multiple claims to an existing DRAFT batch")
     public ResponseEntity<Void> addClaims(
             @PathVariable Long batchId,
-            @Valid @RequestBody AddClaimsToBatchRequest request) {
-        
-        batchService.addClaimsToBatch(batchId, request.getClaimIds(), getCurrentUserId());
+            @Valid @RequestBody AddClaimsToBatchRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        batchService.addClaimsToBatch(batchId, request.getClaimIds(), getCurrentUserId(currentUser));
         return ResponseEntity.ok().build();
     }
 
@@ -89,9 +106,10 @@ public class SettlementBatchController {
     @Operation(summary = "Remove claims from batch", description = "Removes claims from a DRAFT batch")
     public ResponseEntity<Void> removeClaims(
             @PathVariable Long batchId,
-            @Valid @RequestBody RemoveClaimsFromBatchRequest request) {
-        
-        batchService.removeClaimsFromBatch(batchId, request.getClaimIds(), getCurrentUserId());
+            @Valid @RequestBody RemoveClaimsFromBatchRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        batchService.removeClaimsFromBatch(batchId, request.getClaimIds(), getCurrentUserId(currentUser));
         return ResponseEntity.ok().build();
     }
 
@@ -107,10 +125,11 @@ public class SettlementBatchController {
     @Operation(summary = "Confirm batch", description = "Transitions batch from DRAFT to CONFIRMED. Locks aggregation.")
     public ResponseEntity<Void> confirmBatch(
             @PathVariable Long batchId,
-            @RequestBody(required = false) ConfirmSettlementBatchRequest request) {
-        
+            @RequestBody(required = false) ConfirmSettlementBatchRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
         String notes = request != null ? request.getNotes() : null;
-        batchService.confirmBatch(batchId, notes, getCurrentUserId());
+        batchService.confirmBatch(batchId, notes, getCurrentUserId(currentUser));
         return ResponseEntity.ok().build();
     }
 
@@ -122,10 +141,11 @@ public class SettlementBatchController {
     @Operation(summary = "Pay batch", description = "Transitions batch from CONFIRMED to PAID. Debits provider account.")
     public ResponseEntity<Void> payBatch(
             @PathVariable Long batchId,
-            @Valid @RequestBody PaySettlementBatchRequest request) {
-        
+            @Valid @RequestBody PaySettlementBatchRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
         PaymentMethod method = PaymentMethod.valueOf(request.getPaymentMethod());
-        batchService.payBatch(batchId, request.getPaymentReference(), method, getCurrentUserId());
+        batchService.payBatch(batchId, request.getPaymentReference(), method, getCurrentUserId(currentUser));
         return ResponseEntity.ok().build();
     }
 
@@ -137,9 +157,10 @@ public class SettlementBatchController {
     @Operation(summary = "Cancel batch", description = "Cancels a DRAFT or CONFIRMED batch.")
     public ResponseEntity<Void> cancelBatch(
             @PathVariable Long batchId,
-            @Valid @RequestBody CancelSettlementBatchRequest request) {
-        
-        batchService.cancelBatch(batchId, request.getReason(), getCurrentUserId());
+            @Valid @RequestBody CancelSettlementBatchRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+
+        batchService.cancelBatch(batchId, request.getReason(), getCurrentUserId(currentUser));
         return ResponseEntity.ok().build();
     }
 
@@ -165,17 +186,16 @@ public class SettlementBatchController {
     @PreAuthorize("hasAuthority('SETTLEMENT_VIEW')")
     @Operation(summary = "List batches", description = "Paginated list of batches with optional status filter")
     public ResponseEntity<SettlementBatchListResponse> listBatches(
-            @Parameter(description = "Filter by status (DRAFT, CONFIRMED, PAID, CANCELLED)") 
-            @RequestParam(required = false) BatchStatus status,
+            @Parameter(description = "Filter by status (DRAFT, CONFIRMED, PAID, CANCELLED)") @RequestParam(required = false) BatchStatus status,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        
+
         Page<SettlementBatch> page = batchService.listBatches(status, pageable);
-        
+
         // Manual mapping to DTO list response
         List<SettlementBatchListResponse.BatchSummaryItem> items = page.getContent().stream()
                 .map(this::mapToSummaryItem)
                 .collect(Collectors.toList());
-        
+
         SettlementBatchListResponse response = SettlementBatchListResponse.builder()
                 .batches(items)
                 .currentPage(page.getNumber())
@@ -185,10 +205,10 @@ public class SettlementBatchController {
                 .first(page.isFirst())
                 .last(page.isLast())
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
-    
+
     // Mapper helper
     private SettlementBatchListResponse.BatchSummaryItem mapToSummaryItem(SettlementBatch batch) {
         String providerName = "Unknown";
@@ -200,12 +220,20 @@ public class SettlementBatchController {
         } catch (Exception e) {
             log.warn("Failed to fetch provider for batch {}", batch.getId(), e);
         }
-        
+
         String createdAtStr = "N/A";
         if (batch.getCreatedAt() != null) {
             createdAtStr = batch.getCreatedAt().toLocalDate().toString();
         }
-        
+
+        String createdByName = "Unknown User";
+        if (batch.getCreatedBy() != null) {
+            createdByName = userRepository.findById(batch.getCreatedBy())
+                    .map(user -> user.getFullName() != null && !user.getFullName().isBlank() ? user.getFullName()
+                            : user.getUsername())
+                    .orElse("Unknown User");
+        }
+
         return SettlementBatchListResponse.BatchSummaryItem.builder()
                 .batchId(batch.getId())
                 .batchNumber(batch.getBatchNumber())
@@ -215,7 +243,7 @@ public class SettlementBatchController {
                 .claimCount(batch.getTotalClaimsCount())
                 .totalNetAmount(batch.getTotalNetAmount())
                 .paymentReference(batch.getPaymentReference())
-                .createdByName("User #" + batch.getCreatedBy()) // Placeholder
+                .createdByName(createdByName)
                 .createdAt(createdAtStr)
                 .modifiable(batch.isModifiable())
                 .build();

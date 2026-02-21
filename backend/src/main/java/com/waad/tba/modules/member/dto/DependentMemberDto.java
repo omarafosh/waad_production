@@ -31,11 +31,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DependentMemberDto {
 
-    @Schema(description = "Relationship type", example = "SON", required = true)
+    @Schema(description = "Relationship type", example = "SON", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "Relationship is required for dependents")
     private Member.Relationship relationship;
 
-    @Schema(description = "Full name", example = "محمد أحمد علي", required = true)
+    @Schema(description = "Full name", example = "محمد أحمد علي", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Full name is required")
     private String fullName;
 
@@ -68,7 +68,7 @@ public class DependentMemberDto {
 
     // ==================== FORBIDDEN FIELDS ====================
     // The following fields are NOT allowed for dependents:
-    
+
     // ❌ NO barcode - dependents don't have barcodes
     // ❌ NO cardNumber - auto-generated from parent
     // ❌ NO parentId - set automatically during creation

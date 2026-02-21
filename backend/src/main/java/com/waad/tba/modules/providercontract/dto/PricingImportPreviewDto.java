@@ -1,7 +1,6 @@
 package com.waad.tba.modules.providercontract.dto;
 
 import java.util.List;
-import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +22,7 @@ public class PricingImportPreviewDto {
     private int newCount;
     private int updateCount;
     private int errorCount;
-    
+
     private List<String> detectedColumns;
     private List<PricingImportRowDto> previewRows;
     private boolean canProceed;

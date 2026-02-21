@@ -19,9 +19,7 @@ import lombok.NoArgsConstructor;
 public class ProviderServiceAssignDto {
 
     @NotBlank(message = "Service code is required")
-    @Schema(description = "Medical service code (references MedicalService.code)", 
-            example = "SRV-CARDIO-001", 
-            required = true)
-    @JsonAlias({"serviceCode", "service_code", "code"})
+    @Schema(description = "Medical service code (references MedicalService.code)", example = "SRV-CARDIO-001", requiredMode = Schema.RequiredMode.REQUIRED)
+    @JsonAlias({ "serviceCode", "service_code", "code" })
     private String serviceCode;
 }

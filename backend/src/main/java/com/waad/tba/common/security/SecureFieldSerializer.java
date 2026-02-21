@@ -4,11 +4,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.waad.tba.common.annotation.SecureField;
+import org.springframework.context.ApplicationContext;
 import com.waad.tba.security.AuthorizationService;
 import com.waad.tba.modules.rbac.entity.User;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -22,7 +20,8 @@ public class SecureFieldSerializer extends JsonSerializer<Object> {
     private final SecureField annotation;
     private final ApplicationContext applicationContext;
 
-    public SecureFieldSerializer(JsonSerializer<Object> defaultSerializer, SecureField annotation, ApplicationContext applicationContext) {
+    public SecureFieldSerializer(JsonSerializer<Object> defaultSerializer, SecureField annotation,
+            ApplicationContext applicationContext) {
         this.defaultSerializer = defaultSerializer;
         this.annotation = annotation;
         this.applicationContext = applicationContext;
@@ -34,7 +33,7 @@ public class SecureFieldSerializer extends JsonSerializer<Object> {
         User currentUser = authService.getCurrentUser();
 
         boolean hasAccess = false;
-        
+
         if (currentUser != null) {
             if (authService.isAdmin(currentUser)) {
                 hasAccess = true;

@@ -3,8 +3,6 @@ package com.waad.tba.modules.member.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.waad.tba.modules.member.entity.Member;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +12,8 @@ import lombok.NoArgsConstructor;
 /**
  * DTO for viewing a DEPENDENT member (unified architecture).
  * 
- * This DTO represents a dependent (family member) in the unified Member structure.
+ * This DTO represents a dependent (family member) in the unified Member
+ * structure.
  * It contains all relevant information for displaying a dependent member.
  */
 @Schema(description = "DTO for viewing a dependent member (family member)")
@@ -28,7 +27,7 @@ public class DependentViewDto {
     private Long id;
 
     @Schema(description = "Relationship to principal", example = "SON")
-    private Member.Relationship relationship;
+    private String relationship;
 
     @Schema(description = "Full name", example = "محمد أحمد علي")
     private String fullName;
@@ -43,10 +42,10 @@ public class DependentViewDto {
     private LocalDate birthDate;
 
     @Schema(description = "Gender", example = "MALE")
-    private Member.Gender gender;
+    private String gender;
 
     @Schema(description = "Marital status", example = "SINGLE")
-    private Member.MaritalStatus maritalStatus;
+    private String maritalStatus;
 
     @Schema(description = "Phone number", example = "+96512345678")
     private String phone;
@@ -58,7 +57,7 @@ public class DependentViewDto {
     private String occupation;
 
     @Schema(description = "Member status", example = "ACTIVE")
-    private Member.MemberStatus status;
+    private String status;
 
     @Schema(description = "Active flag", example = "true")
     private Boolean active;
@@ -78,9 +77,8 @@ public class DependentViewDto {
     @Schema(description = "Photo URL", example = "/api/unified-members/456/photo")
     private String photoUrl;
 
-
     // ==================== DISPLAY FIELDS ====================
-    
+
     /**
      * Parent Member ID - Always populated for dependents.
      */

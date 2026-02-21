@@ -13,10 +13,11 @@ import com.waad.tba.modules.member.entity.MemberWorkflowHistory;
 import com.waad.tba.modules.member.mapper.UnifiedMemberMapper;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.member.repository.MemberWorkflowHistoryRepository;
-import com.waad.tba.modules.member.service.BarcodeGeneratorService;
-import com.waad.tba.modules.member.service.CardNumberGeneratorService;
 import com.waad.tba.modules.member.service.UnifiedMemberService;
+import com.waad.tba.modules.member.service.search.MemberSearchService;
+import com.waad.tba.modules.member.service.util.MemberGeneratorService;
 import com.waad.tba.security.AuthorizationService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -49,8 +50,8 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     private final MemberWorkflowHistoryRepository workflowHistoryRepository;
     private final OrganizationRepository organizationRepository;
     private final BenefitPolicyRepository benefitPolicyRepository;
-    private final BarcodeGeneratorService barcodeGenerator;
-    private final CardNumberGeneratorService cardNumberGenerator;
+    private final MemberGeneratorService memberGenerator;
+    private final MemberSearchService memberSearchService;
     private final UnifiedMemberMapper mapper;
     private final AuthorizationService authorizationService;
     private final DocumentService documentService;
@@ -79,7 +80,8 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
                     .orElseGet(() -> organizationRepository.findByActiveTrue().stream()
                             .findFirst()
                             .map(Organization::getId)
-                            .orElseThrow(() -> new BusinessRuleException("No Active Organization found for VIP member.")));
+                            .orElseThrow(
+                                    () -> new BusinessRuleException("No Active Organization found for VIP member.")));
         }
 
         if (employerId == null) {
@@ -88,14 +90,17 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
 
         final Long targetEmployerId = employerId;
         Organization employerOrg = organizationRepository.findById(targetEmployerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Employer organization not found: " + targetEmployerId));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Employer organization not found: " + targetEmployerId));
 
         BenefitPolicy benefitPolicy = null;
         if (dto.getBenefitPolicyId() != null) {
             benefitPolicy = benefitPolicyRepository.findById(dto.getBenefitPolicyId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Benefit policy not found: " + dto.getBenefitPolicyId()));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Benefit policy not found: " + dto.getBenefitPolicyId()));
         } else {
-            benefitPolicy = benefitPolicyRepository.findActiveEffectivePolicyForEmployer(targetEmployerId, LocalDate.now()).orElse(null);
+            benefitPolicy = benefitPolicyRepository
+                    .findActiveEffectivePolicyForEmployer(targetEmployerId, LocalDate.now()).orElse(null);
         }
 
         Member principal = mapper.toEntity(dto);
@@ -113,17 +118,20 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
         if (dto.getCardNumber() != null && !dto.getCardNumber().isBlank()) {
             principal.setCardNumber(dto.getCardNumber());
         } else {
-            principal.setCardNumber(cardNumberGenerator.generateSmartCardNumber(principal));
+            principal.setCardNumber(memberGenerator.generateCardNumber(principal));
         }
 
-        principal.setBarcode(barcodeGenerator.generateFromCardNumber(principal));
+        principal.setBarcode(memberGenerator.generateBarcode(principal));
         principal = memberRepository.save(principal);
 
         logWorkflowHistory(principal, null, principal.getStatus().name(), "Initial Creation");
 
         List<Member> dependents = new ArrayList<>();
-        if (dto.getDependents() != null && !dto.getDependents().isEmpty()) {
-            for (DependentMemberDto depDto : dto.getDependents()) {
+        // Use the new recommended method or field instead of getDependents()
+        @SuppressWarnings("deprecation")
+        List<DependentMemberDto> dependentsList = dto.getDependents();
+        if (dependentsList != null && !dependentsList.isEmpty()) {
+            for (DependentMemberDto depDto : dependentsList) {
                 dependents.add(createDependentInternal(principal, depDto));
             }
         }
@@ -134,8 +142,10 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     @Override
     @Transactional
     public MemberViewDto promoteToActive(Long id, String reason) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found: " + id));
-        if (member.getStatus() == Member.MemberStatus.ACTIVE) return mapper.toViewDto(member);
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found: " + id));
+        if (member.getStatus() == Member.MemberStatus.ACTIVE)
+            return mapper.toViewDto(member);
         transitionMemberStatus(member, Member.MemberStatus.ACTIVE, reason);
         if (Boolean.TRUE.equals(member.getIsSmartCard()) && member.getCardActivatedAt() == null) {
             member.setCardActivatedAt(LocalDateTime.now());
@@ -156,7 +166,9 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     protected void logWorkflowHistory(Member member, String fromStatus, String toStatus, String reason) {
         workflowHistoryRepository.save(MemberWorkflowHistory.builder()
                 .member(member).fromStatus(fromStatus).toStatus(toStatus).changedAt(LocalDateTime.now())
-                .changedBy(authorizationService.getCurrentUser() != null ? authorizationService.getCurrentUser().getUsername() : "System")
+                .changedBy(authorizationService.getCurrentUser() != null
+                        ? authorizationService.getCurrentUser().getUsername()
+                        : "System")
                 .reason(reason).build());
     }
 
@@ -167,7 +179,7 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
         dependent.setEmployerOrganization(principal.getEmployerOrganization());
         dependent.setBenefitPolicy(principal.getBenefitPolicy());
         dependent.setPolicyNumber(principal.getPolicyNumber());
-        dependent.setCardNumber(cardNumberGenerator.generateSmartCardNumber(dependent));
+        dependent.setCardNumber(memberGenerator.generateCardNumber(dependent));
         // REMOVED: Barcode is forbidden for dependents
         dependent = memberRepository.save(dependent);
         String statusName = (dependent.getStatus() != null) ? dependent.getStatus().name() : "ACTIVE";
@@ -184,33 +196,41 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     @Override
     @Transactional
     public MemberViewDto createDependentMember(Long principalId, DependentMemberDto dto) {
-        Member principal = memberRepository.findById(principalId).orElseThrow(() -> new ResourceNotFoundException("Principal not found: " + principalId));
+        Member principal = memberRepository.findById(principalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Principal not found: " + principalId));
         return mapper.toViewDto(createDependentInternal(principal, dto));
     }
 
     @Override
     @Transactional(readOnly = true)
     public MemberViewDto getMember(Long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found: " + id));
-        if (member.isPrincipal()) return mapper.toViewDto(member, memberRepository.findByParentId(member.getId()));
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found: " + id));
+        if (member.isPrincipal())
+            return mapper.toViewDto(member, memberRepository.findByParentId(member.getId()));
         return mapper.toViewDto(member);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public MemberViewDto getMemberWithDependents(Long id) { return getMember(id); }
+    public MemberViewDto getMemberWithDependents(Long id) {
+        return getMember(id);
+    }
 
     @Override
     @Transactional
     public MemberViewDto updateMember(Long id, MemberUpdateDto dto) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found: " + id));
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found: " + id));
         Member.MemberStatus oldStatus = member.getStatus();
         mapper.updateEntityFromDto(member, dto);
         if (dto.getEmployerId() != null) {
-            member.setEmployerOrganization(organizationRepository.findById(dto.getEmployerId()).orElseThrow(() -> new ResourceNotFoundException("Employer not found")));
+            member.setEmployerOrganization(organizationRepository.findById(dto.getEmployerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Employer not found")));
         }
         if (dto.getBenefitPolicyId() != null) {
-            member.setBenefitPolicy(benefitPolicyRepository.findById(dto.getBenefitPolicyId()).orElseThrow(() -> new ResourceNotFoundException("Policy not found")));
+            member.setBenefitPolicy(benefitPolicyRepository.findById(dto.getBenefitPolicyId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Policy not found")));
         }
         if (dto.getStatus() != null && dto.getStatus() != oldStatus) {
             logWorkflowHistory(member, oldStatus.name(), dto.getStatus().name(), "Direct Update");
@@ -221,11 +241,14 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     @Override
     @Transactional
     public void deleteMember(Long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found"));
-        member.setActive(false); member.setStatus(Member.MemberStatus.TERMINATED);
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        member.setActive(false);
+        member.setStatus(Member.MemberStatus.TERMINATED);
         memberRepository.save(member);
         for (Member dep : memberRepository.findByParentId(id)) {
-            dep.setActive(false); dep.setStatus(Member.MemberStatus.TERMINATED);
+            dep.setActive(false);
+            dep.setStatus(Member.MemberStatus.TERMINATED);
             memberRepository.save(dep);
         }
         logWorkflowHistory(member, "ACTIVE", "TERMINATED", "Soft deleted");
@@ -234,11 +257,14 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     @Override
     @Transactional
     public void restoreMember(Long id) {
-        Member member = memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found"));
-        member.setActive(true); member.setStatus(Member.MemberStatus.ACTIVE);
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        member.setActive(true);
+        member.setStatus(Member.MemberStatus.ACTIVE);
         memberRepository.save(member);
         for (Member dep : memberRepository.findByParentId(id)) {
-            dep.setActive(true); dep.setStatus(Member.MemberStatus.ACTIVE);
+            dep.setActive(true);
+            dep.setStatus(Member.MemberStatus.ACTIVE);
             memberRepository.save(dep);
         }
         logWorkflowHistory(member, "TERMINATED", "ACTIVE", "Restored from trash");
@@ -247,7 +273,8 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     @Override
     @Transactional
     public void hardDeleteMember(Long id) {
-        memberRepository.delete(memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found")));
+        memberRepository.delete(
+                memberRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Member not found")));
     }
 
     @Override
@@ -255,116 +282,61 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
     public FamilyEligibilityResponseDto checkFamilyEligibility(String query) {
         String cleanQuery = query != null ? query.trim() : "";
         List<Member> members = memberRepository.findByBarcode(cleanQuery);
-        if (members.isEmpty()) members = memberRepository.findByCardNumber(cleanQuery);
-        if (members.isEmpty()) members = memberRepository.findByEmployeeNumber(cleanQuery);
+        if (members.isEmpty())
+            members = memberRepository.findByCardNumber(cleanQuery);
+        if (members.isEmpty())
+            members = memberRepository.findByEmployeeNumber(cleanQuery);
 
         Member target = members.isEmpty() ? null : members.get(0);
         if (target == null && cleanQuery.length() > 1) {
             members = memberRepository.findByCardNumber(cleanQuery.substring(0, cleanQuery.length() - 1));
-            if (!members.isEmpty() && members.get(0).isPrincipal()) target = members.get(0);
+            if (!members.isEmpty() && members.get(0).isPrincipal())
+                target = members.get(0);
         }
 
-        if (target == null) throw new ResourceNotFoundException("Member not found");
+        if (target == null)
+            throw new ResourceNotFoundException("Member not found");
         Member principal = target.getParent() != null ? target.getParent() : target;
         return mapper.toFamilyEligibilityResponse(principal, memberRepository.findByParentId(principal.getId()));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public FamilyEligibilityResponseDto checkEligibility(String barcode) { return checkFamilyEligibility(barcode); }
+    public FamilyEligibilityResponseDto checkEligibility(String barcode) {
+        return checkFamilyEligibility(barcode);
+    }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<MemberViewDto> getAllMembers(Pageable pageable, Long organizationId, String status, String type, boolean deleted) {
-        Specification<Member> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            if (organizationId != null) predicates.add(cb.equal(root.get("employerOrganization").get("id"), organizationId));
-            if (status != null && !status.isEmpty()) predicates.add(cb.equal(root.get("status"), Member.MemberStatus.valueOf(status)));
-            if ("PRINCIPAL".equalsIgnoreCase(type)) predicates.add(cb.isNull(root.get("parent")));
-            else if ("DEPENDENT".equalsIgnoreCase(type)) predicates.add(cb.isNotNull(root.get("parent")));
-            predicates.add(cb.equal(root.get("active"), !deleted));
-            applySecurityFilter(root, cb, predicates);
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-        return memberRepository.findAll(spec, pageable).map(m -> {
-            MemberViewDto dto = mapper.toViewDto(m);
-            if (Boolean.FALSE.equals(m.getActive())) dto.setStatus(Member.MemberStatus.TERMINATED);
-            return dto;
-        });
+    public Page<MemberViewDto> getAllMembers(Pageable pageable, Long organizationId, String status, String type,
+            boolean deleted) {
+        MemberSearchCriteria criteria = MemberSearchCriteria.builder()
+                .organizationId(organizationId)
+                .status(status)
+                .type(type)
+                .deleted(deleted)
+                .build();
+        return memberSearchService.searchMembersAdvanced(criteria, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public long countMembers(Long organizationId, String status, String type, boolean deleted) {
-        Specification<Member> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            if (organizationId != null) predicates.add(cb.equal(root.get("employerOrganization").get("id"), organizationId));
-            if (status != null && !status.isEmpty()) predicates.add(cb.equal(root.get("status"), Member.MemberStatus.valueOf(status)));
-            if ("PRINCIPAL".equalsIgnoreCase(type)) predicates.add(cb.isNull(root.get("parent")));
-            else if ("DEPENDENT".equalsIgnoreCase(type)) predicates.add(cb.isNotNull(root.get("parent")));
-            predicates.add(cb.equal(root.get("active"), !deleted));
-            applySecurityFilter(root, cb, predicates);
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-        return memberRepository.count(spec);
+        // Simple delegating for consistency, or implementation in SearchService
+        return getAllMembers(PageRequest.of(0, 1), organizationId, status, type, deleted).getTotalElements();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<MemberViewDto> searchMembers(String searchTerm, String civilId, String barcode, String cardNumber, Long organizationId, Long benefitPolicyId, String status, String type, boolean deleted, Pageable pageable) {
-        Specification<Member> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            String term = (searchTerm != null && !searchTerm.trim().isEmpty()) ? searchTerm : null;
-            if (term != null) {
-                String pattern = "%" + term.toLowerCase() + "%";
-                predicates.add(cb.or(cb.like(cb.lower(root.get("fullName")), pattern), cb.like(cb.lower(root.get("barcode")), pattern), cb.like(cb.lower(root.get("cardNumber")), pattern)));
-            }
-            if (civilId != null && !civilId.isEmpty()) predicates.add(cb.equal(root.get("civilId"), civilId));
-            if (organizationId != null) predicates.add(cb.equal(root.get("employerOrganization").get("id"), organizationId));
-            if (benefitPolicyId != null) predicates.add(cb.equal(root.get("benefitPolicy").get("id"), benefitPolicyId));
-            if (status != null && !status.isEmpty()) predicates.add(cb.equal(root.get("status"), Member.MemberStatus.valueOf(status)));
-            if ("PRINCIPAL".equalsIgnoreCase(type)) predicates.add(cb.isNull(root.get("parent")));
-            else if ("DEPENDENT".equalsIgnoreCase(type)) predicates.add(cb.isNotNull(root.get("parent")));
-            predicates.add(cb.equal(root.get("active"), !deleted));
-            applySecurityFilter(root, cb, predicates);
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-        return memberRepository.findAll(spec, pageable).map(m -> {
-            MemberViewDto dto = mapper.toViewDto(m);
-            if (Boolean.FALSE.equals(m.getActive())) dto.setStatus(Member.MemberStatus.TERMINATED);
-            return dto;
-        });
-    }
-
-    @Override
-    @Transactional
-    public MemberViewDto createMember(MemberCreateDto dto) { return createPrincipalMember(dto); }
-
-    @Override
-    @Transactional
-    public MemberViewDto addDependent(Long principalId, DependentMemberDto dto) { return createDependentMember(principalId, dto); }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<MemberViewDto> getDependents(Long principalId) {
-        Member p = memberRepository.findById(principalId).orElseThrow(() -> new ResourceNotFoundException("Principal not found"));
-        if (p.isDependent()) throw new BusinessRuleException("Not a principal");
-        return memberRepository.findByParentId(principalId).stream().map(mapper::toViewDto).collect(Collectors.toList());
+    public Page<MemberViewDto> searchMembersAdvanced(MemberSearchCriteria criteria, Pageable pageable) {
+        return memberSearchService.searchMembersAdvanced(criteria, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long countDependents(Long principalId) {
-        Member p = memberRepository.findById(principalId).orElseThrow(() -> new ResourceNotFoundException("Principal not found"));
-        if (p.isDependent()) throw new BusinessRuleException("Not a principal");
-        return memberRepository.countByParentId(principalId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public byte[] exportMembersToExcel(String searchTerm, String civilId, String barcode, String cardNumber, Long organizationId, Long benefitPolicyId, String status, String type, boolean deleted) throws IOException {
-        log.info("📊 Generating Excel export via DocumentService");
-        Page<MemberViewDto> page = searchMembers(searchTerm, civilId, barcode, cardNumber, organizationId, benefitPolicyId, status, type, deleted, PageRequest.of(0, 10000));
+    public byte[] exportMembersToExcel(MemberSearchCriteria criteria) throws IOException {
+        log.info("📊 Generating Excel export for criteria: {}", criteria);
+        Page<MemberViewDto> page = searchMembersAdvanced(criteria, PageRequest.of(0, 10000));
         List<Map<String, Object>> data = page.getContent().stream().map(m -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("الاسم الكامل", m.getFullName());
@@ -372,7 +344,7 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
             map.put("الباركود", m.getBarcode());
             map.put("الرقم المدني", m.getCivilId());
             map.put("النوع", "PRINCIPAL".equalsIgnoreCase(m.getType()) ? "أصيل" : "تابع");
-            map.put("الحالة", m.getStatus() != null ? m.getStatus().name() : "");
+            map.put("الحالة", m.getStatus() != null ? m.getStatus() : "");
             map.put("جهة العمل", m.getEmployerName());
             map.put("عدد التابعين", m.getDependentsCount() != null ? m.getDependentsCount() : 0);
             return map;
@@ -380,12 +352,28 @@ public class UnifiedMemberServiceImpl implements UnifiedMemberService {
         return documentService.createExcel(data, "Members");
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberViewDto> getDependents(Long principalId) {
+        log.info("🔍 Fetching dependents for principal ID: {}", principalId);
+        List<Member> dependents = memberRepository.findByParentId(principalId);
+        return dependents.stream().map(mapper::toViewDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countDependents(Long principalId) {
+        return memberRepository.countByParentId(principalId);
+    }
+
     private void applySecurityFilter(Root<Member> root, CriteriaBuilder cb, List<Predicate> predicates) {
         User user = authorizationService.getCurrentUser();
         Set<Long> ids = authorizationService.getPermittedEmployerIdsForUser(user);
         if (ids != null) {
-            if (ids.isEmpty()) predicates.add(cb.disjunction());
-            else predicates.add(root.get("employerOrganization").get("id").in(ids));
+            if (ids.isEmpty())
+                predicates.add(cb.disjunction());
+            else
+                predicates.add(root.get("employerOrganization").get("id").in(ids));
         }
     }
 }

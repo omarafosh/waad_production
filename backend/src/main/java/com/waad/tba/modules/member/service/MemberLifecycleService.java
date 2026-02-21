@@ -1,12 +1,9 @@
 package com.waad.tba.modules.member.service;
 
-import com.waad.tba.common.entity.Organization;
 import com.waad.tba.common.exception.BusinessRuleException;
 import com.waad.tba.common.exception.ResourceNotFoundException;
-import com.waad.tba.modules.member.dto.MemberViewDto;
 import com.waad.tba.modules.member.entity.Member;
 import com.waad.tba.modules.member.entity.MemberWorkflowHistory;
-import com.waad.tba.modules.member.mapper.UnifiedMemberMapper;
 import com.waad.tba.modules.member.repository.MemberRepository;
 import com.waad.tba.modules.member.repository.MemberWorkflowHistoryRepository;
 import com.waad.tba.security.AuthorizationService;
@@ -26,7 +23,6 @@ public class MemberLifecycleService {
     private final MemberRepository memberRepository;
     private final MemberWorkflowHistoryRepository workflowHistoryRepository;
     private final AuthorizationService authorizationService;
-    private final UnifiedMemberMapper mapper;
 
     @Transactional
     public void transitionMemberStatus(Member member, Member.MemberStatus newStatus, String reason) {

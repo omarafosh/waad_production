@@ -110,7 +110,7 @@ public class SlaMonitoringScheduler {
                 daysLeft + " business days left");
         }
         
-        // TODO: Send notifications to reviewers
+        
         // notificationService.sendSlaWarning(approaching);
     }
     

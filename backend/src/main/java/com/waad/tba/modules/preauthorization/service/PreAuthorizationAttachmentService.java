@@ -17,7 +17,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
-import com.waad.tba.common.file.FileResourceUtils;
 
 /**
  * Service for managing PreAuthorization Attachments
@@ -41,14 +40,14 @@ public class PreAuthorizationAttachmentService {
             "image/png",
             "image/gif",
             "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
     /**
      * Upload attachment to a pre-authorization
      */
     @Transactional
-    public PreAuthorizationAttachment uploadAttachment(Long preAuthorizationId, MultipartFile file, String attachmentType, String uploadedBy) {
+    public PreAuthorizationAttachment uploadAttachment(Long preAuthorizationId, MultipartFile file,
+            String attachmentType, String uploadedBy) {
         // Validate pre-authorization exists
         if (!preAuthorizationRepository.existsById(preAuthorizationId)) {
             throw new IllegalArgumentException("Pre-authorization not found: " + preAuthorizationId);
@@ -71,24 +70,25 @@ public class PreAuthorizationAttachmentService {
         try {
             // Create directory structure
             // Security: Sanitize ID and construct path safely
-            String directoryPath = uploadPath + "/pre-authorizations/" + preAuthorizationId;
             Path directory = Paths.get(uploadPath, "pre-authorizations", String.valueOf(preAuthorizationId));
             Files.createDirectories(directory);
 
             // Generate unique filename
             String originalFileName = file.getOriginalFilename();
-            // Security: Sanitize original filename to prevent path traversal in database record
-            String safeOriginalName = originalFileName != null ? originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_") : "attachment";
-            
-            String extension = originalFileName != null && originalFileName.contains(".") 
+            // Security: Sanitize original filename to prevent path traversal in database
+            // record
+            String safeOriginalName = originalFileName != null ? originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_")
+                    : "attachment";
+
+            String extension = originalFileName != null && originalFileName.contains(".")
                     ? originalFileName.substring(originalFileName.lastIndexOf("."))
                     : "";
             String storedFileName = UUID.randomUUID().toString() + extension;
-            
+
             // Save file
             // Security: Use Path.resolve for safe path concatenation
             Path filePath = directory.resolve(storedFileName).normalize();
-            
+
             // Final check: ensures the file is still within the intended directory
             if (!filePath.startsWith(directory.toAbsolutePath())) {
                 throw new SecurityException("Potential Path Traversal attack detected");
@@ -109,8 +109,9 @@ public class PreAuthorizationAttachmentService {
                     .build();
 
             PreAuthorizationAttachment saved = attachmentRepository.save(attachment);
-            log.info("✅ Uploaded attachment {} for pre-authorization {} by {}", saved.getId(), preAuthorizationId, uploadedBy);
-            
+            log.info("✅ Uploaded attachment {} for pre-authorization {} by {}", saved.getId(), preAuthorizationId,
+                    uploadedBy);
+
             return saved;
 
         } catch (IOException e) {
@@ -139,7 +140,7 @@ public class PreAuthorizationAttachmentService {
      */
     public byte[] downloadAttachment(Long attachmentId) {
         PreAuthorizationAttachment attachment = getAttachment(attachmentId);
-        
+
         try {
             Path filePath = Paths.get(attachment.getFilePath());
             if (!Files.exists(filePath)) {
@@ -158,17 +159,17 @@ public class PreAuthorizationAttachmentService {
     @Transactional
     public void deleteAttachment(Long attachmentId) {
         PreAuthorizationAttachment attachment = getAttachment(attachmentId);
-        
+
         try {
             // Delete physical file
             Path filePath = Paths.get(attachment.getFilePath());
             Files.deleteIfExists(filePath);
-            
+
             // Delete record
             attachmentRepository.delete(attachment);
-            log.info("✅ Deleted attachment {} from pre-authorization {}", 
+            log.info("✅ Deleted attachment {} from pre-authorization {}",
                     attachmentId, attachment.getPreAuthorizationId());
-            
+
         } catch (IOException e) {
             log.error("Failed to delete attachment file: {}", e.getMessage());
             // Still delete the record even if file deletion fails

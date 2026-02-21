@@ -1,0 +1,54 @@
+# ================================================================
+# 🛠️ Development Profile - Local Environment Only
+# ================================================================
+# Usage: mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# Or: java -jar -Dspring.profiles.active=dev app.jar
+# ================================================================
+
+spring:
+  main:
+    allow-circular-references: false  # DEV: Should also fix circular deps
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${SPRING_MULTIPART_MAX_FILE_SIZE:60MB}
+      max-request-size: ${SPRING_MULTIPART_MAX_REQUEST_SIZE:60MB}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tba_waad_system
+    username: postgres
+    password: "12345"
+  
+  jpa:
+    show-sql: true
+    # DEV: Don't validate schema (allow missing tables)
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: true
+        # Disable schema validation
+        javax.persistence.validation.mode: none
+        jakarta.persistence.schema-generation.database.action: none
+  
+  flyway:
+    # 🔧 DEV: Allow checksum validation to be bypassed
+    validate-on-migrate: false
+    # 🚨 WARNING: Use repair manually if checksums changed
+    # Command: mvn flyway:repair
+    clean-disabled: false  # Allow clean in dev only
+
+jwt:
+  # DEV ONLY fallback to avoid startup failure locally when JWT_SECRET is not set
+  secret: ${JWT_SECRET:dev-jwt-secret-key-for-testing-only-12345678}
+
+# ==============================
+# 🔍 Logging (Verbose for Dev)
+# ==============================
+logging:
+  level:
+    root: INFO
+    com.waad.tba: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.flywaydb: DEBUG

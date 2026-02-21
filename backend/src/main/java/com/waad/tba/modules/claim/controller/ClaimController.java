@@ -69,14 +69,16 @@ public class ClaimController {
     @GetMapping
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_VIEW')")
     public ResponseEntity<ApiResponse<PaginationResponse<ClaimViewDto>>> listClaims(
-            @RequestParam(required = false) Long employerId,
+            @RequestParam(required = false) String employerId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) String search) {
+
+        Long parsedEmployerId = parseEmployerId(employerId);
         Page<ClaimViewDto> claimsPage = claimService.listClaims(
-                employerId, Math.max(0, page - 1), size, sortBy, sortDir, search);
+                parsedEmployerId, Math.max(0, page - 1), size, sortBy, sortDir, search);
 
         PaginationResponse<ClaimViewDto> response = PaginationResponse.<ClaimViewDto>builder()
                 .items(claimsPage.getContent())
@@ -98,8 +100,9 @@ public class ClaimController {
     @GetMapping("/count")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_VIEW')")
     public ResponseEntity<ApiResponse<Long>> countClaims(
-            @RequestParam(required = false) Long employerId) {
-        long count = claimService.countClaims(employerId);
+            @RequestParam(required = false) String employerId) {
+        Long parsedEmployerId = parseEmployerId(employerId);
+        long count = claimService.countClaims(parsedEmployerId);
         return ResponseEntity.ok(ApiResponse.success("Claims counted successfully", count));
     }
 
@@ -121,7 +124,8 @@ public class ClaimController {
 
     @GetMapping("/pre-authorization/{preAuthorizationId}")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_VIEW')")
-    public ResponseEntity<ApiResponse<List<ClaimViewDto>>> getClaimsByPreAuthorization(@PathVariable Long preAuthorizationId) {
+    public ResponseEntity<ApiResponse<List<ClaimViewDto>>> getClaimsByPreAuthorization(
+            @PathVariable Long preAuthorizationId) {
         List<ClaimViewDto> claims = claimService.getClaimsByPreAuthorization(preAuthorizationId);
         return ResponseEntity.ok(ApiResponse.success("Pre-authorization claims retrieved successfully", claims));
     }
@@ -168,7 +172,8 @@ public class ClaimController {
      * 
      * Validates:
      * - Coverage limits (via CoverageValidationService)
-     * - Financial snapshot equation: RequestedAmount = PatientCoPay + NetProviderAmount
+     * - Financial snapshot equation: RequestedAmount = PatientCoPay +
+     * NetProviderAmount
      */
     @PostMapping("/{id:\\d+}/approve")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_APPROVE')")
@@ -269,6 +274,14 @@ public class ClaimController {
         return ResponseEntity.ok(ApiResponse.success("المطالبات المعلقة", response));
     }
 
+    @GetMapping("/inbox/pending/stats")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasAuthority('CLAIM_VIEW')")
+    @Operation(summary = "Claims pending review stats", description = "Get statistics for claims awaiting review")
+    public ResponseEntity<ApiResponse<com.waad.tba.modules.claim.dto.InboxStatsDto>> getPendingClaimsStats() {
+        com.waad.tba.modules.claim.dto.InboxStatsDto stats = claimService.getPendingClaimsStats();
+        return ResponseEntity.ok(ApiResponse.success("إحصائيات المطالبات المعلقة", stats));
+    }
+
     /**
      * Get approved claims ready for settlement (Inbox for finance).
      */
@@ -348,5 +361,19 @@ public class ClaimController {
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success("Claims by status retrieved", response));
+    }
+
+    /**
+     * Helper method to parse employerId safely
+     */
+    private Long parseEmployerId(String employerId) {
+        if (employerId == null || employerId.trim().isEmpty() || "null".equalsIgnoreCase(employerId)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(employerId);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid employerId format: " + employerId);
+        }
     }
 }

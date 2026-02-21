@@ -1,7 +1,6 @@
 package com.waad.tba.modules.medicaltaxonomy.controller;
 
 import com.waad.tba.common.dto.ApiResponse;
-import com.waad.tba.modules.medicaltaxonomy.dto.CatalogStatsDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.MappingRequestDto;
 import com.waad.tba.modules.medicaltaxonomy.dto.ProviderRawServiceDto;
 import com.waad.tba.modules.medicaltaxonomy.entity.ProviderMappingAudit;
@@ -57,13 +56,13 @@ public class ProviderMappingController {
 
     @GetMapping("/stats")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<ApiResponse> getCatalogStats() {
+    public ResponseEntity<ApiResponse<?>> getCatalogStats() {
         return ResponseEntity.ok(ApiResponse.success("Stats retrieved", mappingService.getCatalogStats()));
     }
 
     @PostMapping("/map")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<ApiResponse> mapService(
+    public ResponseEntity<ApiResponse<?>> mapService(
             @Valid @RequestBody MappingRequestDto request,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         mappingService.mapService(request, currentUser);
@@ -72,7 +71,7 @@ public class ProviderMappingController {
 
     @PostMapping("/unmap")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<ApiResponse> unmapService(
+    public ResponseEntity<ApiResponse<?>> unmapService(
             @RequestBody java.util.List<Long> rawServiceIds,
             @AuthenticationPrincipal UserPrincipal currentUser) {
         mappingService.unmapService(rawServiceIds, currentUser);
@@ -81,7 +80,7 @@ public class ProviderMappingController {
 
     @PostMapping("/raw/{id}/category")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<ApiResponse> assignCategory(
+    public ResponseEntity<ApiResponse<?>> assignCategory(
             @PathVariable Long id,
             @RequestParam String categoryName) {
         mappingService.assignCategory(id, categoryName);
@@ -90,32 +89,33 @@ public class ProviderMappingController {
 
     @PostMapping("/upload-raw")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<ApiResponse> uploadRawServices(
+    public ResponseEntity<ApiResponse<?>> uploadRawServices(
             @RequestParam("file") MultipartFile file,
             @RequestParam("providerId") Long providerId) {
-        
+
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("File is empty"));
         }
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             int count = 0;
             // Skip header if present (simple check)
             boolean firstLine = true;
-            
+
             while ((line = reader.readLine()) != null) {
                 if (firstLine && line.toLowerCase().contains("code")) {
-                   firstLine = false;
-                   continue; 
+                    firstLine = false;
+                    continue;
                 }
-                
+
                 String[] parts = line.split(",");
                 if (parts.length >= 2) {
                     String code = parts[0].trim();
                     String name = parts[1].trim();
                     String desc = parts.length > 2 ? parts[2].trim() : null;
-                    
+
                     if (!code.isEmpty()) {
                         mappingService.uploadRawService(providerId, code, name, desc);
                         count++;
@@ -135,19 +135,19 @@ public class ProviderMappingController {
      */
     @PostMapping("/import-from-contract")
     @PreAuthorize("hasAuthority('MANAGE_TAXONOMY')")
-    public ResponseEntity<ApiResponse> importFromContractPricing(
+    public ResponseEntity<ApiResponse<?>> importFromContractPricing(
             @RequestParam("providerId") Long providerId,
             @RequestParam(value = "contractId", required = false) Long contractId) {
-        
+
         try {
             int count = mappingService.importFromContractPricing(providerId, contractId);
             return ResponseEntity.ok(ApiResponse.success(
-                "تم استيراد " + count + " خدمة من قائمة أسعار العقد", 
-                count));
+                    "تم استيراد " + count + " خدمة من قائمة أسعار العقد",
+                    count));
         } catch (Exception e) {
             log.error("Failed to import from contract pricing", e);
             return ResponseEntity.badRequest().body(ApiResponse.error(
-                "فشل استيراد الخدمات من العقد: " + e.getMessage()));
+                    "فشل استيراد الخدمات من العقد: " + e.getMessage()));
         }
     }
 }

@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -34,12 +33,12 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class PdfTableBuilder {
-    
+
     private final PdfFontConfig fontConfig;
-    
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    
+
     /**
      * Build key-value table for detail views
      */
@@ -47,36 +46,36 @@ public class PdfTableBuilder {
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
         try {
-            table.setWidths(new float[]{40, 60});
+            table.setWidths(new float[] { 40, 60 });
         } catch (DocumentException e) {
             log.error("Failed to set column widths", e);
         }
-        
+
         table.setHeaderRows(0);
         table.setSpacingBefore(10f);
         table.setSpacingAfter(10f);
-        
+
         for (KeyValue kv : data) {
             // Key cell
             PdfPCell keyCell = new PdfPCell(
-                new Phrase(kv.getKey(), fontConfig.getFont(kv.getKey(), false)));
+                    new Phrase(kv.getKey(), fontConfig.getFont(kv.getKey(), false)));
             keyCell.setBackgroundColor(new Color(230, 230, 230));
             keyCell.setPadding(8f);
             keyCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
             table.addCell(keyCell);
-            
+
             // Value cell
             String value = kv.getValue() != null ? kv.getValue() : "-";
             PdfPCell valueCell = new PdfPCell(
-                new Phrase(value, fontConfig.getFont(value, false)));
+                    new Phrase(value, fontConfig.getFont(value, false)));
             valueCell.setPadding(8f);
             valueCell.setHorizontalAlignment(Element.ALIGN_LEFT);
             table.addCell(valueCell);
         }
-        
+
         return table;
     }
-    
+
     /**
      * Simple key-value pair for detail tables
      */
@@ -86,27 +85,28 @@ public class PdfTableBuilder {
         private String key;
         private String value;
     }
-    
+
     /**
      * Format value for display
      */
+    @SuppressWarnings("unused")
     private String formatValue(Object value) {
         if (value == null) {
             return "-";
         }
-        
+
         if (value instanceof LocalDate) {
             return ((LocalDate) value).format(DATE_FORMATTER);
         }
-        
+
         if (value instanceof LocalDateTime) {
             return ((LocalDateTime) value).format(DATETIME_FORMATTER);
         }
-        
+
         if (value instanceof Boolean) {
             return ((Boolean) value) ? "نعم" : "لا";
         }
-        
+
         return value.toString();
     }
 }

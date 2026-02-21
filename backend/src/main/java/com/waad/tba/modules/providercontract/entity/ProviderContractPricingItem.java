@@ -11,17 +11,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * Provider Contract Pricing Item Entity - represents per-service pricing within a contract.
+ * Provider Contract Pricing Item Entity - represents per-service pricing within
+ * a contract.
  * (REFACTORED 2026-02-17 - UNIFIED DICTIONARY)
  */
 @Entity
 @Table(name = "provider_contract_pricing_items", indexes = {
-    @Index(name = "idx_pricing_contract_id", columnList = "contract_id"),
-    @Index(name = "idx_pricing_service_id", columnList = "medical_service_id"),
-    @Index(name = "idx_pricing_active", columnList = "active")
+        @Index(name = "idx_pricing_contract_id", columnList = "contract_id"),
+        @Index(name = "idx_pricing_service_id", columnList = "medical_service_id"),
+        @Index(name = "idx_pricing_active", columnList = "active")
 })
 @Getter
 @Setter
@@ -48,32 +48,32 @@ public class ProviderContractPricingItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medical_service_id")
     private MedicalService medicalService;
-    
+
     /**
      * Service name - denormalized snapshot
      */
     @Size(max = 255)
     @Column(name = "service_name", length = 255)
     private String serviceName;
-    
+
     /**
      * Service code - denormalized lookup
      */
     @Size(max = 50)
     @Column(name = "service_code", length = 50)
     private String serviceCode;
-    
+
     /**
      * Category name - from Unified MedicalService
      */
     @Size(max = 255)
     @Column(name = "category_name", length = 255)
     private String categoryName;
-    
+
     @Size(max = 255)
     @Column(name = "specialty", length = 255)
     private String specialty;
-    
+
     /**
      * Quantity (for internal tracking)
      */
@@ -98,7 +98,8 @@ public class ProviderContractPricingItem {
     private BigDecimal contractPrice = BigDecimal.ZERO;
 
     /**
-     * Calculated discount percentage ((basePrice - contractPrice) / basePrice * 100)
+     * Calculated discount percentage ((basePrice - contractPrice) / basePrice *
+     * 100)
      */
     @DecimalMin(value = "0.00", message = "Discount must be >= 0")
     @DecimalMax(value = "100.00", message = "Discount must be <= 100")
@@ -183,14 +184,14 @@ public class ProviderContractPricingItem {
                     .divide(basePrice, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100))
                     .setScale(2, RoundingMode.HALF_UP);
-            
+
             // Ensure discount is within bounds
             if (discount.compareTo(BigDecimal.ZERO) < 0) {
                 discount = BigDecimal.ZERO;
             } else if (discount.compareTo(BigDecimal.valueOf(100)) > 0) {
                 discount = BigDecimal.valueOf(100);
             }
-            
+
             this.discountPercent = discount;
         }
     }
@@ -204,19 +205,18 @@ public class ProviderContractPricingItem {
      */
     public boolean isCurrentlyEffective() {
         LocalDate today = LocalDate.now();
-        
+
         // Use item-specific dates if available, otherwise use contract dates
-        LocalDate effectiveStart = effectiveFrom != null ? effectiveFrom : 
-                (contract != null ? contract.getStartDate() : null);
-        LocalDate effectiveEnd = effectiveTo != null ? effectiveTo : 
-                (contract != null ? contract.getEndDate() : null);
-        
+        LocalDate effectiveStart = effectiveFrom != null ? effectiveFrom
+                : (contract != null ? contract.getStartDate() : null);
+        LocalDate effectiveEnd = effectiveTo != null ? effectiveTo : (contract != null ? contract.getEndDate() : null);
+
         if (effectiveStart == null) {
             return false;
         }
-        
-        return !effectiveStart.isAfter(today) && 
-               (effectiveEnd == null || !effectiveEnd.isBefore(today));
+
+        return !effectiveStart.isAfter(today) &&
+                (effectiveEnd == null || !effectiveEnd.isBefore(today));
     }
 
     /**

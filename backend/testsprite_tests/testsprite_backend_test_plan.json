@@ -1,22 +1,32 @@
 [
   {
     "id": "TC001",
-    "title": "benefitpolicycontrollercrudoperations",
-    "description": "Test the CRUD operations of the BenefitPolicyController API to ensure correct creation, retrieval, update, soft-delete, and restore of insurance benefit policies."
+    "title": "post api members unified create member",
+    "description": "Test creating a new unified member record with valid payload and authentication token to ensure successful creation and return of memberId."
   },
   {
     "id": "TC002",
-    "title": "eligibilitycontrollereligibilitycheck",
-    "description": "Verify the EligibilityController API correctly checks member eligibility against active benefit policies, considering membership status, policy dates, waiting periods, and coverage limits, returning appropriate eligibility status and reason codes."
+    "title": "get api members unified id retrieve member details",
+    "description": "Test retrieving unified member details by memberId with valid authentication token to verify correct member information and linked policies are returned."
   },
   {
     "id": "TC003",
-    "title": "claimcontrollersubmissionandlifecycle",
-    "description": "Test the ClaimController API for claim submission, ensuring correct handling of claim creation, cost breakdown calculations (deductible, co-pay, insurer coverage), and lifecycle status transitions from draft to settled."
+    "title": "post api claims submit new claim",
+    "description": "Test submitting a new medical claim with valid memberId, serviceCode, totalAmount, and providerId to verify claim creation with status DRAFT and correct cost breakdown."
   },
   {
     "id": "TC004",
-    "title": "servicepricemappingandcontractrateapplication",
-    "description": "Validate that the service price mapping API correctly maps service codes, applies provider contract rates, and falls back to master catalog prices when necessary."
+    "title": "get api claims list and filter claims",
+    "description": "Test listing and filtering claims by memberId to ensure the correct list of claims including draft claims is returned."
+  },
+  {
+    "id": "TC005",
+    "title": "post api preauthorizations request preauthorization",
+    "description": "Test requesting a pre-authorization with valid memberId, providerId, serviceCode, plannedDate, clinicalDetails, and authentication token to verify creation of preAuthId with status PENDING."
+  },
+  {
+    "id": "TC006",
+    "title": "get api policies list benefit policies",
+    "description": "Test retrieving the list of benefit policies with valid authentication token to verify correct policies and coverage rules are returned."
   }
 ]

@@ -11,5 +11,10 @@ public class MappingSuggestionDto {
     private String nameAr;
     private String nameEn;
     private Double confidenceScore;
-    private String matchSource; // e.g., "TEXT_SIMILARITY", "ALIAS", "CODE_MATCH"
+    private String matchSource;
+    private Boolean autoApprove;
+    private Boolean requiresReview;
+    private String decision;
+    private String reason;
+    private String matchScope;
 }
